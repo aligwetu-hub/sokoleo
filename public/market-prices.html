@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SokoLeo – Market Price Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b1120;--surface:#111827;--surface2:#1a2435;--border:#1e3050;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --text:#e2e8f0;--muted:#64748b;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;position:sticky;top:0;z-index:10;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--green);}
+.logo span{color:var(--text);}
+.back-btn{color:var(--muted);text-decoration:none;font-size:.85rem;display:flex;align-items:center;gap:.4rem;}
+.back-btn:hover{color:var(--green);}
+
+.hero{background:linear-gradient(135deg,#0a1628 0%,#0d2137 100%);padding:3rem 2rem;text-align:center;border-bottom:1px solid var(--border);}
+.hero-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.hero-sub{color:var(--muted);font-size:.9rem;}
+.updated-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(52,211,153,.1);
+               border:1px solid rgba(52,211,153,.2);color:var(--green);
+               padding:4px 14px;border-radius:20px;font-size:.75rem;margin-top:1rem;}
+
+.container{max-width:1100px;margin:0 auto;padding:2rem;}
+
+/* Search / filter */
+.filter-row{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
+.filter-row input,.filter-row select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;}
+.filter-row input{flex:1;min-width:180px;}
+.filter-row input:focus,.filter-row select:focus{outline:none;border-color:var(--green);}
+
+/* Category pills */
+.cat-pills{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;}
+.cat-pill{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s;}
+.cat-pill.active,.cat-pill:hover{background:rgba(52,211,153,.1);border-color:var(--green);color:var(--green);}
+
+/* Price table */
+.price-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.pt-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;padding:.75rem 1.25rem;
+           background:var(--surface2);font-size:.75rem;color:var(--muted);
+           text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.pt-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;
+        padding:1rem 1.25rem;border-top:1px solid var(--border);
+        transition:background .15s;align-items:center;}
+.pt-row:hover{background:var(--surface2);}
+.pt-produce{font-weight:600;}
+.pt-category{font-size:.75rem;color:var(--muted);}
+.pt-price{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--green);}
+.pt-range{font-size:.78rem;color:var(--muted);}
+.trend{display:flex;align-items:center;gap:.3rem;font-size:.8rem;}
+.trend.up{color:var(--green);}
+.trend.down{color:var(--red);}
+.trend.stable{color:var(--amber);}
+
+/* Tip box */
+.tip-box{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);
+         border-radius:var(--radius);padding:1.5rem;margin-bottom:2rem;}
+.tip-title{font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.75rem;color:var(--green);}
+.tip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+.tip-item{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.tip-item strong{color:var(--text);display:block;margin-bottom:.2rem;}
+
+/* USSD notice */
+.ussd-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+          padding:1.5rem;margin-top:2rem;display:flex;align-items:center;gap:1.5rem;}
+.ussd-code{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--amber);white-space:nowrap;}
+.ussd-text{font-size:.85rem;color:var(--muted);line-height:1.6;}
+
+@media(max-width:640px){
+  .pt-header,.pt-row{grid-template-columns:2fr 1fr 1fr;} 
+  .pt-header>:nth-child(4),.pt-row>:nth-child(4),
+  .pt-header>:nth-child(5),.pt-row>:nth-child(5){display:none;}
+  .hero-title{font-size:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo-wrap" style="display:flex;align-items:center;gap:.6rem;text-decoration:none">
+      <img src="/logo.png" alt="SokoLeo" style="height:42px;width:42px;object-fit:contain;border-radius:50%"/>
+      <div>
+        <div class="logo" style="line-height:1"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div>
+        <div style="font-size:.62rem;color:var(--green);letter-spacing:.18em;font-family:'DM Sans',sans-serif;font-weight:500;margin-top:1px">SOKO KILA SIKU</div>
+      </div>
+    </div>
+  <a class="back-btn" href="javascript:history.back()">← Back</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-title">📊 Market Price Guide</div>
+  <div class="hero-sub">Current produce prices in Tharaka Nithi County & Meru region</div>
+  <div class="updated-badge">🟢 Updated: <span id="updateDate">–</span></div>
+</div>
+
+<div class="container">
+
+  <div class="tip-box">
+    <div class="tip-title">💡 Negotiation Tips</div>
+    <div class="tip-grid">
+      <div class="tip-item"><strong>For Farmers</strong>Set your price 10–15% above the market average to leave room for negotiation with traders.</div>
+      <div class="tip-item"><strong>For Traders</strong>Offer 5–10% below market price as an opening bid. Bulk purchases earn better rates.</div>
+      <div class="tip-item"><strong>Grade Matters</strong>Grade A produce commands 15–25% premium over Grade B. Always specify your quality.</div>
+      <div class="tip-item"><strong>Seasonal Trends</strong>Prices fluctuate by ±30% during harvest peaks. Buy/sell at the right time.</div>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <input type="text" id="searchProduce" placeholder="Search produce..." oninput="filterPrices()"/>
+    <select id="filterCat" onchange="filterPrices()">
+      <option value="">All Categories</option>
+      <option>Vegetables</option><option>Fruits</option><option>Grains & Legumes</option>
+      <option>Root Crops</option><option>Cash Crops</option>
+    </select>
+  </div>
+
+  <div class="cat-pills">
+    <div class="cat-pill active" onclick="setCat('',this)">All</div>
+    <div class="cat-pill" onclick="setCat('Vegetables',this)">🥬 Vegetables</div>
+    <div class="cat-pill" onclick="setCat('Fruits',this)">🍅 Fruits</div>
+    <div class="cat-pill" onclick="setCat('Grains & Legumes',this)">🌽 Grains & Legumes</div>
+    <div class="cat-pill" onclick="setCat('Root Crops',this)">🥔 Root Crops</div>
+    <div class="cat-pill" onclick="setCat('Cash Crops',this)">☕ Cash Crops</div>
+  </div>
+
+  <div class="price-table">
+    <div class="pt-header">
+      <div>Produce</div>
+      <div>Avg Price</div>
+      <div>Range</div>
+      <div>Per Unit</div>
+      <div>Trend</div>
+    </div>
+    <div id="priceRows"></div>
+  </div>
+
+  <div class="ussd-box">
+    <div class="ussd-code">*384#</div>
+    <div class="ussd-text">
+      <strong style="color:var(--text)">No internet? No problem.</strong><br/>
+      Dial <strong style="color:var(--amber)">*384#</strong> on any phone to get current market prices via USSD. Works on all networks — Safaricom, Airtel, Telkom.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PRICES = [
+  // Vegetables
+  {produce:'Tomatoes',category:'Vegetables',avg:55,min:40,max:75,unit:'kg',trend:'up',change:'+12%'},
+  {produce:'Kale (Sukuma Wiki)',category:'Vegetables',avg:25,min:18,max:35,unit:'bundle',trend:'stable',change:'0%'},
+  {produce:'Cabbage',category:'Vegetables',avg:40,min:30,max:55,unit:'head',trend:'down',change:'-8%'},
+  {produce:'Onions',category:'Vegetables',avg:80,min:60,max:100,unit:'kg',trend:'up',change:'+5%'},
+  {produce:'Spinach',category:'Vegetables',avg:20,min:15,max:30,unit:'bundle',trend:'stable',change:'0%'},
+  {produce:'Green Pepper',category:'Vegetables',avg:120,min:90,max:150,unit:'kg',trend:'up',change:'+18%'},
+  {produce:'Carrots',category:'Vegetables',avg:60,min:45,max:80,unit:'kg',trend:'stable',change:'+2%'},
+  {produce:'Courgette (Zucchini)',category:'Vegetables',avg:70,min:50,max:90,unit:'kg',trend:'up',change:'+10%'},
+  {produce:'French Beans',category:'Vegetables',avg:150,min:120,max:200,unit:'kg',trend:'up',change:'+20%'},
+  // Fruits
+  {produce:'Avocado',category:'Fruits',avg:15,min:10,max:25,unit:'piece',trend:'up',change:'+25%'},
+  {produce:'Mango',category:'Fruits',avg:10,min:5,max:20,unit:'piece',trend:'stable',change:'0%'},
+  {produce:'Banana',category:'Fruits',avg:200,min:150,max:280,unit:'bunch',trend:'down',change:'-5%'},
+  {produce:'Passion Fruit',category:'Fruits',avg:300,min:220,max:400,unit:'kg',trend:'up',change:'+15%'},
+  {produce:'Pineapple',category:'Fruits',avg:80,min:60,max:120,unit:'piece',trend:'stable',change:'+3%'},
+  // Grains & Legumes
+  {produce:'Maize (Dry)',category:'Grains & Legumes',avg:45,min:38,max:55,unit:'kg',trend:'stable',change:'+1%'},
+  {produce:'Beans (Dry)',category:'Grains & Legumes',avg:120,min:100,max:145,unit:'kg',trend:'up',change:'+8%'},
+  {produce:'Green Grams (Ndengu)',category:'Grains & Legumes',avg:140,min:120,max:165,unit:'kg',trend:'up',change:'+12%'},
+  {produce:'Pigeon Peas (Njahi)',category:'Grains & Legumes',avg:130,min:110,max:155,unit:'kg',trend:'stable',change:'0%'},
+  {produce:'Sorghum',category:'Grains & Legumes',avg:55,min:45,max:68,unit:'kg',trend:'down',change:'-3%'},
+  // Root Crops
+  {produce:'Irish Potatoes',category:'Root Crops',avg:35,min:25,max:50,unit:'kg',trend:'down',change:'-10%'},
+  {produce:'Sweet Potatoes',category:'Root Crops',avg:30,min:22,max:42,unit:'kg',trend:'stable',change:'+2%'},
+  {produce:'Cassava',category:'Root Crops',avg:25,min:18,max:35,unit:'kg',trend:'stable',change:'0%'},
+  {produce:'Arrowroots (Nduma)',category:'Root Crops',avg:50,min:38,max:65,unit:'kg',trend:'up',change:'+7%'},
+  // Cash Crops
+  {produce:'Coffee (Dry Cherry)',category:'Cash Crops',avg:95,min:80,max:115,unit:'kg',trend:'up',change:'+6%'},
+  {produce:'Tea (Green Leaf)',category:'Cash Crops',avg:22,min:18,max:28,unit:'kg',trend:'stable',change:'0%'},
+  {produce:'Miraa (Khat)',category:'Cash Crops',avg:500,min:400,max:650,unit:'kg',trend:'down',change:'-5%'},
+  {produce:'Sunflower',category:'Cash Crops',avg:65,min:55,max:78,unit:'kg',trend:'up',change:'+9%'},
+];
+
+let currentCat = '';
+let filtered = [...PRICES];
+
+function filterPrices(){
+  const q = document.getElementById('searchProduce').value.toLowerCase();
+  filtered = PRICES.filter(p=>
+    (!currentCat || p.category===currentCat) &&
+    (!q || p.produce.toLowerCase().includes(q))
+  );
+  renderPrices();
+}
+
+function setCat(cat, el){
+  currentCat = cat;
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  filterPrices();
+}
+
+function trendIcon(t){ return t==='up'?'↑':t==='down'?'↓':'→'; }
+
+function renderPrices(){
+  const el = document.getElementById('priceRows');
+  if(!filtered.length){ el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">No produce found</div>'; return; }
+  el.innerHTML = filtered.map(p=>`
+    <div class="pt-row">
+      <div>
+        <div class="pt-produce">${p.produce}</div>
+        <div class="pt-category">${p.category}</div>
+      </div>
+      <div class="pt-price">KES ${p.avg}</div>
+      <div class="pt-range">KES ${p.min}–${p.max}</div>
+      <div class="pt-range">per ${p.unit}</div>
+      <div class="trend ${p.trend}">${trendIcon(p.trend)} ${p.change}</div>
+    </div>`).join('');
+}
+
+document.getElementById('updateDate').textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+renderPrices();
+</script>
+</body>
+</html>

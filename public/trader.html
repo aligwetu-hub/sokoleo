@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SokoLeo – Trader Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--border:#2d3748;
+  --green:#22c55e;--green-dim:#166534;--amber:#f59e0b;--red:#ef4444;
+  --text:#e2e8f0;--muted:#64748b;--white:#fff;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* ── NAV ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 2rem;height:60px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;
+      color:var(--green);letter-spacing:-0.5px;}
+.logo span{color:var(--text);}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.trader-badge{background:var(--green-dim);color:var(--green);
+              padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;}
+#userDisplay{font-size:.85rem;color:var(--muted);}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);
+            padding:6px 14px;border-radius:8px;cursor:pointer;font-size:.8rem;
+            transition:all .2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* ── LAYOUT ── */
+.container{max-width:1200px;margin:0 auto;padding:2rem;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:.5rem;margin-bottom:2rem;
+      border-bottom:1px solid var(--border);padding-bottom:0;}
+.tab{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;
+     font-size:.9rem;padding:.75rem 1.25rem;cursor:pointer;
+     border-bottom:2px solid transparent;margin-bottom:-1px;
+     transition:all .2s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:500;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── STATS BAR ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);
+           border-radius:var(--radius);padding:1.25rem;}
+.stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;
+            letter-spacing:.08em;margin-bottom:.5rem;}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;}
+.stat-value.green{color:var(--green);}
+.stat-value.amber{color:var(--amber);}
+
+/* ── LISTINGS GRID ── */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.section-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;}
+.filter-bar{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.filter-bar input,.filter-bar select{
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:8px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;}
+.filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--green);}
+
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;}
+.listing-card{background:var(--surface);border:1px solid var(--border);
+              border-radius:var(--radius);padding:1.5rem;
+              transition:border-color .2s,transform .2s;}
+.listing-card:hover{border-color:var(--green);transform:translateY(-2px);}
+.lc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;}
+.lc-produce{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;}
+.lc-badge{font-size:.7rem;padding:3px 10px;border-radius:20px;font-weight:600;}
+.lc-badge.available{background:#14532d;color:var(--green);}
+.lc-badge.reserved{background:#451a03;color:var(--amber);}
+.lc-details{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;}
+.lc-detail{font-size:.8rem;}
+.lc-detail-label{color:var(--muted);display:block;margin-bottom:2px;}
+.lc-detail-value{font-weight:500;}
+.lc-price{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;
+          color:var(--green);margin-bottom:1rem;}
+.lc-price span{font-size:.75rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;}
+.lc-actions{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.btn{padding:9px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;
+     font-size:.85rem;font-weight:500;cursor:pointer;border:none;
+     transition:all .2s;text-align:center;}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:#16a34a;}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-offer{background:var(--amber);color:#000;}
+.btn-offer:hover{background:#d97706;}
+
+/* ── NEGOTIATION MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+               z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface2);border:1px solid var(--border);
+       border-radius:16px;width:100%;max-width:480px;padding:2rem;
+       animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;
+             margin-bottom:.25rem;}
+.modal-subtitle{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem;}
+.form-group{margin-bottom:1.25rem;}
+.form-label{display:block;font-size:.8rem;color:var(--muted);
+            text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border);
+            color:var(--text);padding:10px 14px;border-radius:8px;
+            font-family:'DM Sans',sans-serif;font-size:.9rem;}
+.form-input:focus{outline:none;border-color:var(--green);}
+.price-hint{font-size:.75rem;color:var(--muted);margin-top:.4rem;}
+.price-hint strong{color:var(--amber);}
+.modal-actions{display:flex;gap:.75rem;margin-top:1.5rem;}
+.modal-actions .btn{flex:1;padding:12px;}
+
+/* ── NEGOTIATIONS LIST ── */
+.neg-list{display:flex;flex-direction:column;gap:.75rem;}
+.neg-card{background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius);padding:1.25rem;
+          display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;}
+.neg-produce{font-weight:600;font-size:.95rem;margin-bottom:.25rem;}
+.neg-meta{font-size:.8rem;color:var(--muted);}
+.neg-prices{text-align:right;}
+.neg-offered{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--green);}
+.neg-counter{font-size:.8rem;color:var(--amber);margin-top:.25rem;}
+.status-pill{display:inline-block;padding:3px 10px;border-radius:20px;
+             font-size:.7rem;font-weight:600;margin-top:.4rem;}
+.status-pill.pending{background:#1e3a5f;color:#60a5fa;}
+.status-pill.accepted{background:#14532d;color:var(--green);}
+.status-pill.rejected{background:#450a0a;color:var(--red);}
+.status-pill.countered{background:#451a03;color:var(--amber);}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:.4;}
+.empty-state p{font-size:.9rem;}
+
+/* ── LOGIN OVERLAY ── */
+.login-overlay{display:flex;position:fixed;inset:0;background:var(--bg);
+               z-index:999;align-items:center;justify-content:center;}
+.login-box{background:var(--surface);border:1px solid var(--border);
+           border-radius:16px;padding:2.5rem;width:100%;max-width:400px;}
+.login-title{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:.5rem;}
+.login-sub{color:var(--muted);font-size:.85rem;margin-bottom:2rem;}
+.login-step{display:none;}
+.login-step.active{display:block;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);
+       border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;
+       font-size:.85rem;z-index:2000;transform:translateY(100px);opacity:0;
+       transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+
+/* ── LIVESTOCK MARKET ── */
+.ls-stab{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Sans',sans-serif;font-size:.82rem;padding:7px 14px;
+  border-radius:8px;cursor:pointer;transition:all .2s;}
+.ls-stab.active,.ls-stab:hover{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green);}
+.ls-panel{display:none;}
+.ls-panel.active{display:block;}
+
+.ls-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.5rem;
+  transition:border-color .2s,transform .2s;position:relative;}
+.ls-card:hover{border-color:var(--green);transform:translateY(-2px);}
+.ls-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;}
+.ls-card-animal{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;}
+.ls-card-breed{font-size:.78rem;color:var(--muted);margin-top:.15rem;}
+.ls-card-emoji{font-size:2rem;line-height:1;}
+.ls-card-details{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;}
+.ls-card-detail{font-size:.78rem;}
+.ls-card-detail span{color:var(--muted);display:block;font-size:.7rem;}
+.ls-card-price{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;
+  color:var(--green);margin-bottom:.25rem;}
+.ls-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1rem;}
+.passport-strip{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);
+  border-radius:6px;padding:.5rem .75rem;font-size:.73rem;margin-bottom:.75rem;}
+.passport-strip-id{color:var(--green);font-weight:600;}
+.passport-strip-vax{color:var(--muted);}
+.ai-badge{display:inline-flex;align-items:center;gap:.3rem;background:rgba(96,165,250,.1);
+  border:1px solid rgba(96,165,250,.2);color:#60a5fa;
+  padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-left:.4rem;}
+.lameness-warn{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);
+  color:var(--red);border-radius:6px;padding:.4rem .75rem;font-size:.75rem;margin-bottom:.75rem;
+  display:flex;align-items:center;gap:.4rem;}
+.lameness-ok{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);
+  color:var(--green);border-radius:6px;padding:.4rem .75rem;font-size:.75rem;margin-bottom:.75rem;
+  display:flex;align-items:center;gap:.4rem;}
+.barter-arrow{text-align:center;font-size:1.4rem;padding:.3rem 0;color:var(--muted);}
+.barter-value-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.73rem;font-weight:600;}
+.barter-value-fair{background:rgba(34,197,94,.12);color:var(--green);}
+.barter-value-diff{background:rgba(245,158,11,.12);color:var(--amber);}
+
+.t-cat-pill{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  padding:5px 14px;border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s;
+  font-family:'DM Sans',sans-serif;}
+.t-cat-pill.active,.t-cat-pill:hover{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green);}
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-left:.3rem;}
+.delivery-tag{display:inline-flex;align-items:center;gap:.3rem;background:rgba(96,165,250,.1);
+  border:1px solid rgba(96,165,250,.2);color:#60a5fa;padding:2px 9px;border-radius:10px;
+  font-size:.7rem;font-weight:600;margin-top:.4rem;}
+
+@media(max-width:640px){
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .listings-grid{grid-template-columns:1fr;}
+  .ls-card-actions{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem"><img src="/logo.png" style="height:52px;width:52px;object-fit:contain;border-radius:50%"/><div><div class="login-title" style="margin-bottom:2px"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div><div style="font-size:.68rem;letter-spacing:.2em;color:var(--green);font-family:'DM Sans',sans-serif">SOKO KILA SIKU</div></div></div>
+    <div class="login-sub">Trader Portal – Tharaka Nithi County</div>
+    <div class="login-step active" id="step1">
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="loginPhone" type="tel" placeholder="+254 7XX XXX XXX"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="sendOTP()">Send OTP</button>
+    </div>
+    <div class="login-step" id="step2">
+      <div class="form-group">
+        <label class="form-label">Enter OTP</label>
+        <input class="form-input" id="loginOTP" type="text" placeholder="6-digit code" maxlength="6"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="verifyOTP()">Verify & Login</button>
+      <button class="btn btn-outline" style="width:100%;padding:10px;margin-top:.5rem" onclick="backToPhone()">← Back</button>
+    </div>
+    <!-- DEMO DIVIDER -->
+    <div style="display:flex;align-items:center;gap:.75rem;margin:1.5rem 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:.75rem;color:var(--muted)">OR</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button onclick="loginDemo()"
+      style="width:100%;padding:12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);font-family:'DM Sans',sans-serif;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:500;">
+      🧪 Preview Demo (No OTP needed)
+    </button>
+    <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.5rem">
+      Uses sample data — no real account required
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo-wrap" style="display:flex;align-items:center;gap:.6rem;text-decoration:none">
+      <img src="/logo.png" alt="SokoLeo" style="height:42px;width:42px;object-fit:contain;border-radius:50%"/>
+      <div>
+        <div class="logo" style="line-height:1"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div>
+        <div style="font-size:.62rem;color:var(--green);letter-spacing:.18em;font-family:'DM Sans',sans-serif;font-weight:500;margin-top:1px">SOKO KILA SIKU</div>
+      </div>
+    </div>
+  <div class="nav-right">
+    <span class="trader-badge">TRADER</span>
+    <span id="dualRoleBadge" style="display:none;background:rgba(74,222,128,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600">+ FARMER</span>
+    <span id="userDisplay">Loading...</span>
+    <a href="market-prices.html" style="color:var(--green);font-size:.85rem;text-decoration:none">📊 Prices</a>
+    <a href="farm-services.html" style="color:var(--green);font-size:.85rem;text-decoration:none">🏪 Services</a>
+    <button onclick="openRoleModal()" style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s" id="switchRoleBtn">🔄 Switch Role</button>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- ═══ ROLE SWITCH MODAL ═══ -->
+<div id="roleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:440px;padding:2rem;animation:slideUp .25s ease;margin:1rem">
+
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
+      <img src="/logo.png" style="height:40px;width:40px;object-fit:contain;border-radius:50%"/>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700"><span style="color:var(--green)">Soko</span>Leo Role Switch</div>
+        <div style="font-size:.75rem;color:var(--muted)">One account — multiple roles</div>
+      </div>
+      <button onclick="closeRoleModal()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer">×</button>
+    </div>
+
+    <!-- Current role -->
+    <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Your Current Role</div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span style="background:var(--green-dim);color:var(--green);padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:600">🏪 TRADER</span>
+        <span style="font-size:.82rem;color:var(--text)" id="roleModalName">–</span>
+      </div>
+    </div>
+
+    <!-- Already a farmer -->
+    <div id="alreadyFarmerSection" style="display:none;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:.82rem;color:var(--green);font-weight:600;margin-bottom:.5rem">✅ You are also registered as a Farmer</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">You can switch to your Farmer Dashboard anytime.</div>
+      <button onclick="goToFarmer()" style="width:100%;background:var(--green);color:#000;border:none;padding:10px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">
+        🌱 Go to Farmer Dashboard →
+      </button>
+    </div>
+
+    <!-- Register as farmer -->
+    <div id="registerFarmerSection">
+      <div style="font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:.5rem">Do you also sell your own produce?</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Register as a <strong style="color:var(--green)">Farmer</strong> using the same account. List your produce, register livestock, and manage your farm — all from one login.
+      </div>
+      <div style="background:var(--surface);border-radius:8px;padding:.9rem;margin-bottom:1rem;font-size:.8rem;color:var(--muted);line-height:1.7">
+        ✅ Same phone number & OTP<br/>
+        ✅ Switch roles instantly from the nav bar<br/>
+        ✅ List produce AND trade others' produce<br/>
+        ✅ Register livestock & get Digital Passports
+      </div>
+      <button onclick="registerAsFarmer()" id="registerFarmerBtn" style="width:100%;background:var(--green);color:#000;border:none;padding:12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s">
+        🌱 Register Me as a Farmer Too
+      </button>
+      <div id="registerFarmerStatus" style="font-size:.78rem;text-align:center;margin-top:.6rem;min-height:1.2rem"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DEMO BANNER -->
+<div id="demoBanner" style="display:none;background:rgba(245,158,11,.08);border-bottom:1px solid rgba(245,158,11,.2);padding:.6rem 2rem;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+  <div style="font-size:.82rem;color:var(--amber);">🧪 <strong>Demo Mode</strong> — Sample data only. Offers and reservations will not be saved.</div>
+  <button onclick="exitDemo()" style="background:none;border:1px solid rgba(245,158,11,.4);color:var(--amber);padding:4px 14px;border-radius:6px;cursor:pointer;font-size:.78rem;">Exit Demo</button>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-card">
+      <div class="stat-label">Active Listings</div>
+      <div class="stat-value green" id="statListings">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">My Offers Sent</div>
+      <div class="stat-value amber" id="statOffers">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Accepted Deals</div>
+      <div class="stat-value green" id="statAccepted">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">My Reservations</div>
+      <div class="stat-value" id="statReservations">–</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('browse',this)">Browse Produce</button>
+    <button class="tab" onclick="switchTab('livestock',this)">🐄 Livestock Market</button>
+    <button class="tab" onclick="switchTab('negotiations',this)">My Negotiations</button>
+    <button class="tab" onclick="switchTab('reservations',this)">My Reservations</button>
+  </div>
+
+  <!-- Browse Tab -->
+  <div class="tab-panel active" id="tab-browse">
+    <!-- Category quick-filter pills -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+      <button class="t-cat-pill active" onclick="filterByCategory('',this)">🌿 All</button>
+      <button class="t-cat-pill" onclick="filterByCategory('Vegetables',this)">🥬 Vegetables</button>
+      <button class="t-cat-pill" onclick="filterByCategory('Fruits',this)">🍋 Fruits</button>
+      <button class="t-cat-pill" onclick="filterByCategory('Tubers',this)">🥔 Tubers</button>
+      <button class="t-cat-pill" onclick="filterByCategory('Cereals & Pulses',this)">🌽 Cereals &amp; Pulses</button>
+      <button class="t-cat-pill" onclick="filterByCategory('Farm Inputs & Byproducts',this)">🌿 Farm Inputs</button>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="Search produce..." oninput="filterListings()"/>
+      <select id="filterLocation" onchange="filterListings()">
+        <option value="">All Locations</option>
+        <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+        <option>Kiburia</option><option>Muthambi</option><option>Gatunga</option>
+      </select>
+      <select id="filterSort" onchange="filterListings()">
+        <option value="newest">Newest First</option>
+        <option value="price_asc">Price: Low→High</option>
+        <option value="price_desc">Price: High→Low</option>
+      </select>
+    </div>
+    <div class="listings-grid" id="listingsGrid">
+      <div style="grid-column:1/-1" class="empty-state">
+        <div class="empty-icon">🌾</div>
+        <p>Loading produce listings...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Negotiations Tab -->
+  <div class="tab-panel" id="tab-negotiations">
+    <div class="section-header">
+      <div class="section-title">My Offers & Negotiations</div>
+      <button class="btn btn-outline" style="font-size:.8rem;padding:7px 14px" onclick="loadNegotiations()">↻ Refresh</button>
+    </div>
+    <div class="neg-list" id="negList">
+      <div class="empty-state"><div class="empty-icon">🤝</div><p>No negotiations yet</p></div>
+    </div>
+  </div>
+
+  <!-- Reservations Tab -->
+  <div class="tab-panel" id="tab-reservations">
+    <div class="section-header">
+      <div class="section-title">My Reservations</div>
+    </div>
+    <div id="reservationsList">
+      <div class="empty-state"><div class="empty-icon">📦</div><p>No reservations yet</p></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ LIVESTOCK MARKET TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-livestock">
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <button class="ls-stab active" onclick="switchLsTab('buy',this)">🐄 Buy Animals</button>
+      <button class="ls-stab" onclick="switchLsTab('barter',this)">🔄 Barter / Swap</button>
+      <button class="ls-stab" onclick="switchLsTab('sire',this)">🐂 Hire a Sire</button>
+      <button class="ls-stab" onclick="switchLsTab('fodder',this)">🌾 Buy Fodder</button>
+    </div>
+
+    <!-- ── BUY ANIMALS ── -->
+    <div class="ls-panel active" id="ls-buy">
+      <div class="section-header">
+        <div class="section-title">Animals for Sale</div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <select class="form-input" id="filterLsSpecies" onchange="filterLivestock()" style="font-size:.8rem;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;">
+            <option value="">All Species</option>
+            <option>Cattle</option><option>Goat</option><option>Sheep</option>
+            <option>Pig</option><option>Chicken</option><option>Camel</option>
+            <option>Dog</option>
+          </select>
+          <select class="form-input" id="filterLsDogCat" onchange="filterLivestock()" style="font-size:.8rem;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;display:none" id="filterDogCat">
+            <option value="">All Dog Types</option>
+            <option>Security &amp; Guard Dogs</option>
+            <option>Companion &amp; Toy Breeds</option>
+            <option>Family &amp; Hunting Dogs</option>
+            <option>Local &amp; Mixed Breeds</option>
+          </select>
+          <select class="form-input" id="filterLsLocation" onchange="filterLivestock()" style="font-size:.8rem;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;">
+            <option value="">All Locations</option>
+            <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+            <option>Kiburia</option><option>Muthambi</option><option>Gatunga</option>
+          </select>
+          <select class="form-input" id="filterLsSort" onchange="filterLivestock()" style="font-size:.8rem;padding:6px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;">
+            <option value="newest">Newest First</option>
+            <option value="price_asc">Price: Low→High</option>
+            <option value="price_desc">Price: High→Low</option>
+          </select>
+        </div>
+      </div>
+      <div id="livestockGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;"></div>
+    </div>
+
+    <!-- ── BARTER / SWAP ── -->
+    <div class="ls-panel" id="ls-barter">
+      <div class="section-title" style="margin-bottom:.5rem">🔄 Barter / Swap Listings</div>
+      <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.5rem">Farmers offering animals in exchange for other animals. Value balance shown for each deal.</div>
+      <div id="barterGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;"></div>
+    </div>
+
+    <!-- ── SIRE HIRE ── -->
+    <div class="ls-panel" id="ls-sire">
+      <div class="section-title" style="margin-bottom:.5rem">🐂 Available Sires for Hire</div>
+      <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.5rem">Hire a proven bull, buck, or ram for your breeding programme.</div>
+      <div id="sireGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;"></div>
+    </div>
+
+    <!-- ── FODDER MARKET ── -->
+    <div class="ls-panel" id="ls-fodder">
+      <div class="section-title" style="margin-bottom:.5rem">🌾 Fodder Available Near You</div>
+      <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.5rem">Buy hay, silage, dairy meal, and supplements direct from farmers.</div>
+      <div id="fodderGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;"></div>
+    </div>
+
+  </div><!-- end tab-livestock -->
+
+</div>
+
+<!-- MAKE OFFER MODAL -->
+<div class="modal-overlay" id="offerModal">
+  <div class="modal">
+    <div class="modal-title">💬 Make an Offer</div>
+    <div class="modal-subtitle" id="offerModalSub">Submit your price offer to the farmer</div>
+    <input type="hidden" id="offerListingId"/>
+    <input type="hidden" id="offerFarmerId"/>
+    <div class="form-group">
+      <label class="form-label">Your Offer Price (KES per kg)</label>
+      <input class="form-input" id="offerPrice" type="number" min="1" placeholder="e.g. 45"/>
+      <div class="price-hint">Listed price: <strong id="offerListedPrice">–</strong></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quantity you want (kg)</label>
+      <input class="form-input" id="offerQty" type="number" min="1" placeholder="e.g. 100"/>
+      <div class="price-hint" id="offerAvailHint"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message to Farmer (optional)</label>
+      <textarea class="form-input" id="offerMessage" rows="2"
+        placeholder="e.g. I can collect from your farm tomorrow morning"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeOfferModal()">Cancel</button>
+      <button class="btn btn-offer" onclick="submitOffer()">Send Offer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1';
+let currentUser = null;
+let allListings  = [];
+let DEMO_MODE    = false;
+
+// ── DEMO DATA ─────────────────────────────────────────────────────────────────
+const DEMO_USER = {id:888,full_name:'Demo Trader (Wanjiku)',phone:'+254711000000',role:'trader',status:'verified'};
+const DEMO_LISTINGS = [
+  {id:1,produce_name:'Tomatoes',farmer_name:'Kamau Njiru',quantity:300,price_per_kg:55,location:'Chuka',grade:'Grade A',status:'available',farmer_id:1},
+  {id:2,produce_name:'Green Beans',farmer_name:'Njeri Mwenda',quantity:150,price_per_kg:80,location:'Maara',grade:'Grade A',status:'available',farmer_id:2},
+  {id:3,produce_name:'Kale (Sukuma)',farmer_name:'Mwangi Kirimi',quantity:200,price_per_kg:22,location:'Chuka',grade:'Grade B',status:'available',farmer_id:3},
+  {id:4,produce_name:'Avocado',farmer_name:'Wambua Mutethia',quantity:500,price_per_kg:18,location:'Tharaka',grade:'Grade A',status:'available',farmer_id:4},
+  {id:5,produce_name:'Irish Potatoes',farmer_name:'Ciira Murithi',quantity:800,price_per_kg:32,location:'Muthambi',grade:'Grade B',status:'reserved',farmer_id:5},
+  {id:6,produce_name:'Passion Fruit',farmer_name:'Karimi Gitonga',quantity:120,price_per_kg:280,location:'Maara',grade:'Grade A',status:'available',farmer_id:6},
+];
+const DEMO_NEGS = [
+  {id:1,produce_name:'Tomatoes',farmer_name:'Kamau Njiru',quantity:200,offered_price:48,status:'pending',created_at:new Date(Date.now()-3600000).toISOString(),counter_price:null,response_message:''},
+  {id:2,produce_name:'Green Beans',farmer_name:'Njeri Mwenda',quantity:100,offered_price:72,status:'countered',counter_price:76,response_message:'Best I can do, quality is Grade A export',created_at:new Date(Date.now()-86400000).toISOString()},
+  {id:3,produce_name:'Avocado',farmer_name:'Wambua Mutethia',quantity:300,offered_price:16,status:'accepted',created_at:new Date(Date.now()-172800000).toISOString(),counter_price:null,response_message:''},
+  {id:4,produce_name:'Kale (Sukuma)',farmer_name:'Mwangi Kirimi',quantity:50,offered_price:19,status:'rejected',created_at:new Date(Date.now()-259200000).toISOString(),counter_price:null,response_message:'Price too low, minimum is 21'},
+];
+
+function loginDemo(){
+  DEMO_MODE   = true;
+  currentUser = DEMO_USER;
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('userDisplay').textContent    = DEMO_USER.full_name;
+  document.getElementById('demoBanner').style.display   = 'flex';
+  // load demo data
+  allListings = DEMO_LISTINGS;
+  renderListings(allListings);
+  renderDemoNegotiations();
+  loadDemoStats();
+}
+
+function exitDemo(){
+  DEMO_MODE   = false;
+  currentUser = null;
+  document.getElementById('demoBanner').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+function renderDemoNegotiations(){
+  const list = document.getElementById('negList');
+  list.innerHTML = DEMO_NEGS.map(n=>`
+    <div class="neg-card">
+      <div>
+        <div class="neg-produce">${n.produce_name}</div>
+        <div class="neg-meta">Farmer: ${n.farmer_name} · ${n.quantity}kg · ${new Date(n.created_at).toLocaleDateString('en-KE')}</div>
+        <span class="status-pill ${n.status}">${n.status.toUpperCase()}</span>
+        ${n.response_message ? `<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">💬 "${n.response_message}"</div>` : ''}
+        ${n.status==='countered' ? `<button class="btn btn-primary" style="margin-top:.75rem;font-size:.8rem;padding:6px 14px" onclick="showToast('✅ Demo: Counter accepted!')">Accept Counter Offer</button>` : ''}
+      </div>
+      <div class="neg-prices">
+        <div class="neg-offered">KES ${n.offered_price}/kg</div>
+        <div style="font-size:.75rem;color:var(--muted)">Your offer</div>
+        ${n.counter_price ? `<div class="neg-counter">Counter: KES ${n.counter_price}/kg</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function loadDemoStats(){
+  document.getElementById('statListings').textContent     = DEMO_LISTINGS.filter(l=>l.status==='available').length;
+  document.getElementById('statOffers').textContent       = DEMO_NEGS.length;
+  document.getElementById('statAccepted').textContent     = DEMO_NEGS.filter(n=>n.status==='accepted').length;
+  document.getElementById('statReservations').textContent = 1;
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function checkAuth(){
+  if(DEMO_MODE) return true;
+  const u = localStorage.getItem('sokoleo_user');
+  if(!u){ document.getElementById('loginOverlay').style.display='flex'; return false; }
+  currentUser = JSON.parse(u);
+  if(currentUser.role !== 'trader'){ showToast('Access denied: Traders only','error'); return false; }
+  document.getElementById('loginOverlay').style.display='none';
+  document.getElementById('userDisplay').textContent = currentUser.full_name || currentUser.phone;
+  return true;
+}
+
+async function sendOTP(){
+  const phone = document.getElementById('loginPhone').value.trim();
+  if(!phone){ showToast('Enter your phone number','error'); return; }
+  try{
+    const r = await fetch(`${API}/auth/request-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    const d = await r.json();
+    if(d.success||d.message){ document.getElementById('step1').classList.remove('active'); document.getElementById('step2').classList.add('active'); showToast('OTP sent!'); }
+    else showToast(d.error||'Failed','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+
+async function verifyOTP(){
+  const phone = document.getElementById('loginPhone').value.trim();
+  const otp   = document.getElementById('loginOTP').value.trim();
+  try{
+    const r = await fetch(`${API}/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,otp})});
+    const d = await r.json();
+    if(d.user){
+      localStorage.setItem('sokoleo_user',JSON.stringify(d.user));
+      currentUser = d.user;
+      document.getElementById('loginOverlay').style.display='none';
+      document.getElementById('userDisplay').textContent = d.user.full_name||d.user.phone;
+      init();
+    } else showToast(d.error||'Invalid OTP','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+
+function backToPhone(){ document.getElementById('step2').classList.remove('active'); document.getElementById('step1').classList.add('active'); }
+function logout(){ localStorage.removeItem('sokoleo_user'); location.reload(); }
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function init(){
+  if(!checkAuth()) return;
+  if(DEMO_MODE){
+    allListings = DEMO_LISTINGS;
+    renderListings(allListings);
+    loadDemoStats();
+    return;
+  }
+  await loadListings();
+  await loadStats();
+}
+
+// ── LISTINGS ─────────────────────────────────────────────────────────────────
+let currentCategoryFilter = '';
+
+function filterByCategory(cat, btn){
+  currentCategoryFilter = cat;
+  document.querySelectorAll('.t-cat-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterListings();
+}
+
+async function loadListings(){
+  try{
+    const r = await fetch(`${API}/listings`);
+    allListings = await r.json();
+    renderListings(allListings);
+  }catch(e){ document.getElementById('listingsGrid').innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load listings</p></div>'; }
+}
+
+function filterListings(){
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const loc  = document.getElementById('filterLocation').value;
+  const sort = document.getElementById('filterSort').value;
+  let filtered = allListings.filter(l =>
+    (!q || l.produce_name.toLowerCase().includes(q)) &&
+    (!loc || (l.location||'').includes(loc)) &&
+    (!currentCategoryFilter || (l.category||'').includes(currentCategoryFilter))
+  );
+  if(sort==='price_asc') filtered.sort((a,b)=>a.price_per_kg-b.price_per_kg);
+  else if(sort==='price_desc') filtered.sort((a,b)=>b.price_per_kg-a.price_per_kg);
+  renderListings(filtered);
+}
+
+function renderListings(listings){
+  const g = document.getElementById('listingsGrid');
+  if(!listings.length){ g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🌾</div><p>No listings found</p></div>'; return; }
+  const catColors = {
+    'Vegetables':'rgba(74,222,128,.12)',
+    'Fruits':'rgba(251,191,36,.12)',
+    'Tubers':'rgba(245,101,101,.12)',
+    'Cereals & Pulses':'rgba(251,191,36,.15)',
+    'Farm Inputs & Byproducts':'rgba(96,165,250,.12)',
+  };
+  const catTextColors = {
+    'Vegetables':'#4ade80','Fruits':'#fbbf24','Tubers':'#f87171',
+    'Cereals & Pulses':'#fcd34d','Farm Inputs & Byproducts':'#60a5fa',
+  };
+  const isInputs = (cat) => cat && cat.includes('Farm Inputs');
+  g.innerHTML = listings.map(l=>{
+    const cat = l.category||'';
+    const catBg   = catColors[cat]||'rgba(255,255,255,.05)';
+    const catText = catTextColors[cat]||'var(--muted)';
+    const unit    = l.unit||'kg';
+    const deliveryTag = l.delivery_option && l.delivery_option.includes('inclusive')
+      ? '<div class="delivery-tag">🚚 Delivery Included</div>' : '';
+    return '<div class="listing-card">' +
+      '<div class="lc-header">' +
+        '<div>' +
+          '<div class="lc-produce">' + l.produce_name + '</div>' +
+          (cat?'<span style="display:inline-block;background:'+catBg+';color:'+catText+';padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-top:.2rem">'+cat+'</span>':'') +
+        '</div>' +
+        '<span class="lc-badge ' + (l.status==='available'?'available':'reserved') + '">' + (l.status||'available').toUpperCase() + '</span>' +
+      '</div>' +
+      '<div class="lc-details">' +
+        '<div class="lc-detail"><span class="lc-detail-label">Seller</span><span class="lc-detail-value">' + (l.farmer_name||'–') + '</span></div>' +
+        '<div class="lc-detail"><span class="lc-detail-label">Location</span><span class="lc-detail-value">' + (l.location||'–') + '</span></div>' +
+        '<div class="lc-detail"><span class="lc-detail-label">Quantity</span><span class="lc-detail-value">' + l.quantity + ' ' + unit + '</span></div>' +
+        '<div class="lc-detail"><span class="lc-detail-label">' + (isInputs(cat)?'State':'Grade') + '</span><span class="lc-detail-value">' + (l.state||l.grade||'Standard') + '</span></div>' +
+      '</div>' +
+      deliveryTag +
+      '<div class="lc-price">KES ' + parseFloat(l.price_per_kg).toFixed(0) + ' <span>/ ' + unit + '</span></div>' +
+      '<div class="lc-actions">' +
+        '<button class="btn btn-offer" onclick="openOfferModal(' + l.id + ',' + l.farmer_id + ',' + l.price_per_kg + ',' + l.quantity + ')">💬 Make Offer</button>' +
+        '<button class="btn btn-primary" onclick="reserveListing(' + l.id + ')">📦 Reserve</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── RESERVE ───────────────────────────────────────────────────────────────────
+async function reserveListing(listingId){
+  if(!currentUser) return;
+  try{
+    const r = await fetch(`${API}/reservations`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({listing_id:listingId,trader_id:currentUser.id})});
+    const d = await r.json();
+    if(d.success||d.reservation) showToast('Listing reserved! ✅');
+    else showToast(d.error||'Could not reserve','error');
+    loadListings(); loadStats();
+  }catch(e){ showToast('Network error','error'); }
+}
+
+// ── OFFER MODAL ───────────────────────────────────────────────────────────────
+function openOfferModal(listingId, farmerId, listedPrice, availQty){
+  document.getElementById('offerListingId').value  = listingId;
+  document.getElementById('offerFarmerId').value   = farmerId;
+  document.getElementById('offerListedPrice').textContent = `KES ${listedPrice}/kg`;
+  document.getElementById('offerAvailHint').innerHTML = `Available: <strong>${availQty} kg</strong>`;
+  document.getElementById('offerPrice').value = '';
+  document.getElementById('offerQty').value   = '';
+  document.getElementById('offerMessage').value = '';
+  document.getElementById('offerModal').classList.add('open');
+}
+function closeOfferModal(){ document.getElementById('offerModal').classList.remove('open'); }
+
+async function submitOffer(){
+  const listing_id    = parseInt(document.getElementById('offerListingId').value);
+  const farmer_id     = parseInt(document.getElementById('offerFarmerId').value);
+  const offered_price = parseFloat(document.getElementById('offerPrice').value);
+  const quantity      = parseFloat(document.getElementById('offerQty').value);
+  const message       = document.getElementById('offerMessage').value;
+  if(!offered_price||!quantity){ showToast('Please fill price and quantity','error'); return; }
+  if(DEMO_MODE){
+    showToast('🤝 Demo: Offer sent to farmer!');
+    closeOfferModal();
+    return;
+  }
+  try{
+    const r = await fetch(`${API}/negotiations`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({listing_id,trader_id:currentUser.id,farmer_id,offered_price,quantity,message})});
+    const d = await r.json();
+    if(d.success){ showToast('Offer sent to farmer! 🤝'); closeOfferModal(); loadNegotiations(); loadStats(); }
+    else showToast(d.error||'Failed to send offer','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+
+// ── NEGOTIATIONS ──────────────────────────────────────────────────────────────
+async function loadNegotiations(){
+  if(!currentUser) return;
+  try{
+    const r = await fetch(`${API}/negotiations/trader/${currentUser.id}`);
+    const negs = await r.json();
+    const list = document.getElementById('negList');
+    if(!negs.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">🤝</div><p>No negotiations yet. Browse listings and make an offer!</p></div>'; return; }
+    list.innerHTML = negs.map(n=>`
+      <div class="neg-card">
+        <div>
+          <div class="neg-produce">${n.produce_name}</div>
+          <div class="neg-meta">Farmer: ${n.farmer_name} · ${n.quantity}kg · ${new Date(n.created_at).toLocaleDateString('en-KE')}</div>
+          <span class="status-pill ${n.status}">${n.status.toUpperCase()}</span>
+          ${n.response_message?`<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">💬 "${n.response_message}"</div>`:''}
+          ${n.status==='countered'?`<button class="btn btn-primary" style="margin-top:.75rem;font-size:.8rem;padding:6px 14px" onclick="acceptCounter(${n.id})">Accept Counter Offer</button>`:''}
+        </div>
+        <div class="neg-prices">
+          <div class="neg-offered">KES ${parseFloat(n.offered_price).toFixed(0)}/kg</div>
+          <div style="font-size:.75rem;color:var(--muted)">Your offer</div>
+          ${n.counter_price?`<div class="neg-counter">Counter: KES ${parseFloat(n.counter_price).toFixed(0)}/kg</div>`:''}
+        </div>
+      </div>`).join('');
+  }catch(e){ document.getElementById('negList').innerHTML='<div class="empty-state"><p>Failed to load negotiations</p></div>'; }
+}
+
+async function acceptCounter(negId){
+  try{
+    const r = await fetch(`${API}/negotiations/${negId}/accept-counter`,{method:'PATCH'});
+    const d = await r.json();
+    if(d.success){ showToast('Counter offer accepted! ✅'); loadNegotiations(); }
+    else showToast(d.error||'Failed','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+async function loadStats(){
+  if(!currentUser) return;
+  try{
+    const [negsR, resR, listR] = await Promise.all([
+      fetch(`${API}/negotiations/trader/${currentUser.id}`),
+      fetch(`${API}/reservations/trader/${currentUser.id}`).catch(()=>({json:()=>[]})),
+      fetch(`${API}/listings`)
+    ]);
+    const negs = await negsR.json();
+    const listings = await listR.json();
+    document.getElementById('statListings').textContent     = listings.filter(l=>l.status==='available').length;
+    document.getElementById('statOffers').textContent       = negs.length;
+    document.getElementById('statAccepted').textContent     = negs.filter(n=>n.status==='accepted').length;
+    document.getElementById('statReservations').textContent = '–';
+  }catch(e){}
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(name, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='negotiations'){ DEMO_MODE ? renderDemoNegotiations() : loadNegotiations(); }
+  if(name==='livestock'){ renderLivestockMarket(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVESTOCK MARKET — Trader side
+// Reads from API (real data) + falls back to demo data
+// ══════════════════════════════════════════════════════════════
+const SPECIES_EMOJI = {Cattle:'🐄',Goat:'🐐',Sheep:'🐑',Pig:'🐷',Camel:'🐪',Chicken:'🐓',Dog:'🐕'};
+
+// ── DEMO DATA (fallback / demo mode) ──────────────────────────────────────────
+const DEMO_LS_ANIMALS = [
+  {id:201,species:'Cattle',breed:'Friesian',name:'Daisy',sex:'Female',age:'3.5 years',
+   weight:380,ai_weight:375,bcs:3,bcs_ai:true,price:95000,location:'Chuka',
+   stage:'Milking',passport_id:'DHP-KE-A1B2C3',dog_category:null,
+   vaccinations:['FMD','LSD','Brucella'],health:'Good milker, 12L/day',
+   lameness_risk:'Low',gait_checked:true,
+   farmer:'Kamau Njiru',farmer_phone:'+254722001001'},
+  {id:202,species:'Goat',breed:'Boer Cross',name:'Mbuzi Nono',sex:'Male',age:'1.5 years',
+   weight:55,ai_weight:52,bcs:4,bcs_ai:true,price:18500,location:'Maara',
+   stage:'Fattening / Beef',passport_id:'DHP-KE-D4E5F6',dog_category:null,
+   vaccinations:['PPR','FMD'],health:'Excellent conformation',
+   lameness_risk:'Low',gait_checked:true,
+   farmer:'Njeri Mwenda',farmer_phone:'+254733002002'},
+  {id:203,species:'Cattle',breed:'Sahiwal',name:'Bull #7',sex:'Male',age:'4 years',
+   weight:450,ai_weight:448,bcs:3,bcs_ai:false,price:130000,location:'Tharaka',
+   stage:'Breeding Bull',passport_id:'DHP-KE-G7H8I9',dog_category:null,
+   vaccinations:['FMD','LSD','Anthrax','ECF'],health:'Proven sire, 14 live offspring',
+   lameness_risk:'Medium',gait_checked:true,
+   farmer:'Wambua Mutethia',farmer_phone:'+254744003003'},
+  {id:204,species:'Sheep',breed:'Dorper',name:'Kondoo Pack (x5)',sex:'Female',age:'2 years',
+   weight:38,ai_weight:40,bcs:3,bcs_ai:true,price:65000,location:'Muthambi',
+   stage:'In-Calf / In-Kid',passport_id:'DHP-KE-J1K2L3',dog_category:null,
+   vaccinations:['FMD'],health:'All pregnant, due in 6 weeks',
+   lameness_risk:'Low',gait_checked:false,
+   farmer:'Ciira Murithi',farmer_phone:'+254755004004'},
+  // Dogs
+  {id:207,species:'Dog',breed:'German Shepherd (GSD)',name:'Rex',sex:'Male',age:'2 years',
+   weight:32,ai_weight:32,bcs:3,bcs_ai:true,price:45000,location:'Chuka',
+   stage:'N/A',passport_id:'DHP-KE-DOG001',dog_category:'Security & Guard Dogs',
+   vaccinations:['Rabies','DHPP (5-in-1)','Parvovirus'],health:'Fully trained, CCTV-compatible',
+   lameness_risk:'Low',gait_checked:false,
+   farmer:'Kamau Njiru',farmer_phone:'+254722001001'},
+  {id:208,species:'Dog',breed:'Japanese Spitz',name:'Snowball',sex:'Female',age:'8 months',
+   weight:8,ai_weight:8,bcs:3,bcs_ai:false,price:35000,location:'Maara',
+   stage:'N/A',passport_id:'DHP-KE-DOG002',dog_category:'Companion & Toy Breeds',
+   vaccinations:['Rabies','DHPP (5-in-1)','Bordetella (Kennel Cough)'],health:'Paper-trained, child-friendly',
+   lameness_risk:'Low',gait_checked:false,
+   farmer:'Njeri Mwenda',farmer_phone:'+254733002002'},
+  {id:209,species:'Dog',breed:'Boerboel',name:'Goliath',sex:'Male',age:'3 years',
+   weight:65,ai_weight:67,bcs:3,bcs_ai:true,price:80000,location:'Tharaka',
+   stage:'N/A',passport_id:'DHP-KE-DOG003',dog_category:'Security & Guard Dogs',
+   vaccinations:['Rabies','DHPP (5-in-1)','Leptospirosis'],health:'Farm guard, good with livestock, KKC registered',
+   lameness_risk:'Low',gait_checked:true,
+   farmer:'Wambua Mutethia',farmer_phone:'+254744003003'},
+  {id:210,species:'Dog',breed:'Kienyeji (Local)',name:'Simba',sex:'Male',age:'1.5 years',
+   weight:18,ai_weight:18,bcs:3,bcs_ai:false,price:3000,location:'Gatunga',
+   stage:'N/A',passport_id:'DHP-KE-DOG004',dog_category:'Local & Mixed Breeds',
+   vaccinations:['Rabies'],health:'Village watchdog, healthy and active',
+   lameness_risk:'Low',gait_checked:false,
+   farmer:'Mwangi Kirimi',farmer_phone:'+254777006006'},
+];
+
+const DEMO_LS_BARTER = [
+  {id:301,my_species:'Cattle',my_breed:'Zebu Bull',my_name:'Ng’ombe Dume',my_value:60000,
+   want_desc:'2 Boer goats + 1 Dorper ewe',want_value:55000,
+   location:'Chuka',farmer:'Mwangi Farm',passport_id:'DHP-KE-S1T2U3'},
+  {id:302,my_species:'Goat',my_breed:'Galla Buck',my_name:'Mbuzi Dume',my_value:25000,
+   want_desc:'1 Dorper cross ewe in-kid',want_value:22000,
+   location:'Maara',farmer:'Njeri Holdings',passport_id:'DHP-KE-V4W5X6'},
+  {id:303,my_species:'Dog',my_breed:'GSD Pup',my_name:'Rex Jr.',my_value:20000,
+   want_desc:'2 Boer goat kids or KES 15,000 top-up',want_value:18000,
+   location:'Chuka',farmer:'Kamau Njiru',passport_id:'DHP-KE-DOG005'},
+];
+
+const DEMO_LS_SIRES = [
+  {id:401,species:'Cattle',breed:'Friesian Bull',name:'Mzigo',fee:5000,
+   offspring:18,vet_cert:'KVB/2025/001',location:'Chuka',
+   farmer:'Mwangi Farm',ai_weight:680,bcs:3,vaccinations:['FMD','LSD']},
+  {id:402,species:'Goat',breed:'Boer Buck',name:'Bora',fee:1500,
+   offspring:32,vet_cert:'KVB/2025/044',location:'Maara',
+   farmer:'Njeri Holdings',ai_weight:90,bcs:4,vaccinations:['PPR','FMD']},
+  {id:403,species:'Cattle',breed:'Sahiwal Bull',name:'Nguvu',fee:4000,
+   offspring:12,vet_cert:'KVB/2025/089',location:'Tharaka',
+   farmer:'Kirimi Ranch',ai_weight:580,bcs:3,vaccinations:['FMD','LSD','ECF']},
+  {id:404,species:'Sheep',breed:'Dorper Ram',name:'Simba',fee:2000,
+   offspring:24,vet_cert:'KVB/2025/112',location:'Muthambi',
+   farmer:'Murithi Livestock',ai_weight:95,bcs:3,vaccinations:['FMD']},
+];
+
+const DEMO_LS_FODDER = [
+  {id:501,type:'Napier Grass',qty:500,unit:'bundle',price:50,location:'Chuka',
+   delivery:'Pickup only',seller:'Kamau Farm',notes:'Fresh cut daily'},
+  {id:502,type:'Dairy Meal',qty:20,unit:'bag (90kg)',price:3200,location:'Maara',
+   delivery:'Delivery available',seller:'AgroSupplies Meru',notes:'18% protein, certified'},
+  {id:503,type:'Maize Silage',qty:5,unit:'tonne',price:8500,location:'Chuka',
+   delivery:'Free delivery (10km)',seller:'Murithi Holdings',notes:'Well fermented, 2025 harvest'},
+  {id:504,type:'Rhodes Grass Hay',qty:100,unit:'bale',price:350,location:'Tharaka',
+   delivery:'Pickup only',seller:'Njeru Livestock',notes:'Dry, well baled'},
+  {id:505,type:'Lucerne (Alfalfa)',qty:200,unit:'kg',price:80,location:'Muthambi',
+   delivery:'Delivery available',seller:'Gitonga Farms',notes:'High protein, ideal for dairy'},
+  {id:506,type:'Dog Food (Kibble)',qty:30,unit:'bag (15kg)',price:2200,location:'Chuka',
+   delivery:'Delivery available',seller:'PetSupplies Chuka',notes:'Royal Canin Adult, all breeds'},
+];
+
+let allLsAnimals = [...DEMO_LS_ANIMALS];
+let allLsData    = { barter: DEMO_LS_BARTER, sires: DEMO_LS_SIRES, fodder: DEMO_LS_FODDER };
+
+// ── LOAD FROM API (real mode) ─────────────────────────────────────────────────
+async function loadLivestockFromAPI(){
+  try {
+    const [saleR, barterR, siresR, fodderR] = await Promise.all([
+      fetch(`${API}/livestock/sale`),
+      fetch(`${API}/livestock/barter`),
+      fetch(`${API}/livestock/sires`),
+      fetch(`${API}/livestock/fodder`),
+    ]);
+    const [sale, barter, sires, fodder] = await Promise.all([
+      saleR.json(), barterR.json(), siresR.json(), fodderR.json()
+    ]);
+
+    // Normalize API response to match demo shape
+    if (Array.isArray(sale) && sale.length) {
+      allLsAnimals = sale.map(s => ({
+        id:           s.id,
+        species:      s.species,
+        breed:        s.breed,
+        name:         s.animal_name,
+        sex:          s.sex,
+        age:          s.ai_age_estimate || (s.dob ? calcAge(s.dob) : 'Unknown'),
+        weight:       s.weight,
+        ai_weight:    s.ai_weight || s.weight,
+        bcs:          s.bcs || s.ai_bcs,
+        bcs_ai:       !!s.ai_bcs,
+        price:        parseFloat(s.price),
+        location:     s.location || s.sub_county,
+        stage:        s.production_stage || 'N/A',
+        passport_id:  s.passport_id,
+        dog_category: s.dog_category,
+        vaccinations: typeof s.vaccinations==='string' ? JSON.parse(s.vaccinations||'[]') : (s.vaccinations||[]),
+        health:       s.health_notes || '',
+        lameness_risk:s.lameness_risk || 'Unknown',
+        gait_checked: !!s.lameness_risk,
+        farmer:       s.farmer_name,
+        farmer_phone: s.farmer_phone,
+        farmer_id:    s.farmer_id,
+        listing_id:   s.id,
+      }));
+    }
+    if (Array.isArray(barter) && barter.length) allLsData.barter = barter;
+    if (Array.isArray(sires)  && sires.length)  allLsData.sires  = sires;
+    if (Array.isArray(fodder) && fodder.length)  allLsData.fodder = fodder;
+  } catch(e) {
+    console.log('Livestock API unavailable, using demo data');
+  }
+}
+
+function calcAge(dob){
+  if(!dob) return 'Unknown';
+  const months = Math.floor((new Date() - new Date(dob)) / (1000*60*60*24*30.44));
+  if(months < 12) return months + ' months';
+  return (months/12).toFixed(1) + ' years';
+}
+
+// ── SUB-TAB SWITCH ─────────────────────────────────────────────────────────────
+function switchLsTab(name, btn){
+  document.querySelectorAll('.ls-stab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.ls-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ls-'+name).classList.add('active');
+  if(name==='buy')    renderLivestockCards(allLsAnimals);
+  if(name==='barter') renderBarterCards();
+  if(name==='sire')   renderSireCards();
+  if(name==='fodder') renderFodderCards();
+}
+
+async function renderLivestockMarket(){
+  if(!DEMO_MODE) await loadLivestockFromAPI();
+  renderLivestockCards(allLsAnimals);
+  renderBarterCards();
+  renderSireCards();
+  renderFodderCards();
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function filterLivestock(){
+  const species  = document.getElementById('filterLsSpecies').value;
+  const dogCat   = document.getElementById('filterLsDogCat').value;
+  const location = document.getElementById('filterLsLocation').value;
+  const sort     = document.getElementById('filterLsSort').value;
+
+  // Show/hide dog category filter
+  const dogCatEl = document.getElementById('filterLsDogCat');
+  if(dogCatEl) dogCatEl.style.display = species==='Dog' ? 'block' : 'none';
+
+  const source = DEMO_MODE ? DEMO_LS_ANIMALS : allLsAnimals;
+  let filtered = source.filter(a=>
+    (!species  || a.species===species) &&
+    (!dogCat   || a.dog_category===dogCat) &&
+    (!location || (a.location||'').includes(location))
+  );
+  if(sort==='price_asc')  filtered.sort((a,b)=>a.price-b.price);
+  if(sort==='price_desc') filtered.sort((a,b)=>b.price-a.price);
+  allLsAnimals = filtered;
+  renderLivestockCards(filtered);
+}
+
+// ── ANIMAL CARDS ──────────────────────────────────────────────────────────────
+function renderLivestockCards(animals){
+  const grid = document.getElementById('livestockGrid');
+  if(!animals.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🐾</div><p>No animals match your filters</p></div>';
+    return;
+  }
+  grid.innerHTML = animals.map(a => {
+    const isDog = a.species === 'Dog';
+    window['ls_'+a.id] = a;
+
+    const lamenessHtml = a.gait_checked
+      ? (a.lameness_risk==='Low'
+          ? '<div class="lameness-ok">✅ Gait checked — No lameness detected</div>'
+          : '<div class="lameness-warn">⚠️ Gait: ' + a.lameness_risk + ' lameness risk</div>')
+      : '';
+
+    const dogCatBadge = isDog && a.dog_category
+      ? '<span style="background:rgba(96,165,250,.15);color:#93c5fd;font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:.4rem">' + a.dog_category + '</span>'
+      : '';
+
+    const weightLabel = isDog ? 'Weight' : 'AI Weight';
+    const weightVal   = (a.ai_weight||a.weight||'–') + ' kg';
+    const bcsRow      = isDog ? '' :
+      '<div class="ls-card-detail"><span>BCS' + (a.bcs_ai?'<span class="ai-badge">🤖</span>':'') + '</span>' + (a.bcs||'–') + '/5</div>';
+    const stageRow    = isDog ? '' :
+      '<div class="ls-card-detail"><span>Stage</span>' + (a.stage||'–') + '</div>';
+    const dogRow      = isDog
+      ? '<div class="ls-card-detail"><span>Vax Status</span>' + (a.vaccinations&&a.vaccinations.length?'✅ '+a.vaccinations.length+' vaccines':'None recorded') + '</div>'
+      : '';
+
+    return '<div class="ls-card">' +
+      '<div class="ls-card-header">' +
+        '<div>' +
+          '<div class="ls-card-animal">' + (SPECIES_EMOJI[a.species]||'🐾') + ' ' + a.name + dogCatBadge + '</div>' +
+          '<div class="ls-card-breed">' + a.breed + ' · ' + a.sex + '</div>' +
+        '</div>' +
+        '<span class="lc-badge available">FOR SALE</span>' +
+      '</div>' +
+      '<div class="passport-strip">' +
+        '<div class="passport-strip-id">📋 ' + (a.passport_id||'–') + '</div>' +
+        '<div class="passport-strip-vax">💉 ' + (a.vaccinations&&a.vaccinations.length?a.vaccinations.join(', '):'None recorded') + '</div>' +
+      '</div>' +
+      lamenessHtml +
+      '<div class="ls-card-details">' +
+        '<div class="ls-card-detail"><span>Age</span>' + (a.age||'–') + '</div>' +
+        '<div class="ls-card-detail"><span>' + weightLabel + (a.bcs_ai?'<span class="ai-badge">🤖</span>':'') + '</span>' + weightVal + '</div>' +
+        bcsRow + stageRow + dogRow +
+        '<div class="ls-card-detail"><span>Location</span>' + (a.location||'–') + '</div>' +
+        '<div class="ls-card-detail"><span>Seller</span>' + (a.farmer||'–') + '</div>' +
+        '<div class="ls-card-detail"><span>Health</span>' + ((a.health||'').substring(0,28)||'–') + '…</div>' +
+      '</div>' +
+      '<div class="ls-card-price">KES ' + (a.price||0).toLocaleString() + '</div>' +
+      '<div style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">💳 M-PESA Escrow available</div>' +
+      '<div class="ls-card-actions">' +
+        '<button class="btn btn-offer" onclick="lsOffer(' + a.id + ')">💬 Make Offer</button>' +
+        '<button class="btn btn-primary" onclick="lsContact(' + a.id + ')">📞 Contact</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// Safe button handlers
+function lsOffer(id){
+  const a = window['ls_'+id];
+  if(!a) return;
+  openLsOfferModal(a.id, a.listing_id||a.id, a.farmer_id||0, a.price, a.name, a.species);
+}
+
+function lsContact(id){
+  const a = window['ls_'+id];
+  if(!a) return;
+  if(DEMO_MODE){
+    showToast('📞 Demo: Contact sent to ' + a.farmer + '!');
+  } else {
+    showToast('📞 Contact request sent to ' + a.farmer + '!');
+  }
+}
+
+// ── BARTER CARDS ──────────────────────────────────────────────────────────────
+function renderBarterCards(){
+  const data = allLsData.barter || DEMO_LS_BARTER;
+  const grid = document.getElementById('barterGrid');
+  if(!data.length){ grid.innerHTML='<div class="empty-state"><div class="empty-icon">🔄</div><p>No swap offers available</p></div>'; return; }
+  grid.innerHTML = data.map(b => {
+    const mySpecies  = b.my_species || b.species;
+    const myName     = b.my_name || b.animal_name;
+    const myBreed    = b.my_breed || b.breed;
+    const myVal      = parseFloat(b.my_value||0);
+    const wantVal    = parseFloat(b.want_value||b.want_val||0);
+    const wantDesc   = b.want_description || b.want_desc || '–';
+    const diff       = myVal - wantVal;
+    const balanceHtml = Math.abs(diff)<2000
+      ? '<span class="barter-value-tag barter-value-fair">⚖️ Fair Swap</span>'
+      : diff>0
+        ? '<span class="barter-value-tag barter-value-diff">They give KES '+diff.toLocaleString()+' more</span>'
+        : '<span class="barter-value-tag barter-value-diff">You give KES '+Math.abs(diff).toLocaleString()+' more</span>';
+    const bid = b.id;
+    window['barter_'+bid] = b;
+    return '<div class="ls-card">' +
+      '<div style="font-size:1.5rem;margin-bottom:.5rem">' + (SPECIES_EMOJI[mySpecies]||'🐾') + '</div>' +
+      '<div class="ls-card-animal" style="margin-bottom:.25rem">' + myName + '</div>' +
+      '<div class="ls-card-breed" style="margin-bottom:.75rem">' + myBreed + ' · ' + (b.location||'–') + ' · ' + (b.farmer||b.farmer_name||'–') + '</div>' +
+      '<div class="passport-strip"><div class="passport-strip-id">📋 ' + (b.passport_id||'–') + '</div></div>' +
+      '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;margin:.75rem 0;text-align:center">' +
+        '<div style="background:var(--surface2);border-radius:8px;padding:.75rem;font-size:.8rem"><div style="color:var(--muted);font-size:.7rem;margin-bottom:.25rem">OFFERING</div><strong>' + myName + '</strong><div style="color:var(--green);font-size:.75rem">KES ' + myVal.toLocaleString() + '</div></div>' +
+        '<div style="font-size:1.5rem;color:var(--muted)">⇄</div>' +
+        '<div style="background:var(--surface2);border-radius:8px;padding:.75rem;font-size:.8rem"><div style="color:var(--muted);font-size:.7rem;margin-bottom:.25rem">WANTS</div><strong style="font-size:.78rem">' + wantDesc + '</strong><div style="color:var(--amber);font-size:.75rem">KES ' + wantVal.toLocaleString() + '</div></div>' +
+      '</div>' +
+      '<div style="text-align:center;margin-bottom:.75rem">' + balanceHtml + '</div>' +
+      '<button class="btn btn-primary" style="width:100%" onclick="expressBarterInterest(' + bid + ')">Express Interest in Swap</button>' +
+    '</div>';
+  }).join('');
+}
+
+function expressBarterInterest(id){
+  if(DEMO_MODE){ showToast('🤝 Demo: Swap interest sent!'); return; }
+  showToast('🤝 Swap interest sent to farmer!');
+}
+
+// ── SIRE CARDS ────────────────────────────────────────────────────────────────
+function renderSireCards(){
+  const data = allLsData.sires || DEMO_LS_SIRES;
+  const grid = document.getElementById('sireGrid');
+  if(!data.length){ grid.innerHTML='<div class="empty-state"><div class="empty-icon">🐂</div><p>No sires available</p></div>'; return; }
+  grid.innerHTML = data.map(s => {
+    const sid = s.id;
+    window['sire_'+sid] = s;
+    return '<div class="ls-card">' +
+      '<div style="font-size:1.75rem;margin-bottom:.4rem">' + (SPECIES_EMOJI[s.species]||'🐾') + '</div>' +
+      '<div class="ls-card-animal">' + (s.name||s.animal_name||'–') + '</div>' +
+      '<div class="ls-card-breed" style="margin-bottom:.75rem">' + (s.breed||s.breed_description||'–') + ' · ' + (s.location||'–') + '</div>' +
+      '<div class="passport-strip"><div class="passport-strip-id">📋 Vet Cert: ' + (s.vet_cert||'Pending') + '</div>' +
+        '<div class="passport-strip-vax">💉 ' + (s.vaccinations&&s.vaccinations.length?s.vaccinations.join(', '):'–') + '</div></div>' +
+      '<div class="ls-card-details">' +
+        '<div class="ls-card-detail"><span>AI Weight</span>' + (s.ai_weight||s.weight||'–') + ' kg <span class="ai-badge">🤖</span></div>' +
+        '<div class="ls-card-detail"><span>BCS</span>' + (s.bcs||'–') + '/5</div>' +
+        '<div class="ls-card-detail"><span>Proven Offspring</span>' + (s.proven_offspring||s.offspring||0) + '</div>' +
+        '<div class="ls-card-detail"><span>Owner</span>' + (s.farmer||s.farmer_name||'–') + '</div>' +
+      '</div>' +
+      '<div class="ls-card-price">KES ' + parseFloat(s.fee||0).toLocaleString() + ' <span style="font-size:.75rem;color:var(--muted);font-family:DM Sans;font-weight:400">/ service</span></div>' +
+      '<button class="btn btn-primary" style="width:100%;margin-top:.75rem" onclick="requestSireHire(' + sid + ')">Request Sire Hire</button>' +
+    '</div>';
+  }).join('');
+}
+
+function requestSireHire(id){
+  if(DEMO_MODE){ showToast('🐂 Demo: Sire hire request sent!'); return; }
+  showToast('🐂 Sire hire request sent to farmer!');
+}
+
+// ── FODDER CARDS ──────────────────────────────────────────────────────────────
+function renderFodderCards(){
+  const data = allLsData.fodder || DEMO_LS_FODDER;
+  const grid = document.getElementById('fodderGrid');
+  if(!data.length){ grid.innerHTML='<div class="empty-state"><div class="empty-icon">🌾</div><p>No fodder listings available</p></div>'; return; }
+  grid.innerHTML = data.map(f => {
+    const fid = f.id;
+    window['fodder_'+fid] = f;
+    return '<div class="ls-card">' +
+      '<div style="font-size:1.5rem;margin-bottom:.4rem">🌾</div>' +
+      '<div class="ls-card-animal">' + (f.type||f.fodder_type||'–') + '</div>' +
+      '<div class="ls-card-breed" style="margin-bottom:.75rem">' + (f.seller||f.seller_name||'–') + ' · ' + (f.location||'–') + '</div>' +
+      '<div class="ls-card-details">' +
+        '<div class="ls-card-detail"><span>Available</span>' + (f.qty||f.quantity||'–') + ' ' + (f.unit||'kg') + '</div>' +
+        '<div class="ls-card-detail"><span>Price</span><strong style="color:var(--green)">KES ' + parseFloat(f.price||f.price_per_unit||0) + '/' + (f.unit||'kg') + '</strong></div>' +
+        '<div class="ls-card-detail" style="grid-column:1/-1"><span>Delivery</span>' + (f.delivery||f.delivery_option||'Pickup only') + '</div>' +
+        '<div class="ls-card-detail" style="grid-column:1/-1"><span>Notes</span>' + (f.notes||'–') + '</div>' +
+      '</div>' +
+      '<button class="btn btn-primary" style="width:100%;margin-top:.75rem" onclick="orderFodder(' + fid + ')">Order / Enquire</button>' +
+    '</div>';
+  }).join('');
+}
+
+function orderFodder(id){
+  if(DEMO_MODE){ showToast('📦 Demo: Order request sent!'); return; }
+  showToast('📦 Order request sent to seller!');
+}
+
+// ── LIVESTOCK OFFER MODAL ──────────────────────────────────────────────────────
+function openLsOfferModal(animalId, listingId, farmerId, listedPrice, animalName, species){
+  document.getElementById('offerListingId').value  = listingId || animalId;
+  document.getElementById('offerFarmerId').value   = farmerId || 0;
+  document.getElementById('offerListedPrice').textContent = 'KES ' + parseFloat(listedPrice||0).toLocaleString();
+  document.getElementById('offerAvailHint').innerHTML =
+    (SPECIES_EMOJI[species]||'🐾') + ' <strong>' + animalName + '</strong>';
+  document.getElementById('offerPrice').value   = '';
+  document.getElementById('offerQty').value     = '1';
+  document.getElementById('offerMessage').value = '';
+  document.querySelector('.modal-title').textContent    = '💬 Make Offer on Animal';
+  document.querySelector('.modal-subtitle').textContent = 'Submit your price to the farmer · M-PESA Escrow available';
+  document.querySelector('.form-label').textContent     = 'Your Offer Price (KES total)';
+  document.getElementById('offerModal').classList.add('open');
+}
+
+
+
+// (duplicate functions removed — defined above)
+
+// (old renderLivestockCards block removed — new version defined above)
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+// Close modal on overlay click
+document.getElementById('offerModal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) closeOfferModal();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// DUAL ROLE SYSTEM — Trader side
+// ══════════════════════════════════════════════════════════════
+function openRoleModal(){
+  if(!currentUser && !DEMO_MODE){ showToast('Please log in first','error'); return; }
+  const user = currentUser || DEMO_USER;
+  document.getElementById('roleModalName').textContent = user.full_name || user.phone || 'Trader';
+  const hasFarmerRole = user.secondary_role === 'farmer' ||
+                        localStorage.getItem('sokoleo_secondary_role') === 'farmer';
+  if(hasFarmerRole){
+    document.getElementById('alreadyFarmerSection').style.display  = 'block';
+    document.getElementById('registerFarmerSection').style.display = 'none';
+  } else {
+    document.getElementById('alreadyFarmerSection').style.display  = 'none';
+    document.getElementById('registerFarmerSection').style.display = 'block';
+  }
+  document.getElementById('roleModal').style.display = 'flex';
+}
+
+function closeRoleModal(){
+  document.getElementById('roleModal').style.display = 'none';
+}
+
+function goToFarmer(){
+  if(currentUser){
+    const u = {...currentUser, active_role: 'farmer'};
+    localStorage.setItem('sokoleo_user', JSON.stringify(u));
+  }
+  closeRoleModal();
+  window.location.href = 'farmer.html';
+}
+
+async function registerAsFarmer(){
+  const btn    = document.getElementById('registerFarmerBtn');
+  const status = document.getElementById('registerFarmerStatus');
+  btn.textContent = 'Registering...';
+  btn.disabled    = true;
+  status.style.color   = 'var(--muted)';
+  status.textContent   = 'Please wait...';
+
+  if(DEMO_MODE){
+    localStorage.setItem('sokoleo_secondary_role','farmer');
+    showDualRoleBadge();
+    status.style.color   = 'var(--green)';
+    status.textContent   = '✅ Registered as Farmer! Redirecting...';
+    setTimeout(()=>{ closeRoleModal(); goToFarmer(); }, 1200);
+    return;
+  }
+
+  try{
+    const r = await fetch(`${API}/auth/add-role`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: currentUser.id, secondary_role: 'farmer' })
+    });
+    const d = await r.json();
+    if(d.success){
+      currentUser.secondary_role = 'farmer';
+      localStorage.setItem('sokoleo_user', JSON.stringify(currentUser));
+      showDualRoleBadge();
+      status.style.color   = 'var(--green)';
+      status.textContent   = '✅ Registered as Farmer! Redirecting...';
+      setTimeout(()=>{ closeRoleModal(); goToFarmer(); }, 1200);
+    } else {
+      status.style.color   = 'var(--red)';
+      status.textContent   = '⚠️ ' + (d.error || 'Failed. Try again.');
+      btn.textContent  = '🌱 Register Me as a Farmer Too';
+      btn.disabled     = false;
+    }
+  } catch(e){
+    status.style.color   = 'var(--red)';
+    status.textContent   = '⚠️ Network error. Try again.';
+    btn.textContent  = '🌱 Register Me as a Farmer Too';
+    btn.disabled     = false;
+  }
+}
+
+function showDualRoleBadge(){
+  document.getElementById('dualRoleBadge').style.display = 'inline-block';
+  document.getElementById('switchRoleBtn').textContent   = '🌱 Go to Farmer Dashboard';
+  document.getElementById('switchRoleBtn').onclick       = goToFarmer;
+}
+
+function checkDualRole(){
+  if(!currentUser && !DEMO_MODE) return;
+  const user = currentUser || {};
+  const hasFarmer = user.secondary_role === 'farmer' ||
+                    localStorage.getItem('sokoleo_secondary_role') === 'farmer';
+  if(hasFarmer) showDualRoleBadge();
+}
+
+document.getElementById('roleModal').addEventListener('click', e=>{
+  if(e.target === e.currentTarget) closeRoleModal();
+});
+
+init();
+setTimeout(checkDualRole, 500);
+</script>
+</body>
+</html>

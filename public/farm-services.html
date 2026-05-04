@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SokoLeo – Farm Services & Supplies</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#080f08;--surface:#0d1a0d;--surface2:#122012;--border:#1a3a1a;
+  --green:#4ade80;--green-dark:#166534;--green-dim:rgba(74,222,128,.1);
+  --amber:#fbbf24;--red:#f87171;--blue:#60a5fa;--purple:#a78bfa;
+  --teal:#2dd4bf;--coral:#fb923c;
+  --text:#dcfce7;--muted:#6b9e7e;--white:#fff;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* ── NAV ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 2rem;height:60px;position:sticky;top:0;z-index:100;}
+.logo-wrap{display:flex;align-items:center;gap:.6rem;text-decoration:none;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;line-height:1;}
+.back-link{color:var(--muted);font-size:.85rem;text-decoration:none;display:flex;align-items:center;gap:.3rem;}
+.back-link:hover{color:var(--green);}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,#060f06 0%,#0a1a0a 60%,#071207 100%);
+      padding:3rem 2rem;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 50%,rgba(74,222,128,.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 50%,rgba(96,165,250,.04) 0%,transparent 60%);}
+.hero-tag{display:inline-flex;align-items:center;gap:.4rem;
+          background:var(--green-dim);border:1px solid rgba(74,222,128,.2);
+          color:var(--green);padding:4px 14px;border-radius:20px;font-size:.75rem;
+          font-weight:600;letter-spacing:.06em;margin-bottom:1rem;}
+.hero-title{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;
+            margin-bottom:.75rem;line-height:1.2;}
+.hero-title span{color:var(--green);}
+.hero-sub{color:var(--muted);font-size:.95rem;max-width:580px;margin:0 auto 1.5rem;}
+
+/* ── SEARCH ── */
+.search-wrap{max-width:600px;margin:0 auto;position:relative;z-index:1;}
+.search-bar{display:flex;gap:.75rem;align-items:center;
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:12px;padding:.5rem .5rem .5rem 1rem;}
+.search-bar input{flex:1;background:none;border:none;color:var(--text);
+                  font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;}
+.search-bar input::placeholder{color:var(--muted);}
+.btn-search{background:var(--green);color:#000;border:none;padding:10px 20px;
+            border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;
+            font-size:.88rem;cursor:pointer;white-space:nowrap;}
+.location-detect{font-size:.78rem;color:var(--muted);margin-top:.6rem;
+                 display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.location-detect button{background:none;border:none;color:var(--green);
+                         cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;}
+
+/* ── LAYOUT ── */
+.page-wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+.page-grid{display:grid;grid-template-columns:260px 1fr;gap:1.5rem;align-items:start;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border:1px solid var(--border);
+         border-radius:var(--radius);padding:1.25rem;position:sticky;top:76px;}
+.sidebar-title{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;
+               color:var(--muted);text-transform:uppercase;letter-spacing:.1em;
+               margin-bottom:1rem;}
+.cat-nav-item{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;
+              border-radius:8px;cursor:pointer;font-size:.85rem;
+              transition:all .18s;margin-bottom:.2rem;border:none;
+              background:none;width:100%;text-align:left;color:var(--muted);}
+.cat-nav-item:hover{background:var(--green-dim);color:var(--green);}
+.cat-nav-item.active{background:var(--green-dim);color:var(--green);font-weight:500;}
+.cat-nav-item .cat-icon{font-size:1rem;width:22px;text-align:center;}
+.cat-nav-count{margin-left:auto;background:var(--surface2);color:var(--muted);
+               padding:1px 7px;border-radius:10px;font-size:.7rem;}
+
+/* Sidebar filters */
+.filter-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+.filter-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;
+              letter-spacing:.07em;margin-bottom:.6rem;display:block;}
+.filter-select{width:100%;background:var(--surface2);border:1px solid var(--border);
+               color:var(--text);padding:8px 10px;border-radius:8px;
+               font-family:'DM Sans',sans-serif;font-size:.83rem;margin-bottom:.75rem;}
+.filter-select:focus{outline:none;border-color:var(--green);}
+.filter-check{display:flex;align-items:center;gap:.5rem;font-size:.82rem;
+              color:var(--muted);margin-bottom:.4rem;cursor:pointer;}
+.filter-check input{accent-color:var(--green);}
+
+/* ── RESULTS ── */
+.results-header{display:flex;justify-content:space-between;align-items:center;
+                margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.results-count{font-size:.85rem;color:var(--muted);}
+.results-count strong{color:var(--text);}
+.sort-select{background:var(--surface);border:1px solid var(--border);color:var(--text);
+             padding:7px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.83rem;}
+.sort-select:focus{outline:none;border-color:var(--green);}
+
+/* ── SERVICE CARDS ── */
+.services-grid{display:grid;grid-template-columns:1fr;gap:1rem;}
+.service-card{background:var(--surface);border:1px solid var(--border);
+              border-radius:var(--radius);padding:1.5rem;
+              transition:border-color .2s,transform .2s;cursor:pointer;}
+.service-card:hover{border-color:var(--green);transform:translateY(-2px);}
+.sc-top{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem;}
+.sc-avatar{width:56px;height:56px;border-radius:10px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:1.6rem;flex-shrink:0;}
+.sc-info{flex:1;}
+.sc-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;
+         margin-bottom:.2rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.sc-type{font-size:.75rem;color:var(--muted);}
+.badges{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;}
+.badge{display:inline-flex;align-items:center;gap:.2rem;padding:2px 9px;
+       border-radius:10px;font-size:.68rem;font-weight:600;}
+.badge-verified{background:rgba(74,222,128,.12);color:var(--green);}
+.badge-kvb{background:rgba(96,165,250,.12);color:var(--blue);}
+.badge-mobile{background:rgba(167,139,250,.12);color:var(--purple);}
+.badge-insured{background:rgba(251,191,36,.12);color:var(--amber);}
+.badge-certified{background:rgba(45,212,191,.12);color:var(--teal);}
+.badge-delivery{background:rgba(251,146,60,.12);color:var(--coral);}
+
+.sc-desc{font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;}
+.sc-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;}
+.sc-tag{background:var(--surface2);border:1px solid var(--border);color:var(--muted);
+        padding:3px 10px;border-radius:20px;font-size:.72rem;}
+.sc-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;
+         padding:.75rem;background:var(--surface2);border-radius:8px;margin-bottom:1rem;}
+.sc-meta-item{text-align:center;}
+.sc-meta-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;
+               letter-spacing:.06em;display:block;margin-bottom:.2rem;}
+.sc-meta-value{font-size:.85rem;font-weight:600;}
+.sc-footer{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;}
+.sc-location{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:.3rem;}
+.sc-rating{display:flex;align-items:center;gap:.3rem;}
+.stars{color:var(--amber);font-size:.85rem;}
+.rating-count{font-size:.75rem;color:var(--muted);}
+.sc-actions{margin-left:auto;display:flex;gap:.6rem;}
+.btn{padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;
+     font-size:.82rem;font-weight:500;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:#22c55e;}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-call{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green);}
+.btn-call:hover{background:var(--green-dim);}
+
+/* ── LIST YOUR SERVICE BANNER ── */
+.list-banner{background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(96,165,250,.06));
+             border:1px solid rgba(74,222,128,.2);border-radius:var(--radius);
+             padding:1.5rem;margin-bottom:1.5rem;display:flex;
+             align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.list-banner-text{font-size:.9rem;}
+.list-banner-text strong{color:var(--green);display:block;font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:.25rem;}
+
+/* ── LIST SERVICE MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+               z-index:1000;align-items:flex-start;justify-content:center;
+               overflow-y:auto;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface2);border:1px solid var(--border);
+       border-radius:16px;width:100%;max-width:600px;padding:2rem;
+       margin:auto;animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:.25rem;}
+.modal-sub{color:var(--muted);font-size:.82rem;margin-bottom:1.5rem;}
+.form-section{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;
+              color:var(--green);text-transform:uppercase;letter-spacing:.1em;
+              padding:.5rem 0;border-bottom:1px solid var(--border);
+              margin:1.25rem 0 .75rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.75rem;}
+.form-group{display:flex;flex-direction:column;gap:.35rem;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.form-input{background:var(--surface);border:1px solid var(--border);color:var(--text);
+            padding:9px 13px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;}
+.form-input:focus{outline:none;border-color:var(--green);}
+.modal-actions{display:flex;gap:.75rem;margin-top:1.5rem;}
+.modal-actions .btn{flex:1;padding:12px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:.4;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);
+       border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;
+       font-size:.85rem;z-index:2000;transform:translateY(100px);opacity:0;
+       transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+
+@media(max-width:768px){
+  .page-grid{grid-template-columns:1fr;}
+  .sidebar{position:static;}
+  .hero-title{font-size:1.6rem;}
+  .sc-meta{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="farmer.html" class="logo-wrap">
+    <img src="/logo.png" alt="SokoLeo" style="height:42px;width:42px;object-fit:contain;border-radius:50%"/>
+    <div>
+      <div class="logo"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div>
+      <div style="font-size:.6rem;color:var(--green);letter-spacing:.18em;font-family:'DM Sans',sans-serif">SOKO KILA SIKU</div>
+    </div>
+  </a>
+  <a href="farmer.html" class="back-link">← Back to Dashboard</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">🌍 Tharaka Nithi County</div>
+  <h1 class="hero-title">Farm <span>Services</span> & Supplies</h1>
+  <p class="hero-sub">Find verified vets, equipment hire, agrovets, soil labs, and more — all near you in Tharaka Nithi.</p>
+  <div class="search-wrap">
+    <div class="search-bar">
+      <input type="text" id="mainSearch" placeholder="Search vets, tractors, seeds, agrovets..." oninput="filterServices()"/>
+      <button class="btn-search" onclick="filterServices()">Search</button>
+    </div>
+    <div class="location-detect">
+      📍 <span id="locationDisplay">Location not set</span>
+      <button onclick="detectLocation()">Detect my location</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- List your service banner -->
+  <div class="list-banner">
+    <div class="list-banner-text">
+      <strong>🏪 Are you a service provider?</strong>
+      List your vet practice, agrovet, tractor hire, or any farm service — reach thousands of farmers in Tharaka Nithi County.
+    </div>
+    <button class="btn btn-primary" onclick="openListModal()">+ List Your Service</button>
+  </div>
+
+  <div class="page-grid">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-title">Categories</div>
+
+      <button class="cat-nav-item active" onclick="filterByCategory('all',this)">
+        <span class="cat-icon">🌿</span> All Services <span class="cat-nav-count" id="cnt-all">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('vet',this)">
+        <span class="cat-icon">🩺</span> Vet & Livestock Services <span class="cat-nav-count" id="cnt-vet">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('equipment',this)">
+        <span class="cat-icon">🚜</span> Equipment & Machinery <span class="cat-nav-count" id="cnt-equipment">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('agrovet',this)">
+        <span class="cat-icon">🌱</span> Agrovet & Inputs <span class="cat-nav-count" id="cnt-agrovet">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('soil',this)">
+        <span class="cat-icon">🧪</span> Soil Testing Labs <span class="cat-nav-count" id="cnt-soil">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('transport',this)">
+        <span class="cat-icon">🚚</span> Transport & Logistics <span class="cat-nav-count" id="cnt-transport">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('insurance',this)">
+        <span class="cat-icon">🛡️</span> Agri Insurance <span class="cat-nav-count" id="cnt-insurance">0</span>
+      </button>
+      <button class="cat-nav-item" onclick="filterByCategory('manager',this)">
+        <span class="cat-icon">👨‍💼</span> Farm Managers for Hire <span class="cat-nav-count" id="cnt-manager">0</span>
+      </button>
+
+      <div class="filter-section">
+        <span class="filter-label">Location</span>
+        <select class="filter-select" id="filterLoc" onchange="filterServices()">
+          <option value="">All Locations</option>
+          <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+          <option>Kiburia</option><option>Muthambi</option><option>Gatunga</option><option>Nkubu</option>
+        </select>
+
+        <span class="filter-label">Filter by</span>
+        <label class="filter-check"><input type="checkbox" id="fVerified" onchange="filterServices()"/> Verified only ✅</label>
+        <label class="filter-check"><input type="checkbox" id="fMobile" onchange="filterServices()"/> Mobile / Travels to farm 🚗</label>
+        <label class="filter-check"><input type="checkbox" id="fDelivery" onchange="filterServices()"/> Delivery available 🚚</label>
+
+        <span class="filter-label" style="margin-top:.75rem">Min Rating</span>
+        <select class="filter-select" id="fRating" onchange="filterServices()">
+          <option value="0">Any Rating</option>
+          <option value="3">3★ and above</option>
+          <option value="4">4★ and above</option>
+          <option value="4.5">4.5★ and above</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="results-header">
+        <div class="results-count" id="resultsCount">Showing <strong>0</strong> services</div>
+        <select class="sort-select" id="sortSelect" onchange="filterServices()">
+          <option value="rating">Top Rated</option>
+          <option value="nearest">Nearest First</option>
+          <option value="newest">Newest Listed</option>
+          <option value="reviews">Most Reviewed</option>
+        </select>
+      </div>
+      <div class="services-grid" id="servicesGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LIST SERVICE MODAL -->
+<div class="modal-overlay" id="listModal">
+  <div class="modal">
+    <div class="modal-title">🏪 List Your Farm Service</div>
+    <div class="modal-sub">Join Tharaka Nithi's largest agri-service directory. Free to list.</div>
+
+    <div class="form-section">Business Details</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Business / Service Name</label>
+        <input class="form-input" id="lsBizName" placeholder="e.g. Chuka Mobile Vet Services"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-input" id="lsCategory">
+          <option value="">-- Select --</option>
+          <option value="vet">Vet & Livestock Services</option>
+          <option value="equipment">Equipment & Machinery</option>
+          <option value="agrovet">Agrovet & Inputs</option>
+          <option value="soil">Soil Testing Lab</option>
+          <option value="transport">Transport & Logistics</option>
+          <option value="insurance">Agricultural Insurance</option>
+          <option value="manager">Farm Manager for Hire</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-type / Specialization</label>
+        <input class="form-input" id="lsSubType" placeholder="e.g. AI Technician, Tractor Hire"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location / Sub-county</label>
+        <select class="form-input" id="lsLocation">
+          <option value="">Select location</option>
+          <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+          <option>Kiburia</option><option>Muthambi</option><option>Gatunga</option><option>Nkubu</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="lsPhone" type="tel" placeholder="+254 7XX XXX XXX"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp Number (optional)</label>
+        <input class="form-input" id="lsWhatsapp" type="tel" placeholder="+254 7XX XXX XXX"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Description of Services</label>
+        <textarea class="form-input" id="lsDesc" rows="3" placeholder="Describe what you offer, your experience, equipment, coverage area..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section">Pricing & Availability</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Price / Rate</label>
+        <input class="form-input" id="lsPrice" placeholder="e.g. KES 2,000/visit or From KES 500"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Availability</label>
+        <select class="form-input" id="lsAvailability">
+          <option>Mon–Fri (Business hours)</option>
+          <option>Mon–Sat</option>
+          <option>7 days a week</option>
+          <option>24/7 Emergency</option>
+          <option>By appointment only</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+      <label class="filter-check"><input type="checkbox" id="lsMobile" style="accent-color:var(--green)"/> I travel to the farm (Mobile service)</label>
+      <label class="filter-check"><input type="checkbox" id="lsDelivery" style="accent-color:var(--green)"/> Delivery available</label>
+    </div>
+
+    <div class="form-section">Verification Documents</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">KVB / Professional Reg. No. (if applicable)</label>
+        <input class="form-input" id="lsRegNo" placeholder="e.g. KVB/2024/001234"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">KRA PIN (for Verified badge)</label>
+        <input class="form-input" id="lsKra" placeholder="e.g. A000000000B"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Tags (helps farmers find you — separate with commas)</label>
+        <input class="form-input" id="lsTags" placeholder="e.g. dairy, cattle, deworming, AI, Friesian"/>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeListModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitServiceListing()">Submit Listing →</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">⭐ Leave a Review</div>
+    <div class="modal-sub" id="reviewModalSub">Share your experience</div>
+    <input type="hidden" id="reviewServiceId"/>
+    <div style="margin-bottom:1.25rem">
+      <div class="form-label" style="margin-bottom:.6rem">Your Rating</div>
+      <div style="display:flex;gap:.4rem" id="starPicker">
+        <button class="star-btn" onclick="setRating(1)">★</button>
+        <button class="star-btn" onclick="setRating(2)">★</button>
+        <button class="star-btn" onclick="setRating(3)">★</button>
+        <button class="star-btn" onclick="setRating(4)">★</button>
+        <button class="star-btn" onclick="setRating(5)">★</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label class="form-label">Your Review</label>
+      <textarea class="form-input" id="reviewText" rows="3" placeholder="How was your experience? Was the vet professional? Did the equipment work well?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="document.getElementById('reviewModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<style>
+.star-btn{background:none;border:none;font-size:2rem;cursor:pointer;color:var(--border);transition:color .15s;}
+.star-btn.active,.star-btn:hover{color:var(--amber);}
+</style>
+
+<script>
+const API = '/api/v1';
+let currentCategory = 'all';
+let currentRating   = 0;
+let userLocation    = null;
+
+// ══════════════════════════════════════════════════════════════
+// DEMO SERVICE DATA
+// ══════════════════════════════════════════════════════════════
+const DEMO_SERVICES = [
+  // ── VETS ──
+  {id:1,category:'vet',subtype:'Mobile Veterinary Surgeon',name:'Dr. Murithi Animal Clinic',
+   location:'Chuka',desc:'Full veterinary services for cattle, goats, sheep, and poultry. Emergency call-outs available 24/7. Specialised in dairy herd health management and East Coast Fever treatment.',
+   phone:'+254722100001',whatsapp:'+254722100001',
+   tags:['cattle','dairy','ECF','FMD','deworming','surgery'],
+   price:'KES 1,500/visit',availability:'24/7 Emergency',
+   mobile:true,delivery:false,verified:true,kvb:'KVB/2024/00112',
+   rating:4.8,reviews:47,avatar:'🩺',bg:'rgba(74,222,128,.12)',
+   badges:['verified','kvb','mobile']},
+
+  {id:2,category:'vet',subtype:'AI Technician',name:'Kamau AI & Genetics Services',
+   location:'Maara',desc:'Certified Artificial Insemination technician with 8+ years experience. Semen from top Friesian, Ayrshire, and Sahiwal bulls. Conception rates of 70%+ guaranteed. Covers Maara, Chuka and Tharaka sub-counties.',
+   phone:'+254733200002',whatsapp:'+254733200002',
+   tags:['AI','Friesian','Ayrshire','genetics','dairy','insemination'],
+   price:'KES 800/session (semen included)',availability:'Mon–Sat',
+   mobile:true,delivery:false,verified:true,kvb:'KVB/2025/00234',
+   rating:4.9,reviews:83,avatar:'🔬',bg:'rgba(96,165,250,.12)',
+   badges:['verified','kvb','mobile']},
+
+  {id:3,category:'vet',subtype:'Livestock Consultant',name:'Tharaka Livestock Advisory',
+   location:'Tharaka',desc:'Expert consulting on cow shed design, poultry house construction, nutrition programmes, and herd management. Also offers training for farm workers on animal husbandry best practices.',
+   phone:'+254744300003',whatsapp:'+254744300003',
+   tags:['consulting','housing','nutrition','poultry','shed design'],
+   price:'KES 3,000/day',availability:'Mon–Fri (Business hours)',
+   mobile:true,delivery:false,verified:true,kvb:'KVB/2024/00445',
+   rating:4.6,reviews:29,avatar:'📋',bg:'rgba(167,139,250,.12)',
+   badges:['verified','kvb']},
+
+  // ── EQUIPMENT ──
+  {id:4,category:'equipment',subtype:'Tractor Hire',name:'Chuka Tractor & Tillage Services',
+   location:'Chuka',desc:'Modern John Deere 5075E tractor available for hire. Services: ploughing, harrowing, planting, and transport. Covers Chuka, Maara, and surrounding areas. Competitive rates per acre.',
+   phone:'+254755400004',whatsapp:'+254755400004',
+   tags:['tractor','ploughing','harrowing','John Deere','tillage'],
+   price:'KES 3,500/acre (ploughing)',availability:'7 days a week',
+   mobile:true,delivery:false,verified:true,kvb:null,
+   rating:4.7,reviews:62,avatar:'🚜',bg:'rgba(251,191,36,.12)',
+   badges:['verified','mobile']},
+
+  {id:5,category:'equipment',subtype:'Irrigation Systems',name:'AquaFarm Irrigation Kenya',
+   location:'Chuka',desc:'Drip irrigation kits, solar water pumps, and pipe fittings. Installation and maintenance services. Kits from 1/8 acre to 5 acres. Finance options available through M-KOPA.',
+   phone:'+254766500005',whatsapp:'+254766500005',
+   tags:['drip irrigation','solar pump','water pump','pipes','greenhouse'],
+   price:'From KES 15,000 (1/8 acre kit)',availability:'Mon–Sat',
+   mobile:false,delivery:true,verified:true,kvb:null,
+   rating:4.5,reviews:38,avatar:'💧',bg:'rgba(45,212,191,.12)',
+   badges:['verified','delivery']},
+
+  {id:6,category:'equipment',subtype:'Greenhouse Construction',name:'GreenHouse Masters Tharaka Nithi',
+   location:'Nkubu',desc:'Design and construction of greenhouse tunnels (8m x 15m standard). Shade nets, drip kits, and UV-resistant polythene supplied. 2-year structural warranty. Site visits free within Tharaka Nithi.',
+   phone:'+254777600006',whatsapp:null,
+   tags:['greenhouse','tunnel','shade net','polythene','construction'],
+   price:'KES 120,000 (8x15m complete)',availability:'Mon–Sat',
+   mobile:true,delivery:true,verified:false,kvb:null,
+   rating:4.3,reviews:21,avatar:'🏗️',bg:'rgba(74,222,128,.08)',
+   badges:['mobile']},
+
+  {id:7,category:'equipment',subtype:'Processing Equipment',name:'Posho Mill & Chaff Cutter Hire',
+   location:'Kiburia',desc:'Mobile chaff cutter hire — comes to your farm. Also: posho mill services, milk cooler rental, and egg incubators for hire (360 and 528 egg capacity). Call to check availability.',
+   phone:'+254788700007',whatsapp:'+254788700007',
+   tags:['chaff cutter','posho mill','milk cooler','incubator','processing'],
+   price:'KES 500/hr (chaff cutter)',availability:'7 days a week',
+   mobile:true,delivery:false,verified:true,kvb:null,
+   rating:4.4,reviews:44,avatar:'⚙️',bg:'rgba(251,146,60,.12)',
+   badges:['verified','mobile']},
+
+  // ── AGROVET ──
+  {id:8,category:'agrovet',subtype:'Agrovet & Farm Store',name:'Chuka Farmers Agrovet',
+   location:'Chuka',desc:'One-stop agrovet serving Chuka town and surroundings since 2008. Certified maize seeds (DK8031, H614D), vegetable hybrids, animal feeds, pesticides, fertilizers, and mineral supplements. Licensed stockist.',
+   phone:'+254799800008',whatsapp:'+254799800008',
+   tags:['seeds','maize','fertilizer','pesticide','animal feed','mineral lick'],
+   price:'Varies by product',availability:'Mon–Sat',
+   mobile:false,delivery:true,verified:true,kvb:null,
+   rating:4.6,reviews:91,avatar:'🌱',bg:'rgba(74,222,128,.12)',
+   badges:['verified','certified','delivery']},
+
+  {id:9,category:'agrovet',subtype:'Seedlings Nursery',name:'Maara Grafted Seedlings',
+   location:'Maara',desc:'Specialising in grafted fruit seedlings: avocado (Hass, Fuerte), mango, passion fruit, citrus, and macadamia. All seedlings certified disease-free. Bulk discounts for 50+ seedlings. Delivery available.',
+   phone:'+254700900009',whatsapp:'+254700900009',
+   tags:['avocado','Hass','mango','passion fruit','grafted','seedlings','citrus'],
+   price:'KES 250–500 per seedling',availability:'7 days a week',
+   mobile:false,delivery:true,verified:true,kvb:null,
+   rating:4.8,reviews:56,avatar:'🌳',bg:'rgba(74,222,128,.1)',
+   badges:['verified','certified','delivery']},
+
+  // ── SOIL ──
+  {id:10,category:'soil',subtype:'Soil Testing Laboratory',name:'TharakaSoil Analytics Lab',
+   location:'Chuka',desc:'Full soil health analysis: pH, NPK, micronutrients, organic matter content. Results in 5 working days with a tailored fertilizer recommendation report. Accredited by KEBS. Farm visits for sampling available.',
+   phone:'+254711000010',whatsapp:'+254711000010',
+   tags:['soil test','pH','NPK','fertilizer recommendation','KEBS','organic'],
+   price:'KES 2,500/sample (full panel)',availability:'Mon–Fri (Business hours)',
+   mobile:true,delivery:false,verified:true,kvb:null,
+   rating:4.9,reviews:33,avatar:'🧪',bg:'rgba(45,212,191,.12)',
+   badges:['verified','certified','mobile']},
+
+  // ── TRANSPORT ──
+  {id:11,category:'transport',subtype:'Produce Transport',name:'FarmHaul Logistics Chuka',
+   location:'Chuka',desc:'Specialised produce transport: Chuka to Nairobi Marikiti, Wakulima, and Kangemi markets. Refrigerated options for tomatoes and French beans. WhatsApp group for weekly runs — join and fill a slot.',
+   phone:'+254722000011',whatsapp:'+254722000011',
+   tags:['transport','Marikiti','Wakulima','Nairobi','lorry','pickup','refrigerated'],
+   price:'KES 4,000 Chuka–Nairobi (shared)',availability:'Tue & Fri (market days)',
+   mobile:true,delivery:true,verified:true,kvb:null,
+   rating:4.7,reviews:78,avatar:'🚛',bg:'rgba(251,146,60,.12)',
+   badges:['verified','mobile','delivery']},
+
+  // ── INSURANCE ──
+  {id:12,category:'insurance',subtype:'Crop & Livestock Insurance',name:'Kilimo Salama – Tharaka Nithi Agent',
+   location:'Chuka',desc:'Authorised agent for Kilimo Salama (UAP Old Mutual) crop insurance and livestock insurance. Insure your maize against drought, your dairy cows against disease. Premiums from KES 500/season. M-PESA payments accepted.',
+   phone:'+254733000012',whatsapp:'+254733000012',
+   tags:['insurance','crop','livestock','drought','Kilimo Salama','UAP','maize'],
+   price:'From KES 500/season',availability:'Mon–Fri (Business hours)',
+   mobile:true,delivery:false,verified:true,kvb:null,
+   rating:4.5,reviews:24,avatar:'🛡️',bg:'rgba(96,165,250,.12)',
+   badges:['verified']},
+
+  // ── MANAGER ──
+  {id:13,category:'manager',subtype:'Farm Manager for Hire',name:'AgriManage Kenya – Remote Farm Management',
+   location:'Chuka',desc:'Professional farm management for "telephone farmers" (city-based owners). Weekly farm inspection reports with photos. Handles worker supervision, purchasing, and sales. Available for farms in Tharaka Nithi and Meru counties.',
+   phone:'+254744000013',whatsapp:'+254744000013',
+   tags:['farm manager','remote','telephone farmer','supervision','management'],
+   price:'KES 8,000/month (full management)',availability:'7 days a week',
+   mobile:true,delivery:false,verified:true,kvb:null,
+   rating:4.6,reviews:18,avatar:'👨‍💼',bg:'rgba(167,139,250,.12)',
+   badges:['verified','mobile']},
+];
+
+let filteredServices = [...DEMO_SERVICES];
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+function renderServices(list){
+  const grid = document.getElementById('servicesGrid');
+  document.getElementById('resultsCount').innerHTML =
+    'Showing <strong>' + list.length + '</strong> service' + (list.length!==1?'s':'');
+
+  if(!list.length){
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>No services found. Try adjusting your filters.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(s => {
+    const badgeHtml = (s.badges||[]).map(b => {
+      const map = {
+        verified: '<span class="badge badge-verified">✅ Verified</span>',
+        kvb:      '<span class="badge badge-kvb">🏥 KVB Reg: '+s.kvb+'</span>',
+        mobile:   '<span class="badge badge-mobile">🚗 Mobile</span>',
+        certified:'<span class="badge badge-certified">🎖️ Certified</span>',
+        delivery: '<span class="badge badge-delivery">🚚 Delivery</span>',
+      };
+      return map[b]||'';
+    }).join('');
+
+    const stars = '★'.repeat(Math.floor(s.rating)) + (s.rating%1>=.5?'½':'') ;
+    const tagsHtml = s.tags.slice(0,5).map(t=>'<span class="sc-tag">'+t+'</span>').join('');
+
+    return '<div class="service-card" id="svc-'+s.id+'">' +
+      '<div class="sc-top">' +
+        '<div class="sc-avatar" style="background:'+s.bg+'">'+s.avatar+'</div>' +
+        '<div class="sc-info">' +
+          '<div class="sc-name">' + s.name + '</div>' +
+          '<div class="sc-type">' + s.subtype + ' · ' + s.location + '</div>' +
+          '<div class="badges">' + badgeHtml + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="sc-desc">' + s.desc + '</p>' +
+      '<div class="sc-tags">' + tagsHtml + '</div>' +
+      '<div class="sc-meta">' +
+        '<div class="sc-meta-item"><span class="sc-meta-label">Price</span><span class="sc-meta-value" style="color:var(--green);font-size:.78rem">' + s.price + '</span></div>' +
+        '<div class="sc-meta-item"><span class="sc-meta-label">Availability</span><span class="sc-meta-value" style="font-size:.75rem">' + s.availability + '</span></div>' +
+        '<div class="sc-meta-item"><span class="sc-meta-label">Reviews</span><span class="sc-meta-value">' + s.reviews + '</span></div>' +
+      '</div>' +
+      '<div class="sc-footer">' +
+        '<div>' +
+          '<div class="sc-rating"><span class="stars">' + stars + '</span><span style="font-size:.85rem;font-weight:600;margin-left:.3rem">' + s.rating + '</span><span class="rating-count">&nbsp;(' + s.reviews + ' reviews)</span></div>' +
+          '<div class="sc-location">📍 ' + s.location + (s.mobile?' · Travels to farm':'') + '</div>' +
+        '</div>' +
+        '<div class="sc-actions">' +
+          '<button class="btn btn-outline" onclick="openReview('+s.id+')">⭐ Review</button>' +
+          (s.whatsapp?'<button class="btn btn-call" onclick="contactWhatsApp(\''+s.whatsapp+'\',\''+s.name+'\')">💬 WhatsApp</button>':'') +
+          '<button class="btn btn-primary" onclick="callService(\''+s.phone+'\',\''+s.name+'\')">📞 Call</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════════════════════════
+function filterByCategory(cat, btn){
+  currentCategory = cat;
+  document.querySelectorAll('.cat-nav-item').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterServices();
+}
+
+function filterServices(){
+  const q         = (document.getElementById('mainSearch').value||'').toLowerCase();
+  const loc       = document.getElementById('filterLoc').value;
+  const verified  = document.getElementById('fVerified').checked;
+  const mobile    = document.getElementById('fMobile').checked;
+  const delivery  = document.getElementById('fDelivery').checked;
+  const minRating = parseFloat(document.getElementById('fRating').value||0);
+  const sort      = document.getElementById('sortSelect').value;
+
+  let list = DEMO_SERVICES.filter(s =>
+    (currentCategory==='all' || s.category===currentCategory) &&
+    (!q || s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q) || s.tags.some(t=>t.toLowerCase().includes(q))) &&
+    (!loc || s.location===loc) &&
+    (!verified || s.verified) &&
+    (!mobile   || s.mobile) &&
+    (!delivery || s.delivery) &&
+    (s.rating >= minRating)
+  );
+
+  if(sort==='rating')  list.sort((a,b)=>b.rating-a.rating);
+  if(sort==='reviews') list.sort((a,b)=>b.reviews-a.reviews);
+  if(sort==='newest')  list.sort((a,b)=>b.id-a.id);
+
+  filteredServices = list;
+  renderServices(list);
+  updateCounts();
+}
+
+function updateCounts(){
+  const cats = ['vet','equipment','agrovet','soil','transport','insurance','manager'];
+  document.getElementById('cnt-all').textContent = DEMO_SERVICES.length;
+  cats.forEach(c=>{
+    const el = document.getElementById('cnt-'+c);
+    if(el) el.textContent = DEMO_SERVICES.filter(s=>s.category===c).length;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONTACT ACTIONS
+// ══════════════════════════════════════════════════════════════
+function callService(phone, name){
+  showToast('📞 Calling ' + name + ' on ' + phone + '...');
+  window.open('tel:' + phone);
+}
+
+function contactWhatsApp(phone, name){
+  const msg = encodeURIComponent('Hello, I found your listing on SokoLeo. I am interested in your services.');
+  window.open('https://wa.me/' + phone.replace(/\D/g,'') + '?text=' + msg);
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOCATION DETECTION
+// ══════════════════════════════════════════════════════════════
+function detectLocation(){
+  if(!navigator.geolocation){ showToast('Location not available on this device','error'); return; }
+  showToast('Detecting location...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLocation = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+      // Simple approximation for Tharaka Nithi towns
+      const towns = [
+        {name:'Chuka',lat:-0.3392,lng:37.6445},{name:'Maara',lat:-0.2800,lng:37.7000},
+        {name:'Tharaka',lat:0.0500,lng:37.9000},{name:'Gatunga',lat:-0.1000,lng:37.8500},
+        {name:'Muthambi',lat:-0.3000,lng:37.5500},{name:'Nkubu',lat:-0.3700,lng:37.6200},
+      ];
+      let nearest = towns[0], minD = 9999;
+      towns.forEach(t=>{
+        const d = Math.sqrt(Math.pow(t.lat-pos.coords.latitude,2)+Math.pow(t.lng-pos.coords.longitude,2));
+        if(d<minD){ minD=d; nearest=t; }
+      });
+      document.getElementById('locationDisplay').textContent = '📍 Near ' + nearest.name;
+      document.getElementById('filterLoc').value = nearest.name;
+      filterServices();
+      showToast('📍 Showing services near ' + nearest.name);
+    },
+    () => showToast('Could not get location','error')
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIST SERVICE MODAL
+// ══════════════════════════════════════════════════════════════
+function openListModal(){ document.getElementById('listModal').classList.add('open'); }
+function closeListModal(){ document.getElementById('listModal').classList.remove('open'); }
+
+function submitServiceListing(){
+  const name = document.getElementById('lsBizName').value.trim();
+  const cat  = document.getElementById('lsCategory').value;
+  const loc  = document.getElementById('lsLocation').value;
+  const phone= document.getElementById('lsPhone').value.trim();
+  if(!name||!cat||!loc||!phone){ showToast('Please fill all required fields','error'); return; }
+  showToast('✅ Your listing has been submitted! Our team will review and publish within 24 hours.');
+  closeListModal();
+}
+
+document.getElementById('listModal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) closeListModal();
+});
+
+// ══════════════════════════════════════════════════════════════
+// REVIEWS
+// ══════════════════════════════════════════════════════════════
+function openReview(serviceId){
+  const s = DEMO_SERVICES.find(x=>x.id===serviceId);
+  if(!s) return;
+  document.getElementById('reviewServiceId').value = serviceId;
+  document.getElementById('reviewModalSub').textContent = 'Review: ' + s.name;
+  currentRating = 0;
+  document.querySelectorAll('.star-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('reviewText').value = '';
+  document.getElementById('reviewModal').classList.add('open');
+}
+
+function setRating(n){
+  currentRating = n;
+  document.querySelectorAll('.star-btn').forEach((b,i)=>{
+    b.classList.toggle('active', i<n);
+  });
+}
+
+function submitReview(){
+  if(!currentRating){ showToast('Please select a star rating','error'); return; }
+  const text = document.getElementById('reviewText').value.trim();
+  if(!text){ showToast('Please write a review','error'); return; }
+  showToast('⭐ Review submitted! Thank you for helping the farming community.');
+  document.getElementById('reviewModal').classList.remove('open');
+}
+
+document.getElementById('reviewModal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) document.getElementById('reviewModal').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'), 4000);
+}
+
+// ── BOOT ──
+updateCounts();
+filterServices();
+</script>
+</body>
+</html>

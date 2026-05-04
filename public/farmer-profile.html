@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SokoLeo – Farmer Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a1a0f;--surface:#0f2318;--surface2:#152d1e;--border:#1e4030;
+  --green:#4ade80;--green-dark:#166534;--amber:#fbbf24;--red:#f87171;
+  --text:#dcfce7;--muted:#6b9e7e;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;position:sticky;top:0;z-index:10;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--green);}
+.logo span{color:var(--text);}
+.back-btn{color:var(--muted);text-decoration:none;font-size:.85rem;}
+.back-btn:hover{color:var(--green);}
+
+.container{max-width:800px;margin:0 auto;padding:2rem;}
+
+/* Profile header */
+.profile-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:1.5rem;display:flex;gap:2rem;align-items:center;}
+.avatar{width:80px;height:80px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;border:3px solid var(--green);}
+.profile-info{flex:1;}
+.profile-name{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:.25rem;}
+.profile-role{color:var(--green);font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;}
+.profile-meta{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.profile-meta-item{font-size:.82rem;color:var(--muted);}
+.profile-meta-item strong{color:var(--text);}
+.verified-badge{display:inline-flex;align-items:center;gap:.3rem;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green);padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;}
+.unverified-badge{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.2);color:var(--amber);}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;text-align:center;}
+.stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:var(--green);}
+
+/* Edit form */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;}
+.card-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-group{display:flex;flex-direction:column;gap:.4rem;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.form-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;}
+.form-input:focus{outline:none;border-color:var(--green);}
+.form-input:disabled{opacity:.5;cursor:not-allowed;}
+.form-textarea{resize:vertical;min-height:80px;}
+
+.btn{padding:10px 20px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:#22c55e;}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+
+/* Produce badges */
+.produce-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;}
+.produce-tag{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green);padding:4px 12px;border-radius:20px;font-size:.8rem;display:flex;align-items:center;gap:.4rem;}
+.produce-tag button{background:none;border:none;color:var(--green);cursor:pointer;font-size:.9rem;padding:0;}
+.produce-tag button:hover{color:var(--red);}
+.produce-input-row{display:flex;gap:.75rem;margin-top:.75rem;}
+.produce-input-row input{flex:1;}
+
+/* Rating */
+.rating-stars{display:flex;gap:.25rem;margin-top:.25rem;}
+.star{font-size:1.2rem;color:var(--amber);}
+.star.empty{color:var(--border);}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;font-size:.85rem;z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+
+/* Login overlay */
+.login-overlay{display:flex;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:100%;max-width:400px;}
+.login-title{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:.5rem;color:var(--green);}
+.login-sub{color:var(--muted);font-size:.85rem;margin-bottom:2rem;}
+.login-step{display:none;}
+.login-step.active{display:block;}
+
+@media(max-width:600px){
+  .profile-header{flex-direction:column;text-align:center;}
+  .profile-meta{justify-content:center;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem"><img src="/logo.png" style="height:52px;width:52px;object-fit:contain;border-radius:50%"/><div><div class="login-title" style="margin-bottom:2px"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div><div style="font-size:.68rem;letter-spacing:.2em;color:var(--green);font-family:'DM Sans',sans-serif">SOKO KILA SIKU</div></div></div>
+    <div class="login-sub">Farmer Profile – Login Required</div>
+    <div class="login-step active" id="step1">
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="loginPhone" type="tel" placeholder="+254 7XX XXX XXX"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="sendOTP()">Send OTP</button>
+    </div>
+    <div class="login-step" id="step2">
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label class="form-label">Enter OTP</label>
+        <input class="form-input" id="loginOTP" type="text" placeholder="6-digit code" maxlength="6"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="verifyOTP()">Verify & Login</button>
+      <button class="btn btn-outline" style="width:100%;padding:10px;margin-top:.5rem" onclick="backToPhone()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="logo-wrap" style="display:flex;align-items:center;gap:.6rem;text-decoration:none">
+      <img src="/logo.png" alt="SokoLeo" style="height:42px;width:42px;object-fit:contain;border-radius:50%"/>
+      <div>
+        <div class="logo" style="line-height:1"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div>
+        <div style="font-size:.62rem;color:var(--green);letter-spacing:.18em;font-family:'DM Sans',sans-serif;font-weight:500;margin-top:1px">SOKO KILA SIKU</div>
+      </div>
+    </div>
+  <a class="back-btn" href="farmer.html">← Back to Dashboard</a>
+</nav>
+
+<div class="container">
+
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="avatar" id="avatarEl">👨‍🌾</div>
+    <div class="profile-info">
+      <div class="profile-name" id="profileName">–</div>
+      <div class="profile-role">Farmer · Tharaka Nithi County</div>
+      <div style="margin-bottom:.75rem">
+        <span class="verified-badge" id="verifiedBadge">✓ Verified</span>
+      </div>
+      <div class="profile-meta">
+        <div class="profile-meta-item">📍 <strong id="profileLocation">–</strong></div>
+        <div class="profile-meta-item">📞 <strong id="profilePhone">–</strong></div>
+        <div class="profile-meta-item">📅 Member since <strong id="profileSince">–</strong></div>
+      </div>
+      <div class="rating-stars" id="ratingStars"></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Listings</div>
+      <div class="stat-value" id="statListings">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completed Deals</div>
+      <div class="stat-value" id="statDeals">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Response Rate</div>
+      <div class="stat-value" id="statResponse">–</div>
+    </div>
+  </div>
+
+  <!-- Edit Profile -->
+  <div class="card">
+    <div class="card-title">✏️ Edit Profile</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="editName" type="text" placeholder="Your full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (read-only)</label>
+        <input class="form-input" id="editPhone" type="tel" disabled/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-County / Location</label>
+        <select class="form-input" id="editLocation">
+          <option value="">Select location</option>
+          <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+          <option>Kiburia</option><option>Muthambi</option><option>Gatunga</option><option>Nkubu</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Farm Size (acres)</label>
+        <input class="form-input" id="editFarmSize" type="number" min="0" step="0.5" placeholder="e.g. 2.5"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">About / Bio</label>
+        <textarea class="form-input form-textarea" id="editBio" placeholder="Tell traders about your farm, your farming methods, certifications..."></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Preferred Payment Method</label>
+        <select class="form-input" id="editPayment">
+          <option>M-Pesa</option><option>Cash on Delivery</option><option>Bank Transfer</option><option>Any</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:1.25rem;display:flex;gap:.75rem">
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+      <button class="btn btn-outline" onclick="loadProfile()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Produce I Grow -->
+  <div class="card">
+    <div class="card-title">🌱 Produce I Grow</div>
+    <div style="font-size:.83rem;color:var(--muted)">Let traders know what you specialise in</div>
+    <div class="produce-tags" id="produceTags"></div>
+    <div class="produce-input-row">
+      <input class="form-input" id="newProduceTag" placeholder="Add produce (e.g. Tomatoes)" onkeydown="if(event.key==='Enter')addProduceTag()"/>
+      <button class="btn btn-outline" onclick="addProduceTag()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- My Listings Preview -->
+  <div class="card">
+    <div class="card-title">📦 Recent Listings</div>
+    <div id="recentListings" style="font-size:.85rem;color:var(--muted)">Loading...</div>
+    <div style="margin-top:1rem"><a href="farmer.html" style="color:var(--green);font-size:.85rem">View all listings →</a></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1';
+let currentUser = null;
+let produceTags = [];
+
+function checkAuth(){
+  const u = localStorage.getItem('sokoleo_user');
+  if(!u){ document.getElementById('loginOverlay').style.display='flex'; return false; }
+  currentUser = JSON.parse(u);
+  document.getElementById('loginOverlay').style.display='none';
+  return true;
+}
+
+async function sendOTP(){
+  const phone = document.getElementById('loginPhone').value.trim();
+  if(!phone){ showToast('Enter phone number','error'); return; }
+  try{
+    const r=await fetch(`${API}/auth/request-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    const d=await r.json();
+    if(d.success||d.message){ document.getElementById('step1').classList.remove('active'); document.getElementById('step2').classList.add('active'); showToast('OTP sent!'); }
+    else showToast(d.error||'Failed','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+
+async function verifyOTP(){
+  const phone=document.getElementById('loginPhone').value.trim();
+  const otp=document.getElementById('loginOTP').value.trim();
+  try{
+    const r=await fetch(`${API}/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,otp})});
+    const d=await r.json();
+    if(d.user){
+      localStorage.setItem('sokoleo_user',JSON.stringify(d.user));
+      currentUser=d.user;
+      document.getElementById('loginOverlay').style.display='none';
+      init();
+    } else showToast(d.error||'Invalid OTP','error');
+  }catch(e){ showToast('Network error','error'); }
+}
+function backToPhone(){ document.getElementById('step2').classList.remove('active'); document.getElementById('step1').classList.add('active'); }
+
+function loadProfile(){
+  if(!currentUser) return;
+  const saved = JSON.parse(localStorage.getItem(`sokoleo_profile_${currentUser.id}`)||'{}');
+  // Header
+  document.getElementById('profileName').textContent = currentUser.full_name || saved.name || 'Farmer';
+  document.getElementById('profilePhone').textContent = currentUser.phone || '–';
+  document.getElementById('profileLocation').textContent = saved.location || currentUser.location || 'Tharaka Nithi';
+  document.getElementById('profileSince').textContent = new Date(currentUser.created_at||Date.now()).toLocaleDateString('en-KE',{month:'short',year:'numeric'});
+  // Avatar initial
+  const name = currentUser.full_name || 'F';
+  document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
+  // Verified
+  const vb = document.getElementById('verifiedBadge');
+  if(currentUser.status==='verified'){ vb.textContent='✓ Verified'; vb.classList.remove('unverified-badge'); }
+  else{ vb.textContent='⏳ Pending Verification'; vb.classList.add('unverified-badge'); }
+  // Stars (demo: 4.2)
+  const rating = saved.rating || 4;
+  document.getElementById('ratingStars').innerHTML = [1,2,3,4,5].map(i=>`<span class="star ${i<=rating?'':'empty'}">★</span>`).join('');
+  // Edit fields
+  document.getElementById('editName').value       = currentUser.full_name || '';
+  document.getElementById('editPhone').value      = currentUser.phone || '';
+  document.getElementById('editLocation').value   = saved.location || '';
+  document.getElementById('editFarmSize').value   = saved.farmSize || '';
+  document.getElementById('editBio').value        = saved.bio || '';
+  document.getElementById('editPayment').value    = saved.payment || 'M-Pesa';
+  // Produce tags
+  produceTags = saved.produceTags || [];
+  renderProduceTags();
+}
+
+function renderProduceTags(){
+  document.getElementById('produceTags').innerHTML = produceTags.map((t,i)=>`
+    <span class="produce-tag">${t}<button onclick="removeTag(${i})">×</button></span>`).join('');
+}
+
+function addProduceTag(){
+  const val = document.getElementById('newProduceTag').value.trim();
+  if(!val||produceTags.includes(val)) return;
+  produceTags.push(val);
+  document.getElementById('newProduceTag').value='';
+  renderProduceTags();
+  saveProfile(true);
+}
+
+function removeTag(i){
+  produceTags.splice(i,1);
+  renderProduceTags();
+  saveProfile(true);
+}
+
+function saveProfile(silent=false){
+  if(!currentUser) return;
+  const data = {
+    name:    document.getElementById('editName').value.trim(),
+    location:document.getElementById('editLocation').value,
+    farmSize:document.getElementById('editFarmSize').value,
+    bio:     document.getElementById('editBio').value,
+    payment: document.getElementById('editPayment').value,
+    produceTags,
+    rating: 4,
+  };
+  localStorage.setItem(`sokoleo_profile_${currentUser.id}`, JSON.stringify(data));
+  // Also try to update name on server
+  if(data.name){
+    fetch(`${API}/auth/update-profile`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:currentUser.id,full_name:data.name,location:data.location})})
+    .catch(()=>{});
+    currentUser.full_name = data.name;
+    localStorage.setItem('sokoleo_user', JSON.stringify(currentUser));
+  }
+  if(!silent){ showToast('Profile saved! ✅'); loadProfile(); }
+}
+
+async function loadStats(){
+  if(!currentUser) return;
+  try{
+    const r=await fetch(`${API}/listings/farmer/${currentUser.id}`);
+    const listings=await r.json();
+    document.getElementById('statListings').textContent=listings.length;
+    document.getElementById('statDeals').textContent=listings.filter(l=>l.status==='reserved'||l.status==='sold').length;
+    document.getElementById('statResponse').textContent='92%';
+    // Recent listings
+    const rl=document.getElementById('recentListings');
+    if(!listings.length){ rl.innerHTML='<div style="color:var(--muted)">No listings yet</div>'; return; }
+    rl.innerHTML=listings.slice(0,3).map(l=>`
+      <div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border)">
+        <span>${l.produce_name} · ${l.quantity}kg</span>
+        <span style="color:var(--green);font-family:Syne,sans-serif;font-weight:700">KES ${parseFloat(l.price_per_kg).toFixed(0)}/kg</span>
+      </div>`).join('');
+  }catch(e){}
+}
+
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+async function init(){
+  if(!checkAuth()) return;
+  loadProfile();
+  await loadStats();
+}
+
+init();
+</script>
+</body>
+</html>

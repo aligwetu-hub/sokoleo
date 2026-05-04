@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sokoleo
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
