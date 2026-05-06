@@ -219,9 +219,19 @@ async function api(path, method='GET', body=null) {
 
 async function loadStats() {
   document.getElementById('lastUpdated').textContent = 'Refreshing...';
-  const d = await api('/api/v1/admin/stats');
+  const raw = await api('/api/v1/admin/stats');
   document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
-  if (!d) return;
+  if (!raw) return;
+  // Handle both {data:{...}} and flat {...} response formats
+  const d = raw.data || raw;
+  // Ensure all fields have defaults
+  d.farmers             = d.farmers             || d.total_farmers    || 0;
+  d.traders             = d.traders             || d.total_traders    || 0;
+  d.active_listings     = d.active_listings     || d.listings         || 0;
+  d.total_reservations  = d.total_reservations  || d.reservations     || 0;
+  d.total_revenue_kes   = d.total_revenue_kes   || d.revenue          || 0;
+  d.pending_verification= d.pending_verification|| d.pending          || 0;
+  d.top_crops           = d.top_crops           || d.crops            || [];
 
   // Show pending banner
   if (d.pending_verification > 0) {
