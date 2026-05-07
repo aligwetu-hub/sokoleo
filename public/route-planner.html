@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SokoLeo – Route Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#060c06;--surface:#0a140a;--surface2:#0f1e0f;--surface3:#142414;
+  --border:#1a3020;--border2:#243828;
+  --green:#4ade80;--green2:#22c55e;--green-dim:rgba(74,222,128,.1);
+  --amber:#fbbf24;--red:#f87171;--blue:#60a5fa;--teal:#2dd4bf;
+  --text:#e8f5e9;--muted:#5a8a6a;--white:#fff;
+  --radius:12px;
+  --road:#1a2e1a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* ── NAV ── */
+nav{background:rgba(6,12,6,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 2rem;height:58px;position:sticky;top:0;z-index:200;}
+.logo-wrap{display:flex;align-items:center;gap:.6rem;text-decoration:none;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;line-height:1;}
+.back-link{color:var(--muted);font-size:.82rem;text-decoration:none;
+           display:flex;align-items:center;gap:.3rem;transition:color .2s;}
+.back-link:hover{color:var(--green);}
+.nav-right{display:flex;align-items:center;gap:.75rem;}
+
+/* ── HERO STRIP ── */
+.hero-strip{background:linear-gradient(135deg,#060c06 0%,#0a1a0a 50%,#06100a 100%);
+            padding:1.75rem 2rem;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;
+            flex-wrap:wrap;gap:1rem;position:relative;overflow:hidden;}
+.hero-strip::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(74,222,128,.05) 0%,transparent 60%);}
+.hero-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;
+            display:flex;align-items:center;gap:.75rem;}
+.hero-sub{color:var(--muted);font-size:.85rem;margin-top:.25rem;}
+.hero-badges{display:flex;gap:.5rem;flex-wrap:wrap;}
+.hero-badge{background:var(--green-dim);border:1px solid rgba(74,222,128,.2);
+            color:var(--green);padding:4px 12px;border-radius:20px;
+            font-size:.72rem;font-weight:600;letter-spacing:.05em;}
+
+/* ── MAIN LAYOUT ── */
+.planner-wrap{display:grid;grid-template-columns:420px 1fr;min-height:calc(100vh - 120px);}
+
+/* ── LEFT PANEL ── */
+.left-panel{background:var(--surface);border-right:1px solid var(--border);
+            display:flex;flex-direction:column;height:calc(100vh - 58px);
+            position:sticky;top:58px;overflow-y:auto;}
+
+.panel-section{padding:1.25rem;border-bottom:1px solid var(--border);}
+.panel-title{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;
+             color:var(--green);text-transform:uppercase;letter-spacing:.12em;
+             margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+
+/* Vehicle selector */
+.vehicle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;}
+.vehicle-btn{background:var(--surface2);border:2px solid var(--border);
+             border-radius:10px;padding:.75rem .5rem;text-align:center;
+             cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.vehicle-btn:hover{border-color:var(--green);}
+.vehicle-btn.active{border-color:var(--green);background:var(--green-dim);}
+.vehicle-icon{font-size:1.5rem;margin-bottom:.25rem;}
+.vehicle-label{font-size:.72rem;color:var(--muted);font-weight:500;}
+.vehicle-cap{font-size:.7rem;color:var(--green);font-weight:600;}
+
+/* Route stops */
+.route-stops{display:flex;flex-direction:column;gap:0;}
+.stop-item{display:flex;align-items:stretch;gap:0;position:relative;}
+.stop-connector{display:flex;flex-direction:column;align-items:center;width:32px;flex-shrink:0;padding:.25rem 0;}
+.stop-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;z-index:1;
+          border:2px solid var(--border);background:var(--surface);}
+.stop-dot.origin{background:var(--green);border-color:var(--green);width:16px;height:16px;}
+.stop-dot.dest{background:var(--red);border-color:var(--red);width:16px;height:16px;}
+.stop-dot.waypoint{background:var(--amber);border-color:var(--amber);}
+.stop-line{flex:1;width:2px;background:linear-gradient(to bottom,var(--border),var(--border2));
+           margin:.1rem 0;}
+.stop-content{flex:1;padding:.6rem 0 .6rem .5rem;min-width:0;}
+.stop-card{background:var(--surface2);border:1px solid var(--border);
+           border-radius:10px;padding:.85rem 1rem;transition:border-color .2s;}
+.stop-card:hover{border-color:var(--border2);}
+.stop-card.origin-card{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.05);}
+.stop-card.dest-card{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.05);}
+.stop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
+.stop-name{font-weight:600;font-size:.88rem;}
+.stop-type-badge{font-size:.65rem;padding:2px 8px;border-radius:8px;font-weight:600;}
+.stop-remove{background:none;border:none;color:var(--muted);cursor:pointer;
+             font-size:.9rem;padding:2px 6px;border-radius:4px;transition:all .2s;}
+.stop-remove:hover{color:var(--red);background:rgba(248,113,113,.1);}
+.stop-produce{display:flex;flex-direction:column;gap:.35rem;margin-top:.5rem;}
+.produce-row{display:grid;grid-template-columns:1fr 80px 90px auto;gap:.35rem;align-items:center;}
+.produce-row input,.produce-row select{background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:5px 8px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.78rem;}
+.produce-row input:focus,.produce-row select:focus{outline:none;border-color:var(--green);}
+.remove-produce{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;}
+.remove-produce:hover{color:var(--red);}
+.add-produce-btn{background:none;border:1px dashed var(--border);color:var(--muted);
+                 width:100%;padding:5px;border-radius:6px;cursor:pointer;font-size:.75rem;
+                 margin-top:.35rem;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.add-produce-btn:hover{border-color:var(--green);color:var(--green);}
+.stop-km{font-size:.72rem;color:var(--muted);margin-top:.4rem;display:flex;align-items:center;gap:.3rem;}
+
+/* Add stop */
+.add-stop-area{padding:1rem 1.25rem;}
+.add-stop-row{display:flex;gap:.5rem;}
+.add-stop-select{flex:1;background:var(--surface2);border:1px solid var(--border);
+                 color:var(--text);padding:9px 12px;border-radius:8px;
+                 font-family:'DM Sans',sans-serif;font-size:.85rem;}
+.add-stop-select:focus{outline:none;border-color:var(--green);}
+.btn-add-stop{background:var(--green);color:#000;border:none;padding:9px 16px;
+              border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;
+              font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-add-stop:hover{background:var(--green2);}
+
+/* ── RIGHT PANEL ── */
+.right-panel{display:flex;flex-direction:column;background:var(--bg);}
+
+/* Summary bar */
+.summary-bar{display:grid;grid-template-columns:repeat(5,1fr);
+             border-bottom:1px solid var(--border);background:var(--surface);}
+.summary-item{padding:1rem 1.25rem;border-right:1px solid var(--border);text-align:center;}
+.summary-item:last-child{border-right:none;}
+.summary-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;
+               letter-spacing:.08em;margin-bottom:.3rem;}
+.summary-value{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;}
+.summary-value.green{color:var(--green);}
+.summary-value.amber{color:var(--amber);}
+.summary-value.red{color:var(--red);}
+.summary-sub{font-size:.68rem;color:var(--muted);margin-top:.15rem;}
+
+/* Map area */
+.map-area{flex:1;background:var(--road);position:relative;min-height:340px;overflow:hidden;}
+.map-bg{width:100%;height:100%;position:relative;
+        background:
+          linear-gradient(rgba(26,46,26,.8) 1px,transparent 1px),
+          linear-gradient(90deg,rgba(26,46,26,.8) 1px,transparent 1px);
+        background-size:40px 40px;
+        background-color:#0a140a;}
+.map-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.map-route-visual{width:100%;height:100%;position:relative;padding:2rem;}
+
+/* Road SVG */
+#routeSvg{width:100%;height:100%;position:absolute;top:0;left:0;}
+.map-empty{position:absolute;inset:0;display:flex;flex-direction:column;
+           align-items:center;justify-content:center;color:var(--muted);text-align:center;}
+.map-empty-icon{font-size:3rem;margin-bottom:.75rem;opacity:.3;}
+.map-empty-text{font-size:.85rem;opacity:.6;}
+
+/* Stop markers on map */
+.map-marker{position:absolute;transform:translate(-50%,-50%);cursor:pointer;
+            transition:transform .2s;}
+.map-marker:hover{transform:translate(-50%,-50%) scale(1.2);}
+.marker-pin{width:36px;height:36px;border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);display:flex;align-items:center;
+            justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.marker-pin-inner{transform:rotate(45deg);font-size:.85rem;}
+.marker-label{position:absolute;top:42px;left:50%;transform:translateX(-50%);
+              background:rgba(6,12,6,.9);border:1px solid var(--border);
+              padding:3px 8px;border-radius:6px;font-size:.68rem;white-space:nowrap;
+              color:var(--text);}
+
+/* Produce breakdown */
+.produce-breakdown{padding:1.25rem;border-top:1px solid var(--border);}
+.breakdown-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem;margin-top:.75rem;}
+.breakdown-card{background:var(--surface);border:1px solid var(--border);
+                border-radius:10px;padding:.85rem 1rem;}
+.bc-produce{font-weight:600;font-size:.85rem;margin-bottom:.25rem;}
+.bc-detail{font-size:.75rem;color:var(--muted);}
+.bc-profit{font-size:.8rem;font-weight:600;margin-top:.3rem;}
+.bc-profit.positive{color:var(--green);}
+.bc-profit.negative{color:var(--red);}
+
+/* Profit calculator */
+.profit-section{padding:1.25rem;border-top:1px solid var(--border);
+                background:var(--surface);}
+.profit-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.75rem;}
+.profit-input-group{display:flex;flex-direction:column;gap:.35rem;}
+.profit-label{font-size:.73rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.profit-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+              padding:8px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.88rem;}
+.profit-input:focus{outline:none;border-color:var(--green);}
+.profit-result{background:var(--green-dim);border:1px solid rgba(74,222,128,.2);
+               border-radius:10px;padding:1rem;margin-top:1rem;
+               display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;text-align:center;}
+.pr-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem;}
+.pr-value{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;}
+
+/* Action buttons */
+.actions-bar{display:flex;gap:.75rem;padding:1.25rem;border-top:1px solid var(--border);
+             background:var(--surface);flex-wrap:wrap;}
+.btn{padding:10px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;
+     font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;
+     display:flex;align-items:center;gap:.4rem;}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:var(--green2);}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-whatsapp{background:#25d366;color:#fff;}
+.btn-whatsapp:hover{background:#128c7e;}
+.btn-amber{background:var(--amber);color:#000;}
+
+/* Capacity bar */
+.capacity-bar-wrap{padding:.75rem 1.25rem;background:var(--surface2);border-bottom:1px solid var(--border);}
+.cap-label{font-size:.72rem;color:var(--muted);margin-bottom:.4rem;display:flex;justify-content:space-between;}
+.cap-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.cap-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+.cap-fill.ok{background:var(--green);}
+.cap-fill.warn{background:var(--amber);}
+.cap-fill.over{background:var(--red);}
+
+/* Fuel estimator */
+.fuel-strip{display:flex;gap:1.5rem;padding:.75rem 1.25rem;
+            background:rgba(251,191,36,.05);border-bottom:1px solid rgba(251,191,36,.1);
+            flex-wrap:wrap;font-size:.8rem;}
+.fuel-item{display:flex;align-items:center;gap:.4rem;color:var(--muted);}
+.fuel-item strong{color:var(--amber);}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);
+       border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;
+       font-size:.85rem;z-index:3000;transform:translateY(100px);opacity:0;
+       transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+
+@media(max-width:900px){
+  .planner-wrap{grid-template-columns:1fr;}
+  .left-panel{height:auto;position:static;}
+  .summary-bar{grid-template-columns:repeat(3,1fr);}
+  .summary-item:nth-child(4),.summary-item:nth-child(5){display:none;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="trader.html" class="logo-wrap">
+    <img src="/logo.png" alt="SokoLeo" style="height:38px;width:38px;object-fit:contain;border-radius:50%"/>
+    <div>
+      <div class="logo"><span style="color:var(--green)">Soko</span><span style="color:var(--text)">Leo</span></div>
+      <div style="font-size:.55rem;color:var(--green);letter-spacing:.18em;font-family:'DM Sans',sans-serif">SOKO KILA SIKU</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <a href="trader.html" class="back-link">← Trader Portal</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-strip">
+  <div>
+    <div class="hero-title">🚛 Pickup Route Planner</div>
+    <div class="hero-sub">Plan your collection route — from farm to Nairobi market</div>
+  </div>
+  <div class="hero-badges">
+    <span class="hero-badge">📍 Tharaka Nithi → Nairobi</span>
+    <span class="hero-badge">⚖️ Load Calculator</span>
+    <span class="hero-badge">💰 Profit Estimator</span>
+    <span class="hero-badge">💬 WhatsApp Share</span>
+  </div>
+</div>
+
+<div class="planner-wrap">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="left-panel">
+
+    <!-- Vehicle -->
+    <div class="panel-section">
+      <div class="panel-title">🚗 Your Vehicle</div>
+      <div class="vehicle-grid">
+        <div class="vehicle-btn active" onclick="selectVehicle(this,'pickup',1000)" data-cap="1000">
+          <div class="vehicle-icon">🛻</div>
+          <div class="vehicle-label">Pickup</div>
+          <div class="vehicle-cap">1,000 kg</div>
+        </div>
+        <div class="vehicle-btn" onclick="selectVehicle(this,'canter',3000)" data-cap="3000">
+          <div class="vehicle-icon">🚚</div>
+          <div class="vehicle-label">Canter</div>
+          <div class="vehicle-cap">3,000 kg</div>
+        </div>
+        <div class="vehicle-btn" onclick="selectVehicle(this,'lorry',7000)" data-cap="7000">
+          <div class="vehicle-icon">🚛</div>
+          <div class="vehicle-label">Lorry</div>
+          <div class="vehicle-cap">7,000 kg</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Route stops -->
+    <div class="panel-section" style="flex:1">
+      <div class="panel-title">📍 Route Stops</div>
+      <div class="route-stops" id="routeStops"></div>
+    </div>
+
+    <!-- Add stop -->
+    <div class="add-stop-area">
+      <div class="panel-title" style="margin-bottom:.75rem">➕ Add Stop</div>
+      <div class="add-stop-row">
+        <select class="add-stop-select" id="newStopSelect">
+          <option value="">-- Select town --</option>
+          <optgroup label="🗺️ Tharaka Nithi">
+            <option value="Chuka|Chuka|-0.3392|37.6445|12">Chuka</option>
+            <option value="Maara|Maara|-0.2800|37.7000|18">Maara</option>
+            <option value="Nkubu|Nkubu|-0.3700|37.6200|8">Nkubu</option>
+            <option value="Tharaka|Tharaka|0.0500|37.9000|45">Tharaka</option>
+            <option value="Kiburia|Kiburia|-0.1000|37.8200|35">Kiburia</option>
+            <option value="Muthambi|Muthambi|-0.3000|37.5500|22">Muthambi</option>
+            <option value="Gatunga|Gatunga|-0.1000|37.8500|40">Gatunga</option>
+            <option value="Mitunguu|Mitunguu|0.0200|37.9500|55">Mitunguu</option>
+            <option value="Tunyai|Tunyai|-0.1500|37.7800|30">Tunyai</option>
+            <option value="Kathwana|Kathwana|-0.0500|37.9200|48">Kathwana</option>
+          </optgroup>
+          <optgroup label="🗺️ Meru & Surroundings">
+            <option value="Meru|Meru Town|-0.0470|37.6490|0">Meru Town</option>
+            <option value="Makutano|Makutano|-0.1500|37.6500|15">Makutano</option>
+            <option value="Maua|Maua|0.2300|37.9600|65">Maua</option>
+            <option value="Timau|Timau|0.0600|37.2600|70">Timau</option>
+          </optgroup>
+          <optgroup label="🗺️ Route to Nairobi">
+            <option value="Embu|Embu Town|-0.5300|37.4500|80">Embu Town</option>
+            <option value="Sagana|Sagana|-0.6700|37.2100|130">Sagana</option>
+            <option value="Karatina|Karatina|-0.4800|37.1200|115">Karatina</option>
+            <option value="Thika|Thika Town|-1.0332|37.0693|200">Thika Town</option>
+            <option value="Ruiru|Ruiru|-1.1447|36.9605|225">Ruiru</option>
+            <option value="Nairobi_Marikiti|Marikiti Market|-1.2800|36.8200|260">Marikiti Market</option>
+            <option value="Nairobi_Wakulima|Wakulima Market|-1.2900|36.8300|262">Wakulima Market</option>
+            <option value="Nairobi_Kangemi|Kangemi Market|-1.2600|36.7400|265">Kangemi Market</option>
+            <option value="Nairobi_City|Nairobi CBD|-1.2921|36.8219|270">Nairobi CBD</option>
+          </optgroup>
+        </select>
+        <button class="btn-add-stop" onclick="addStop()">+ Add</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="right-panel">
+
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-item">
+        <div class="summary-label">Total Stops</div>
+        <div class="summary-value" id="sumStops">0</div>
+        <div class="summary-sub">farms + markets</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Total Distance</div>
+        <div class="summary-value amber" id="sumDist">0 km</div>
+        <div class="summary-sub" id="sumTime">~0 hrs</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Total Load</div>
+        <div class="summary-value" id="sumLoad">0 kg</div>
+        <div class="summary-sub" id="sumLoadPct">0% capacity</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Buying Cost</div>
+        <div class="summary-value red" id="sumCost">KES 0</div>
+        <div class="summary-sub">at farm prices</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Est. Profit</div>
+        <div class="summary-value green" id="sumProfit">KES 0</div>
+        <div class="summary-sub">after fuel</div>
+      </div>
+    </div>
+
+    <!-- Capacity bar -->
+    <div class="capacity-bar-wrap">
+      <div class="cap-label">
+        <span>Vehicle Capacity</span>
+        <span id="capText">0 / 1,000 kg</span>
+      </div>
+      <div class="cap-bar"><div class="cap-fill ok" id="capFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Fuel strip -->
+    <div class="fuel-strip">
+      <div class="fuel-item">⛽ Fuel estimate: <strong id="fuelEst">0 L</strong></div>
+      <div class="fuel-item">💰 Fuel cost: <strong id="fuelCost">KES 0</strong></div>
+      <div class="fuel-item">📏 Avg KES/km: <strong id="fuelPerKm">~12 KES/km</strong></div>
+      <div class="fuel-item" style="margin-left:auto">
+        <select id="fuelPriceSelect" onchange="updateSummary()"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+                 padding:4px 8px;border-radius:6px;font-size:.75rem;font-family:'DM Sans',sans-serif">
+          <option value="180">Petrol KES 180/L</option>
+          <option value="175" selected>Diesel KES 175/L</option>
+          <option value="165">Diesel KES 165/L</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-area">
+      <div class="map-bg">
+        <svg id="routeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="mapMarkers"></div>
+        <div class="map-empty" id="mapEmpty">
+          <div class="map-empty-icon">🗺️</div>
+          <div class="map-empty-text">Add stops to see your route</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Produce breakdown -->
+    <div class="produce-breakdown">
+      <div class="panel-title" style="margin-bottom:0">📦 Produce Summary</div>
+      <div class="breakdown-grid" id="breakdownGrid">
+        <div style="color:var(--muted);font-size:.82rem;padding:.5rem 0">No produce added yet</div>
+      </div>
+    </div>
+
+    <!-- Profit calculator -->
+    <div class="profit-section">
+      <div class="panel-title" style="margin-bottom:0">💰 Nairobi Market Profit Calculator</div>
+      <div class="profit-grid" id="profitInputs">
+        <div style="color:var(--muted);font-size:.82rem;padding:.5rem 0;grid-column:1/-1">Add produce stops to calculate profit</div>
+      </div>
+      <div class="profit-result" id="profitResult" style="display:none">
+        <div><div class="pr-label">Buying Cost</div><div class="pr-value" id="prBuying" style="color:var(--red)">KES 0</div></div>
+        <div><div class="pr-label">Nairobi Revenue</div><div class="pr-value" id="prRevenue" style="color:var(--blue)">KES 0</div></div>
+        <div><div class="pr-label">Net Profit</div><div class="pr-value" id="prProfit" style="color:var(--green)">KES 0</div></div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="saveRoute()">💾 Save Route</button>
+      <button class="btn btn-whatsapp" onclick="shareWhatsApp()">💬 Share via WhatsApp</button>
+      <button class="btn btn-outline" onclick="printRoute()">🖨️ Print Summary</button>
+      <button class="btn btn-outline" onclick="clearRoute()">🗑️ Clear All</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let stops        = [];
+let vehicleCap   = 1000;
+let vehicleType  = 'pickup';
+let nairobiPrices = {};
+
+// Default Nairobi market prices (KES/kg)
+const MARKET_PRICES = {
+  'Tomatoes':60,'Kale (Sukuma Wiki)':30,'Cabbage':45,'Onions':90,
+  'French Beans':160,'Avocado':22,'Mango':15,'Passion Fruit':320,
+  'Banana':18,'Maize (Dry)':55,'Beans (Dry)':135,'Green Grams':155,
+  'Irish Potatoes':42,'Sweet Potatoes':38,'Carrots':70,'Green Pepper':130,
+  'Spinach':28,'Capsicum':140,'Pineapple':90,'Courgette':80,
+};
+
+const PRODUCE_LIST = Object.keys(MARKET_PRICES);
+
+// Town coordinates for map (normalized 0-100)
+const TOWN_COORDS = {
+  'Meru':      {x:48, y:20},
+  'Nkubu':     {x:44, y:25},
+  'Makutano':  {x:46, y:28},
+  'Chuka':     {x:42, y:38},
+  'Muthambi':  {x:38, y:36},
+  'Maara':     {x:50, y:32},
+  'Tunyai':    {x:45, y:42},
+  'Tharaka':   {x:58, y:30},
+  'Kiburia':   {x:55, y:38},
+  'Mitunguu':  {x:60, y:22},
+  'Gatunga':   {x:56, y:44},
+  'Kathwana':  {x:58, y:40},
+  'Maua':      {x:62, y:12},
+  'Timau':     {x:40, y:12},
+  'Embu':      {x:36, y:52},
+  'Sagana':    {x:34, y:62},
+  'Karatina':  {x:32, y:56},
+  'Thika':     {x:30, y:72},
+  'Ruiru':     {x:28, y:78},
+  'Nairobi_Marikiti':  {x:25, y:88},
+  'Nairobi_Wakulima':  {x:26, y:89},
+  'Nairobi_Kangemi':   {x:22, y:87},
+  'Nairobi_City':      {x:24, y:88},
+};
+
+// ══════════════════════════════════════════════════════════════
+// VEHICLE
+// ══════════════════════════════════════════════════════════════
+function selectVehicle(btn, type, cap){
+  document.querySelectorAll('.vehicle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  vehicleCap  = cap;
+  vehicleType = type;
+  updateSummary();
+}
+
+// ══════════════════════════════════════════════════════════════
+// STOPS
+// ══════════════════════════════════════════════════════════════
+function addStop(){
+  const sel = document.getElementById('newStopSelect');
+  if(!sel.value){ showToast('Please select a town','error'); return; }
+  const parts   = sel.value.split('|');
+  const id      = parts[0];
+  const name    = parts[1];
+  const lat     = parseFloat(parts[2]);
+  const lng     = parseFloat(parts[3]);
+  const kmFromMeru = parseInt(parts[4]);
+
+  // Don't duplicate
+  if(stops.find(s=>s.id===id)){ showToast(name+' already on route','error'); return; }
+
+  const isFirst = stops.length===0;
+  const isLast  = id.startsWith('Nairobi');
+
+  stops.push({
+    id, name, lat, lng, kmFromMeru,
+    type: isFirst?'origin': isLast?'destination':'waypoint',
+    produce: isFirst||isLast ? [] : [{crop:'',qty:0,price:0}],
+  });
+
+  sel.value = '';
+  renderStops();
+  renderMap();
+  updateSummary();
+}
+
+function removeStop(idx){
+  stops.splice(idx,1);
+  // Re-assign types
+  stops.forEach((s,i)=>{
+    if(i===0) s.type='origin';
+    else if(i===stops.length-1 && s.id.startsWith('Nairobi')) s.type='destination';
+    else s.type='waypoint';
+  });
+  renderStops();
+  renderMap();
+  updateSummary();
+}
+
+function addProduce(stopIdx){
+  stops[stopIdx].produce.push({crop:'',qty:0,price:0});
+  renderStops();
+}
+
+function removeProduce(stopIdx, pIdx){
+  stops[stopIdx].produce.splice(pIdx,1);
+  renderStops();
+  updateSummary();
+}
+
+function updateProduce(stopIdx, pIdx, field, value){
+  if(field==='qty'||field==='price') value = parseFloat(value)||0;
+  stops[stopIdx].produce[pIdx][field] = value;
+  // Auto-fill price from market prices if crop selected
+  if(field==='crop' && MARKET_PRICES[value]){
+    const mkt = MARKET_PRICES[value];
+    stops[stopIdx].produce[pIdx].price = Math.round(mkt * 0.65); // farm price ~65% of market
+  }
+  updateSummary();
+  updateProfitInputs();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER STOPS
+// ══════════════════════════════════════════════════════════════
+function renderStops(){
+  const el = document.getElementById('routeStops');
+  if(!stops.length){
+    el.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:.5rem 0">No stops yet — add your first stop below</div>';
+    return;
+  }
+
+  el.innerHTML = stops.map((s,i)=>{
+    const dotClass  = s.type==='origin'?'origin': s.type==='destination'?'dest':'waypoint';
+    const cardClass = s.type==='origin'?'origin-card': s.type==='destination'?'dest-card':'';
+    const typeLabel = s.type==='origin'?'START': s.type==='destination'?'DESTINATION':'PICKUP STOP';
+    const typeBg    = s.type==='origin'?'rgba(74,222,128,.15);color:#4ade80':
+                      s.type==='destination'?'rgba(248,113,113,.15);color:#f87171':
+                      'rgba(251,191,36,.15);color:#fbbf24';
+    const showLine  = i < stops.length-1;
+
+    const produceHtml = (s.produce||[]).map((p,pi)=>`
+      <div class="produce-row">
+        <select onchange="updateProduce(${i},${pi},'crop',this.value)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.78rem;">
+          <option value="">Crop...</option>
+          ${PRODUCE_LIST.map(c=>`<option value="${c}" ${p.crop===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <input type="number" placeholder="kg" value="${p.qty||''}" min="0"
+          onchange="updateProduce(${i},${pi},'qty',this.value)"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:'DM Mono',monospace;font-size:.78rem;width:100%"/>
+        <input type="number" placeholder="KES/kg" value="${p.price||''}" min="0"
+          onchange="updateProduce(${i},${pi},'price',this.value)"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:'DM Mono',monospace;font-size:.78rem;width:100%"/>
+        <button class="remove-produce" onclick="removeProduce(${i},${pi})">✕</button>
+      </div>`).join('');
+
+    return `
+      <div class="stop-item">
+        <div class="stop-connector">
+          <div class="stop-dot ${dotClass}"></div>
+          ${showLine?'<div class="stop-line"></div>':''}
+        </div>
+        <div class="stop-content">
+          <div class="stop-card ${cardClass}">
+            <div class="stop-header">
+              <div class="stop-name">📍 ${s.name}</div>
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <span class="stop-type-badge" style="background:${typeBg};padding:2px 8px;border-radius:8px;font-size:.65rem;font-weight:600">${typeLabel}</span>
+                ${i>0?`<button class="stop-remove" onclick="removeStop(${i})">✕</button>`:''}
+              </div>
+            </div>
+            ${s.type!=='origin'&&s.type!=='destination'?`
+              <div class="stop-produce">
+                ${produceHtml}
+                <button class="add-produce-btn" onclick="addProduce(${i})">+ Add produce</button>
+              </div>
+            `:''}
+            <div class="stop-km">📏 ~${s.kmFromMeru} km from Meru</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAP RENDER
+// ══════════════════════════════════════════════════════════════
+function renderMap(){
+  const svg     = document.getElementById('routeSvg');
+  const markers = document.getElementById('mapMarkers');
+  const empty   = document.getElementById('mapEmpty');
+
+  if(stops.length < 2){
+    svg.innerHTML='';
+    markers.innerHTML='';
+    empty.style.display='flex';
+    return;
+  }
+  empty.style.display='none';
+
+  // Get coords for each stop
+  const pts = stops.map(s=>{
+    const c = TOWN_COORDS[s.id] || {x:50,y:50};
+    return {x:c.x, y:c.y, stop:s};
+  });
+
+  const W = svg.clientWidth || 800;
+  const H = svg.clientHeight || 340;
+
+  // Draw road path
+  const pathD = pts.map((p,i)=>{
+    const px = (p.x/100)*W;
+    const py = (p.y/100)*H;
+    if(i===0) return `M${px},${py}`;
+    const prev = pts[i-1];
+    const ppx  = (prev.x/100)*W;
+    const ppy  = (prev.y/100)*H;
+    // Bezier curve
+    const cpx  = (ppx+px)/2;
+    return `Q${cpx},${ppy} ${px},${py}`;
+  }).join(' ');
+
+  svg.innerHTML = `
+    <!-- Road shadow -->
+    <path d="${pathD}" fill="none" stroke="rgba(74,222,128,.08)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Road -->
+    <path d="${pathD}" fill="none" stroke="rgba(74,222,128,.25)" stroke-width="4"
+          stroke-linecap="round" stroke-dasharray="12,6"
+          style="animation:dash 2s linear infinite"/>
+    <!-- Road center -->
+    <path d="${pathD}" fill="none" stroke="rgba(74,222,128,.6)" stroke-width="2"
+          stroke-linecap="round"/>
+    <style>@keyframes dash{to{stroke-dashoffset:-18}}</style>`;
+
+  // Place markers
+  markers.innerHTML = pts.map((p,i)=>{
+    const s = p.stop;
+    const bg = s.type==='origin'?'#4ade80': s.type==='destination'?'#f87171':'#fbbf24';
+    const totalKg = (s.produce||[]).reduce((a,b)=>a+(b.qty||0),0);
+    return `
+      <div class="map-marker" style="left:${p.x}%;top:${p.y}%">
+        <div class="marker-pin" style="background:${bg}">
+          <div class="marker-pin-inner">${s.type==='origin'?'🚗': s.type==='destination'?'🏪':'📦'}</div>
+        </div>
+        <div class="marker-label">${s.name}${totalKg>0?' · '+totalKg+'kg':''}</div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUMMARY
+// ══════════════════════════════════════════════════════════════
+function updateSummary(){
+  // Total load
+  let totalKg   = 0;
+  let totalCost = 0;
+  stops.forEach(s=>{
+    (s.produce||[]).forEach(p=>{
+      if(p.qty&&p.price){ totalKg+=p.qty; totalCost+=p.qty*p.price; }
+    });
+  });
+
+  // Distance (use max km from Meru across all stops as proxy for total route)
+  const kms = stops.map(s=>s.kmFromMeru);
+  const maxKm = Math.max(...kms, 0);
+  const totalKm = maxKm + (stops.length > 1 ? (stops.length-1)*15 : 0);
+
+  // Time (avg 60km/h with stops)
+  const hrs = totalKm > 0 ? ((totalKm/60)+(stops.length*0.25)).toFixed(1) : 0;
+
+  // Fuel
+  const fuelPrice = parseInt(document.getElementById('fuelPriceSelect').value)||175;
+  const fuelConsumption = vehicleType==='lorry'?0.18: vehicleType==='canter'?0.14:0.10;
+  const fuelL   = Math.round(totalKm * fuelConsumption);
+  const fuelCostVal = fuelL * fuelPrice;
+
+  // Profit
+  const totalRevenue  = getEstimatedRevenue();
+  const netProfit     = totalRevenue - totalCost - fuelCostVal;
+
+  // Capacity
+  const capPct = vehicleCap > 0 ? Math.min((totalKg/vehicleCap)*100, 100) : 0;
+
+  // Update DOM
+  document.getElementById('sumStops').textContent  = stops.length;
+  document.getElementById('sumDist').textContent   = totalKm + ' km';
+  document.getElementById('sumTime').textContent   = '~' + hrs + ' hrs';
+  document.getElementById('sumLoad').textContent   = totalKg.toLocaleString() + ' kg';
+  document.getElementById('sumLoadPct').textContent= Math.round(capPct) + '% capacity';
+  document.getElementById('sumCost').textContent   = 'KES ' + totalCost.toLocaleString();
+  document.getElementById('sumProfit').textContent = (netProfit>0?'KES ':'- KES ') + Math.abs(Math.round(netProfit)).toLocaleString();
+  document.getElementById('sumProfit').className   = 'summary-value ' + (netProfit>0?'green':'red');
+
+  // Capacity bar
+  const fill = document.getElementById('capFill');
+  fill.style.width = capPct + '%';
+  fill.className   = 'cap-fill ' + (capPct>95?'over': capPct>80?'warn':'ok');
+  document.getElementById('capText').textContent = totalKg.toLocaleString() + ' / ' + vehicleCap.toLocaleString() + ' kg';
+  if(totalKg > vehicleCap) showToast('⚠️ Load exceeds vehicle capacity!','error');
+
+  // Fuel
+  document.getElementById('fuelEst').textContent  = fuelL + ' L';
+  document.getElementById('fuelCost').textContent = 'KES ' + fuelCostVal.toLocaleString();
+
+  // Profit result box
+  const prBox = document.getElementById('profitResult');
+  if(totalRevenue>0){
+    prBox.style.display='grid';
+    document.getElementById('prBuying').textContent  = 'KES ' + totalCost.toLocaleString();
+    document.getElementById('prRevenue').textContent = 'KES ' + totalRevenue.toLocaleString();
+    document.getElementById('prProfit').textContent  = (netProfit>0?'KES ':'- KES ') + Math.abs(Math.round(netProfit)).toLocaleString();
+    document.getElementById('prProfit').style.color  = netProfit>0?'var(--green)':'var(--red)';
+  } else {
+    prBox.style.display='none';
+  }
+
+  updateBreakdown();
+  updateProfitInputs();
+}
+
+function getEstimatedRevenue(){
+  let total = 0;
+  stops.forEach(s=>{
+    (s.produce||[]).forEach(p=>{
+      if(p.crop && p.qty && MARKET_PRICES[p.crop]){
+        total += p.qty * (nairobiPrices[p.crop] || MARKET_PRICES[p.crop]);
+      }
+    });
+  });
+  return total;
+}
+
+function updateBreakdown(){
+  const totals = {};
+  stops.forEach(s=>{
+    (s.produce||[]).forEach(p=>{
+      if(!p.crop||!p.qty) return;
+      if(!totals[p.crop]) totals[p.crop]={qty:0,cost:0};
+      totals[p.crop].qty  += p.qty;
+      totals[p.crop].cost += p.qty*(p.price||0);
+    });
+  });
+  const el = document.getElementById('breakdownGrid');
+  const entries = Object.entries(totals);
+  if(!entries.length){
+    el.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:.5rem 0">No produce added yet</div>';
+    return;
+  }
+  el.innerHTML = entries.map(([crop,d])=>{
+    const mktPrice = nairobiPrices[crop]||MARKET_PRICES[crop]||0;
+    const revenue  = d.qty * mktPrice;
+    const profit   = revenue - d.cost;
+    return `
+      <div class="breakdown-card">
+        <div class="bc-produce">${crop}</div>
+        <div class="bc-detail">${d.qty.toLocaleString()} kg · KES ${d.cost.toLocaleString()}</div>
+        <div class="bc-detail">Mkt: KES ${mktPrice}/kg</div>
+        <div class="bc-profit ${profit>=0?'positive':'negative'}">
+          ${profit>=0?'+':''}KES ${profit.toLocaleString()} est.
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateProfitInputs(){
+  const crops = new Set();
+  stops.forEach(s=>(s.produce||[]).forEach(p=>{ if(p.crop) crops.add(p.crop); }));
+  const el = document.getElementById('profitInputs');
+  if(!crops.size){
+    el.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:.5rem 0;grid-column:1/-1">Add produce stops to calculate profit</div>';
+    return;
+  }
+  el.innerHTML = [...crops].map(crop=>`
+    <div class="profit-input-group">
+      <div class="profit-label">${crop} — Nairobi price (KES/kg)</div>
+      <input type="number" class="profit-input"
+        value="${nairobiPrices[crop]||MARKET_PRICES[crop]||''}"
+        placeholder="${MARKET_PRICES[crop]||'e.g. 60'}"
+        oninput="nairobiPrices['${crop}']=parseFloat(this.value)||0;updateSummary()"/>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════════════════════════
+function saveRoute(){
+  if(stops.length<2){ showToast('Add at least 2 stops to save','error'); return; }
+  const saved = JSON.parse(localStorage.getItem('sokoleo_saved_routes')||'[]');
+  const route = {
+    id: Date.now(),
+    name: stops[0].name + ' → ' + stops[stops.length-1].name,
+    stops: stops,
+    vehicle: vehicleType,
+    created: new Date().toLocaleDateString('en-KE'),
+  };
+  saved.unshift(route);
+  localStorage.setItem('sokoleo_saved_routes', JSON.stringify(saved.slice(0,10)));
+  showToast('✅ Route saved! ' + route.name);
+}
+
+function shareWhatsApp(){
+  if(stops.length<2){ showToast('Add stops first','error'); return; }
+  let msg = '🚛 *SokoLeo Route Plan*\n';
+  msg += '📅 ' + new Date().toLocaleDateString('en-KE') + '\n\n';
+  msg += '*Route:* ' + stops.map(s=>s.name).join(' → ') + '\n\n';
+
+  let totalKg=0, totalCost=0;
+  stops.forEach(s=>{
+    const produce = (s.produce||[]).filter(p=>p.crop&&p.qty);
+    if(produce.length){
+      msg += '📍 *'+s.name+'*\n';
+      produce.forEach(p=>{
+        msg += '  • '+p.crop+': '+p.qty+'kg @ KES '+p.price+'/kg\n';
+        totalKg+=p.qty; totalCost+=p.qty*p.price;
+      });
+    }
+  });
+
+  msg += '\n⚖️ *Total Load:* '+totalKg.toLocaleString()+' kg';
+  msg += '\n💰 *Buying Cost:* KES '+totalCost.toLocaleString();
+  msg += '\n\n_Sent via SokoLeo — Soko Kila Siku 🌱_';
+
+  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+}
+
+function printRoute(){
+  window.print();
+}
+
+function clearRoute(){
+  if(!confirm('Clear all stops?')) return;
+  stops = [];
+  nairobiPrices = {};
+  renderStops();
+  renderMap();
+  updateSummary();
+  showToast('Route cleared');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// BOOT — Load a demo route
+// ══════════════════════════════════════════════════════════════
+function loadDemoRoute(){
+  stops = [
+    {id:'Meru',name:'Meru Town',lat:-0.047,lng:37.649,kmFromMeru:0,type:'origin',produce:[]},
+    {id:'Nkubu',name:'Nkubu',lat:-0.37,lng:37.62,kmFromMeru:8,type:'waypoint',
+     produce:[{crop:'Avocado',qty:200,price:12},{crop:'Passion Fruit',qty:80,price:180}]},
+    {id:'Chuka',name:'Chuka',lat:-0.339,lng:37.644,kmFromMeru:12,type:'waypoint',
+     produce:[{crop:'Tomatoes',qty:300,price:38},{crop:'Kale (Sukuma Wiki)',qty:100,price:18}]},
+    {id:'Maara',name:'Maara',lat:-0.28,lng:37.7,kmFromMeru:18,type:'waypoint',
+     produce:[{crop:'French Beans',qty:150,price:95},{crop:'Green Pepper',qty:60,price:80}]},
+    {id:'Embu',name:'Embu Town',lat:-0.53,lng:37.45,kmFromMeru:80,type:'waypoint',produce:[]},
+    {id:'Nairobi_Marikiti',name:'Marikiti Market',lat:-1.28,lng:36.82,kmFromMeru:260,type:'destination',produce:[]},
+  ];
+  nairobiPrices = {
+    'Tomatoes':60,'Kale (Sukuma Wiki)':30,'Avocado':22,
+    'Passion Fruit':320,'French Beans':160,'Green Pepper':130
+  };
+  renderStops();
+  renderMap();
+  updateSummary();
+}
+
+window.addEventListener('resize', renderMap);
+loadDemoRoute();
+</script>
+</body>
+</html>
