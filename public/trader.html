@@ -200,6 +200,42 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);
   padding:5px 14px;border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s;
   font-family:'DM Sans',sans-serif;}
 .t-cat-pill.active,.t-cat-pill:hover{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green);}
+
+/* ── COMMISSION ── */
+.commission-strip{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);
+  border-radius:6px;padding:.4rem .75rem;margin-bottom:.6rem;font-size:.72rem;
+  display:flex;justify-content:space-between;align-items:center;}
+.commission-strip .fee{color:var(--muted);}
+.commission-strip .total{color:var(--green);font-weight:600;font-family:'Syne',sans-serif;font-size:.85rem;}
+.escrow-badge{display:inline-flex;align-items:center;gap:.3rem;
+  background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);
+  color:var(--amber);padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;}
+
+/* ── ESCROW MODAL ── */
+.escrow-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:2000;align-items:center;justify-content:center;padding:1rem;}
+.escrow-modal-overlay.open{display:flex;}
+.escrow-modal{background:var(--surface2);border:1px solid var(--border);
+  border-radius:16px;width:100%;max-width:460px;padding:2rem;
+  animation:slideUp .25s ease;}
+.em-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:.25rem;}
+.em-sub{color:var(--muted);font-size:.8rem;margin-bottom:1.5rem;}
+.price-breakdown{background:var(--surface);border-radius:10px;padding:1rem;margin-bottom:1.25rem;}
+.pbd-row{display:flex;justify-content:space-between;align-items:center;
+  padding:.4rem 0;font-size:.83rem;}
+.pbd-row.divider{border-top:1px solid var(--border);margin-top:.3rem;padding-top:.6rem;}
+.pbd-row.total{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;}
+.pbd-label{color:var(--muted);}
+.pbd-val{font-family:'DM Mono',monospace;}
+.pbd-val.green{color:var(--green);}
+.pbd-val.amber{color:var(--amber);}
+.pbd-val.red{color:var(--red);}
+.pbd-val.big{font-size:1.1rem;color:var(--green);}
+.escrow-info{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);
+  border-radius:8px;padding:.85rem;margin-bottom:1.25rem;font-size:.78rem;
+  color:var(--amber);line-height:1.7;}
+.em-actions{display:flex;gap:.75rem;margin-top:.5rem;}
+.em-actions .btn{flex:1;padding:12px;}
 .cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-left:.3rem;}
 .delivery-tag{display:inline-flex;align-items:center;gap:.3rem;background:rgba(96,165,250,.1);
   border:1px solid rgba(96,165,250,.2);color:#60a5fa;padding:2px 9px;border-radius:10px;
@@ -265,6 +301,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);
     <span id="userDisplay">Loading...</span>
     <a href="market-prices.html" style="color:var(--green);font-size:.85rem;text-decoration:none">📊 Prices</a>
     <a href="farm-services.html" style="color:var(--green);font-size:.85rem;text-decoration:none">🏪 Services</a>
+    <a href="route-planner.html" style="color:var(--green);font-size:.85rem;text-decoration:none">🚛 Route</a>
     <a href="route-planner.html" style="color:var(--amber);font-size:.85rem;text-decoration:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:4px 10px;border-radius:8px">🚛 Route Planner</a>
     <button onclick="openRoleModal()" style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s" id="switchRoleBtn">🔄 Switch Role</button>
     <button class="btn-logout" onclick="logout()">Logout</button>
@@ -488,16 +525,57 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);
     <div class="modal-subtitle" id="offerModalSub">Submit your price offer to the farmer</div>
     <input type="hidden" id="offerListingId"/>
     <input type="hidden" id="offerFarmerId"/>
+    <input type="hidden" id="offerCategory" value="Vegetables"/>
     <div class="form-group">
       <label class="form-label">Your Offer Price (KES per kg)</label>
-      <input class="form-input" id="offerPrice" type="number" min="1" placeholder="e.g. 45"/>
+      <input class="form-input" id="offerPrice" type="number" min="1" placeholder="e.g. 45"
+             oninput="calcOfferCommission()"/>
       <div class="price-hint">Listed price: <strong id="offerListedPrice">–</strong></div>
     </div>
     <div class="form-group">
       <label class="form-label">Quantity you want (kg)</label>
-      <input class="form-input" id="offerQty" type="number" min="1" placeholder="e.g. 100"/>
+      <input class="form-input" id="offerQty" type="number" min="1" placeholder="e.g. 100"
+             oninput="calcOfferCommission()"/>
       <div class="price-hint" id="offerAvailHint"></div>
     </div>
+
+    <!-- COMMISSION BREAKDOWN BOX -->
+    <div id="commissionBox" style="display:none;margin:.75rem 0;border-radius:10px;
+         overflow:hidden;border:1px solid var(--border)">
+      <div style="background:rgba(34,197,94,.06);padding:.75rem 1rem;
+                  border-bottom:1px solid var(--border)">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.08em;margin-bottom:.5rem">💰 SokoLeo Commission Breakdown</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div style="background:var(--surface2);border-radius:8px;padding:.6rem .75rem">
+            <div style="font-size:.68rem;color:var(--muted);margin-bottom:.2rem">Deal Amount</div>
+            <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700" id="commDeal">–</div>
+          </div>
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);
+                      border-radius:8px;padding:.6rem .75rem">
+            <div style="font-size:.68rem;color:var(--amber);margin-bottom:.2rem">You Pay (incl. 5% fee)</div>
+            <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;
+                        color:var(--amber)" id="commYouPay">–</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:.65rem 1rem;background:var(--surface2);
+                  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <div style="font-size:.75rem;color:var(--muted)">
+          🌱 Farmer receives: <strong id="commFarmerGets" style="color:var(--green)">–</strong>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted)">
+          🏪 SokoLeo fee: <strong id="commSokoleo" style="color:var(--green)">–</strong>
+        </div>
+      </div>
+      <!-- M-PESA escrow notice -->
+      <div style="padding:.6rem 1rem;background:rgba(96,165,250,.06);
+                  border-top:1px solid var(--border);font-size:.75rem;color:#60a5fa">
+        🔒 <strong>M-PESA Escrow:</strong> Funds held safely until you confirm handover.
+        Farmer gets paid within 24hrs of confirmation.
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Message to Farmer (optional)</label>
       <textarea class="form-input" id="offerMessage" rows="2"
@@ -506,6 +584,119 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeOfferModal()">Cancel</button>
       <button class="btn btn-offer" onclick="submitOffer()">Send Offer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ESCROW CONFIRMATION MODAL -->
+<div class="modal-overlay" id="escrowModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🔒 Confirm & Pay via M-PESA</div>
+    <div class="modal-subtitle">Your payment will be held in escrow until you confirm handover</div>
+
+    <!-- Transaction summary -->
+    <div style="background:var(--surface2);border:1px solid var(--border);
+                border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;
+                  letter-spacing:.08em;margin-bottom:.75rem">Transaction Summary</div>
+      <div id="escrowSummary"></div>
+    </div>
+
+    <!-- M-PESA payment instructions -->
+    <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);
+                border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:.82rem;font-weight:700;color:var(--green);margin-bottom:.75rem">
+        📱 M-PESA Payment Instructions
+      </div>
+      <div style="font-size:.83rem;line-height:2;color:var(--text)">
+        1. Go to M-PESA → <strong>Lipa na M-PESA</strong><br/>
+        2. Select <strong>Pay Bill</strong><br/>
+        3. Business No: <strong style="color:var(--green)">522522</strong><br/>
+        4. Account No: <strong style="color:var(--green)" id="escrowRef">–</strong><br/>
+        5. Amount: <strong style="color:var(--amber)" id="escrowAmount">–</strong><br/>
+        6. Enter your M-PESA PIN
+      </div>
+    </div>
+
+    <!-- M-PESA receipt input -->
+    <div class="form-group" style="margin-bottom:1rem">
+      <label class="form-label">M-PESA Confirmation Code (optional)</label>
+      <input class="form-input" id="mpesaReceipt" placeholder="e.g. QHJ2X4KMNP" maxlength="12"/>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">
+        Enter the code from your M-PESA SMS to confirm payment immediately
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeEscrowModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmEscrowPayment()" style="background:var(--green)">
+        ✅ I Have Paid — Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ESCROW MODAL -->
+<div class="escrow-modal-overlay" id="escrowModal">
+  <div class="escrow-modal">
+    <div class="em-title">🔒 Confirm Purchase with Escrow</div>
+    <div class="em-sub">Review the full price breakdown before confirming</div>
+    <input type="hidden" id="escrowListingId"/>
+    <input type="hidden" id="escrowSellerId"/>
+    <input type="hidden" id="escrowCategory"/>
+
+    <div class="price-breakdown">
+      <div class="pbd-row">
+        <span class="pbd-label">Item</span>
+        <span class="pbd-val" id="escrowItemName">–</span>
+      </div>
+      <div class="pbd-row">
+        <span class="pbd-label">Listed Price</span>
+        <span class="pbd-val" id="escrowListedPrice">–</span>
+      </div>
+      <div class="pbd-row">
+        <span class="pbd-label">Quantity</span>
+        <span class="pbd-val" id="escrowQty">–</span>
+      </div>
+      <div class="pbd-row divider">
+        <span class="pbd-label">SokoLeo Service Fee (<span id="escrowBuyerRate">3</span>%)</span>
+        <span class="pbd-val amber" id="escrowBuyerFee">–</span>
+      </div>
+      <div class="pbd-row total">
+        <span>You Pay Total</span>
+        <span class="pbd-val big" id="escrowBuyerPays">–</span>
+      </div>
+    </div>
+
+    <div class="price-breakdown" style="margin-bottom:1rem">
+      <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Seller Receives</div>
+      <div class="pbd-row">
+        <span class="pbd-label">Listed Price</span>
+        <span class="pbd-val" id="escrowListedPrice2">–</span>
+      </div>
+      <div class="pbd-row">
+        <span class="pbd-label">SokoLeo Platform Fee (<span id="escrowSellerRate">1</span>%)</span>
+        <span class="pbd-val red" id="escrowSellerFee">– deducted</span>
+      </div>
+      <div class="pbd-row total">
+        <span>Seller Gets</span>
+        <span class="pbd-val" id="escrowSellerGets" style="color:var(--green)">–</span>
+      </div>
+    </div>
+
+    <div class="escrow-info">
+      🔒 <strong>How M-PESA Escrow works:</strong><br/>
+      1. You send <strong id="escrowPayAmt">KES –</strong> to SokoLeo Paybill <strong>522522</strong><br/>
+      2. Money is held safely until you confirm you received the goods<br/>
+      3. Seller gets paid automatically within 24 hours of confirmation<br/>
+      4. If goods don't arrive, your money is refunded in full
+    </div>
+
+    <div class="em-actions">
+      <button class="btn btn-outline" onclick="closeEscrowModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmEscrowPurchase()">
+        🔒 Confirm & Pay via M-PESA
+      </button>
     </div>
   </div>
 </div>
@@ -707,9 +898,10 @@ function renderListings(listings){
       '</div>' +
       deliveryTag +
       '<div class="lc-price">KES ' + parseFloat(l.price_per_kg).toFixed(0) + ' <span>/ ' + unit + '</span></div>' +
+      commStrip +
       '<div class="lc-actions">' +
         '<button class="btn btn-offer" onclick="openOfferModal(' + l.id + ',' + l.farmer_id + ',' + l.price_per_kg + ',' + l.quantity + ')">💬 Make Offer</button>' +
-        '<button class="btn btn-primary" onclick="reserveListing(' + l.id + ')">📦 Reserve</button>' +
+        '<button class="btn btn-primary" onclick="openEscrowModal(' + l.id + ',' + l.farmer_id + ',' + l.price_per_kg + ',' + l.quantity + ',&quot;' + l.produce_name + '&quot;,' + l.quantity + ',&quot;' + (l.category||'default') + '&quot;)">🔒 Buy via Escrow</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -1242,7 +1434,355 @@ document.getElementById('offerModal').addEventListener('click',e=>{
   if(e.target===e.currentTarget) closeOfferModal();
 });
 
+// ══════════════════════════════════════════════════════════════
+// COMMISSION & ESCROW SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// Commission rates (synced from server, fallback to defaults)
+const COMM_RATES = {
+  'Livestock':              { buyer: 5, seller: 1 },
+  'Vegetables':             { buyer: 3, seller: 1 },
+  'Fruits':                 { buyer: 3, seller: 1 },
+  'Tubers':                 { buyer: 3, seller: 1 },
+  'Cereals & Pulses':       { buyer: 3, seller: 1 },
+  'Farm Inputs & Byproducts':{ buyer: 2, seller: 1 },
+  'default':                { buyer: 3, seller: 1 },
+};
+
+let currentEscrowData = null;
+
+function getRate(category){
+  return COMM_RATES[category] || COMM_RATES['default'];
+}
+
+function calcCommission(baseAmount, category){
+  const rate       = getRate(category);
+  const buyerComm  = Math.round(baseAmount * rate.buyer  / 100);
+  const sellerComm = Math.round(baseAmount * rate.seller / 100);
+  return {
+    base:         baseAmount,
+    buyerComm,
+    sellerComm,
+    buyerTotal:   baseAmount + buyerComm,
+    sellerPayout: baseAmount - sellerComm,
+    sokoleo:      buyerComm + sellerComm,
+    buyerPct:     rate.buyer,
+    sellerPct:    rate.seller,
+  };
+}
+
+function calcOfferCommission(){
+  const price    = parseFloat(document.getElementById('offerPrice').value) || 0;
+  const qty      = parseFloat(document.getElementById('offerQty').value)   || 0;
+  const category = document.getElementById('offerCategory').value || 'Vegetables';
+  const box      = document.getElementById('commissionBox');
+
+  if(!price || !qty){ box.style.display='none'; return; }
+
+  const base = price * qty;
+  const c    = calcCommission(base, category);
+
+  document.getElementById('commDeal').textContent      = 'KES '+base.toLocaleString();
+  document.getElementById('commYouPay').textContent    = 'KES '+c.buyerTotal.toLocaleString();
+  document.getElementById('commFarmerGets').textContent= 'KES '+c.sellerPayout.toLocaleString();
+  document.getElementById('commSokoleo').textContent   = 'KES '+c.sokoleo.toLocaleString()+
+    ' ('+c.buyerPct+'% + '+c.sellerPct+'%)';
+  box.style.display = 'block';
+}
+
+// ── OPEN OFFER MODAL (updated to set category) ─────────────────────────────
+function openOfferModal(listingId, farmerId, listedPrice, availQty, category){
+  document.getElementById('offerListingId').value  = listingId;
+  document.getElementById('offerFarmerId').value   = farmerId;
+  document.getElementById('offerCategory').value   = category || 'Vegetables';
+  document.getElementById('offerListedPrice').textContent = 'KES '+parseFloat(listedPrice).toFixed(0)+'/kg';
+  document.getElementById('offerAvailHint').innerHTML = 'Available: <strong>'+availQty+' kg</strong>';
+  document.getElementById('offerPrice').value   = '';
+  document.getElementById('offerQty').value     = '';
+  document.getElementById('offerMessage').value = '';
+  document.getElementById('commissionBox').style.display = 'none';
+  document.getElementById('offerModal').classList.add('open');
+}
+
+// ── ESCROW MODAL ─────────────────────────────────────────────────────────────
+function openEscrowModal(transactionData){
+  currentEscrowData = transactionData;
+  const t = transactionData;
+
+  document.getElementById('escrowRef').textContent    = t.reference_no || t.ref || '–';
+  document.getElementById('escrowAmount').textContent = 'KES '+parseFloat(t.buyer_total||t.buyerTotal).toLocaleString();
+  document.getElementById('mpesaReceipt').value       = '';
+
+  document.getElementById('escrowSummary').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.82rem">
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--muted)">Item</span>
+        <strong>${t.item_description||'–'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--muted)">Quantity</span>
+        <strong>${t.item_quantity||'–'} ${t.item_unit||'kg'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--muted)">Deal Amount</span>
+        <strong>KES ${parseFloat(t.base_amount||t.base).toLocaleString()}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--amber)">SokoLeo Fee (${t.buyerPct||3}%)</span>
+        <strong style="color:var(--amber)">+ KES ${parseFloat(t.buyer_commission||t.buyerComm).toLocaleString()}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.5rem">
+        <span style="color:var(--text);font-weight:600">You Pay Total</span>
+        <strong style="color:var(--green);font-size:1rem;font-family:'Syne',sans-serif">
+          KES ${parseFloat(t.buyer_total||t.buyerTotal).toLocaleString()}
+        </strong>
+      </div>
+    </div>`;
+
+  document.getElementById('offerModal').classList.remove('open');
+  document.getElementById('escrowModal').classList.add('open');
+}
+
+function closeEscrowModal(){
+  document.getElementById('escrowModal').classList.remove('open');
+}
+
+async function confirmEscrowPayment(){
+  const receipt = document.getElementById('mpesaReceipt').value.trim();
+  if(!currentEscrowData){ showToast('No transaction data','error'); return; }
+
+  if(DEMO_MODE){
+    showToast('✅ Demo: Payment confirmed! Funds held in escrow. Farmer will be notified.');
+    closeEscrowModal();
+    return;
+  }
+
+  try{
+    const r = await fetch(`${API}/commissions/escrow/${currentEscrowData.reference_no}/pay`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ mpesa_receipt: receipt })
+    });
+    const d = await r.json();
+    if(d.success){
+      showToast('✅ Payment confirmed! Funds held in escrow. Farmer notified.');
+      closeEscrowModal();
+    } else {
+      showToast(d.error||'Failed to confirm payment','error');
+    }
+  }catch(e){ showToast('Network error','error'); }
+}
+
+// ── SUBMIT OFFER WITH ESCROW ──────────────────────────────────────────────────
+async function submitOffer(){
+  const listing_id    = parseInt(document.getElementById('offerListingId').value);
+  const farmer_id     = parseInt(document.getElementById('offerFarmerId').value);
+  const offered_price = parseFloat(document.getElementById('offerPrice').value);
+  const quantity      = parseFloat(document.getElementById('offerQty').value);
+  const message       = document.getElementById('offerMessage').value;
+  const category      = document.getElementById('offerCategory').value || 'Vegetables';
+
+  if(!offered_price||!quantity){ showToast('Please fill price and quantity','error'); return; }
+
+  const base = offered_price * quantity;
+  const c    = calcCommission(base, category);
+
+  if(DEMO_MODE){
+    // Show escrow modal with demo data
+    openEscrowModal({
+      reference_no:   'SKL'+Date.now().toString(36).toUpperCase(),
+      item_description:'Demo listing',
+      item_quantity:   quantity,
+      item_unit:       'kg',
+      base_amount:     base,
+      base:            base,
+      buyer_commission:c.buyerComm,
+      buyerComm:       c.buyerComm,
+      buyer_total:     c.buyerTotal,
+      buyerTotal:      c.buyerTotal,
+      buyerPct:        c.buyerPct,
+    });
+    return;
+  }
+
+  try{
+    // First create the negotiation offer
+    const offerRes = await fetch(`${API}/negotiations`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({listing_id, trader_id:currentUser.id, farmer_id,
+                           offered_price, quantity, message})
+    });
+    const offerData = await offerRes.json();
+
+    if(!offerData.success && !offerData.negotiation){
+      showToast(offerData.error||'Failed to send offer','error'); return;
+    }
+
+    // Then create escrow transaction
+    const escrowRes = await fetch(`${API}/commissions/escrow`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        listing_id, listing_type: category.toLowerCase().includes('livestock')?'livestock':'produce',
+        buyer_id:   currentUser.id,
+        seller_id:  farmer_id,
+        item_description: `Listing #${listing_id}`,
+        item_quantity:    quantity,
+        item_unit:        'kg',
+        base_amount:      base,
+        category,
+      })
+    });
+    const escrowData = await escrowRes.json();
+
+    if(escrowData.success){
+      closeOfferModal();
+      openEscrowModal({
+        ...escrowData.transaction,
+        buyerPct: c.buyerPct,
+      });
+    } else {
+      showToast('Offer sent! Pay via M-PESA to complete.'); closeOfferModal();
+    }
+  }catch(e){ showToast('Network error','error'); }
+}
+
+document.getElementById('escrowModal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) closeEscrowModal();
+});
+
+// ══════════════════════════════════════════════════════════════
+// COMMISSION & ESCROW SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+const COMMISSION_RATES = {
+  livestock:   { buyer: 0.05, seller: 0.01 },
+  vegetables:  { buyer: 0.03, seller: 0.01 },
+  fruits:      { buyer: 0.03, seller: 0.01 },
+  tubers:      { buyer: 0.03, seller: 0.01 },
+  cereals:     { buyer: 0.03, seller: 0.01 },
+  farm_inputs: { buyer: 0.02, seller: 0.01 },
+  default:     { buyer: 0.03, seller: 0.01 },
+};
+
+function getCategory(cat){
+  const c=(cat||'').toLowerCase();
+  if(c.includes('livestock')||c.includes('animal')||c.includes('dog')) return 'livestock';
+  if(c.includes('vegetable')) return 'vegetables';
+  if(c.includes('fruit'))     return 'fruits';
+  if(c.includes('tuber'))     return 'tubers';
+  if(c.includes('cereal')||c.includes('pulse')) return 'cereals';
+  if(c.includes('input')||c.includes('manure')) return 'farm_inputs';
+  return 'default';
+}
+
+function calcCommission(price, category){
+  const cat   = getCategory(category||'');
+  const rates = COMMISSION_RATES[cat]||COMMISSION_RATES.default;
+  const bFee  = Math.round(price * rates.buyer);
+  const sFee  = Math.round(price * rates.seller);
+  return {
+    listing_price:   price,
+    buyer_fee:       bFee,
+    seller_fee:      sFee,
+    buyer_pays:      price + bFee,
+    seller_receives: price - sFee,
+    sokoleo_earns:   bFee + sFee,
+    buyer_rate:      rates.buyer,
+    seller_rate:     rates.seller,
+    category:        cat,
+  };
+}
+
+// Open escrow modal — shows full breakdown
+function openEscrowModal(listingId, sellerId, price, itemName, qty, category){
+  const c = calcCommission(price * (qty||1), category);
+  document.getElementById('escrowListingId').value  = listingId;
+  document.getElementById('escrowSellerId').value   = sellerId;
+  document.getElementById('escrowCategory').value   = category||'';
+  document.getElementById('escrowItemName').textContent     = itemName;
+  document.getElementById('escrowListedPrice').textContent  = 'KES '+price.toLocaleString()+(qty>1?' × '+qty:'');
+  document.getElementById('escrowListedPrice2').textContent = 'KES '+(price*(qty||1)).toLocaleString();
+  document.getElementById('escrowQty').textContent          = qty+' kg';
+  document.getElementById('escrowBuyerRate').textContent    = Math.round(c.buyer_rate*100);
+  document.getElementById('escrowSellerRate').textContent   = Math.round(c.seller_rate*100);
+  document.getElementById('escrowBuyerFee').textContent     = '+ KES '+c.buyer_fee.toLocaleString();
+  document.getElementById('escrowSellerFee').textContent    = '- KES '+c.seller_fee.toLocaleString()+' deducted';
+  document.getElementById('escrowBuyerPays').textContent    = 'KES '+c.buyer_pays.toLocaleString();
+  document.getElementById('escrowSellerGets').textContent   = 'KES '+c.seller_receives.toLocaleString();
+  document.getElementById('escrowPayAmt').textContent       = 'KES '+c.buyer_pays.toLocaleString();
+  document.getElementById('escrowModal').classList.add('open');
+}
+
+function closeEscrowModal(){
+  document.getElementById('escrowModal').classList.remove('open');
+}
+
+async function confirmEscrowPurchase(){
+  const listingId = document.getElementById('escrowListingId').value;
+  const sellerId  = document.getElementById('escrowSellerId').value;
+  const itemName  = document.getElementById('escrowItemName').textContent;
+  const buyerPays = document.getElementById('escrowBuyerPays').textContent;
+
+  if(DEMO_MODE){
+    showToast('🔒 Demo: Escrow initiated! Send '+buyerPays+' to Paybill 522522');
+    closeEscrowModal();
+    return;
+  }
+
+  try{
+    const price    = parseFloat(document.getElementById('escrowBuyerPays').textContent.replace(/[^0-9.]/g,''));
+    const category = document.getElementById('escrowCategory').value;
+    const r = await fetch(`${API}/escrow/initiate`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        buyer_id:currentUser.id,
+        seller_id:parseInt(sellerId),
+        listing_id:parseInt(listingId),
+        item_description:itemName,
+        category,
+        listing_price:price,
+      })
+    });
+    const d = await r.json();
+    if(d.success){
+      closeEscrowModal();
+      showToast('🔒 Escrow created! Send KES '+d.commission.buyer_pays.toLocaleString()+' to Paybill 522522. Ref: TX'+d.transaction.id);
+    } else {
+      showToast(d.error||'Failed to create escrow','error');
+    }
+  }catch(e){
+    showToast('Network error','error');
+  }
+}
+
+document.getElementById('escrowModal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget) closeEscrowModal();
+});
+
 // ── BOOT ──────────────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// COMMISSION SYSTEM
+// ══════════════════════════════════════════════════════════════
+// Commission functions defined above
+
+const _origOpenLsOffer = openLsOfferModal;
+function openLsOfferModal(animalId, listingId, farmerId, listedPrice, animalName, species){
+  document.getElementById('offerCategory').value = 'Livestock';
+  _origOpenLsOffer(animalId, listingId, farmerId, listedPrice, animalName, species);
+  calcCommission();
+}
+
+// Patch openOfferModal (produce) to set category
+const _origOpenOffer = openOfferModal;
+function openOfferModal(listingId, farmerId, listedPrice, availQty, category){
+  document.getElementById('offerCategory').value = category || 'Vegetables';
+  _origOpenOffer(listingId, farmerId, listedPrice, availQty);
+  calcCommission();
+}
 
 // ══════════════════════════════════════════════════════════════
 // DUAL ROLE SYSTEM — Trader side
