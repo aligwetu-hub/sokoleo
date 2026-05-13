@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Farmer Profile – SokoLeo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#166534"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+  <style>
+    :root {
+      --green:#166534; --green-light:#16a34a; --green-pale:#dcfce7;
+      --amber:#f59e0b; --amber-pale:#fef3c7; --amber-dark:#d97706;
+      --dark:#1b1b2f; --mid:#374151; --muted:#6b7280;
+      --border:#e5e7eb; --white:#fff; --red:#ef4444; --blue:#3b82f6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Outfit',sans-serif; background:#f3f4f6; color:var(--dark); min-height:100vh; }
+
+    /* Top bar */
+    .topbar {
+      background:var(--green); color:#fff; padding:14px 20px;
+      display:flex; align-items:center; gap:12px;
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar-back {
+      background:rgba(255,255,255,.15); border:none; color:#fff;
+      border-radius:8px; padding:6px 12px; font-size:13px;
+      cursor:pointer; font-family:'Outfit',sans-serif; font-weight:500;
+    }
+    .topbar-back:hover { background:rgba(255,255,255,.25); }
+    .topbar h1 { font-size:18px; font-weight:700; }
+    .topbar h1 span { color:#86efac; }
+
+    /* Layout */
+    .container { max-width:900px; margin:0 auto; padding:24px 16px 100px; }
+
+    /* Hero card */
+    .profile-hero {
+      background:#fff; border-radius:16px; border:1px solid var(--border);
+      overflow:hidden; margin-bottom:20px;
+    }
+    .hero-banner {
+      height:100px;
+      background:linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+      position:relative;
+    }
+    .hero-body { padding:0 24px 24px; }
+    .avatar-wrap {
+      width:72px; height:72px; border-radius:50%;
+      background:var(--green); border:4px solid #fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:700; color:#fff;
+      margin-top:-36px; margin-bottom:12px;
+      position:relative; z-index:1;
+    }
+    .farmer-name { font-size:22px; font-weight:700; }
+    .farmer-location { font-size:14px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:4px; }
+    .verified-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      background:var(--green-pale); color:var(--green);
+      border-radius:999px; padding:3px 10px; font-size:12px; font-weight:600;
+      margin-top:10px;
+    }
+    .hero-meta {
+      display:flex; gap:24px; margin-top:16px; flex-wrap:wrap;
+      padding-top:16px; border-top:1px solid var(--border);
+    }
+    .hero-stat { text-align:center; }
+    .hero-stat-val { font-size:20px; font-weight:700; font-family:'DM Mono',monospace; color:var(--green); }
+    .hero-stat-lab { font-size:11px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+    .hero-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
+    .tag {
+      background:#f3f4f6; color:var(--mid); border-radius:999px;
+      padding:4px 12px; font-size:12px; font-weight:500;
+    }
+    .tag.green { background:var(--green-pale); color:var(--green); }
+
+    /* Action buttons */
+    .action-bar { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+    .btn { padding:10px 20px; border-radius:9px; font-size:14px; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; border:none; transition:all .15s; }
+    .btn-green  { background:var(--green); color:#fff; }
+    .btn-green:hover  { background:var(--green-light); }
+    .btn-amber  { background:var(--amber-dark); color:#fff; }
+    .btn-amber:hover  { background:var(--amber); }
+    .btn-outline{ background:#fff; border:1px solid var(--border); color:var(--mid); }
+    .btn-outline:hover{ background:#f9fafb; }
+    .btn-sm { padding:7px 14px; font-size:13px; border-radius:7px; }
+
+    /* Section */
+    .section-head {
+      display:flex; justify-content:space-between; align-items:center;
+      margin:0 0 14px;
+    }
+    .section-head h2 { font-size:16px; font-weight:700; }
+    .section-head span { font-size:12px; color:var(--muted); }
+
+    /* Cards */
+    .card { background:#fff; border-radius:14px; border:1px solid var(--border); margin-bottom:20px; }
+    .card-body { padding:20px; }
+
+    /* Produce grid */
+    .produce-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .produce-card {
+      background:#fff; border-radius:12px; border:1px solid var(--border);
+      padding:14px; transition:box-shadow .15s; cursor:pointer;
+    }
+    .produce-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .produce-name  { font-size:15px; font-weight:700; }
+    .produce-price { font-size:14px; font-weight:700; color:var(--green); font-family:'DM Mono',monospace; margin-top:4px; }
+    .produce-meta  { font-size:12px; color:var(--muted); margin-top:6px; display:flex; flex-direction:column; gap:3px; }
+    .produce-foot  { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+
+    /* Livestock grid */
+    .livestock-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .lv-card {
+      background:#fff; border-radius:12px; border:1px solid var(--border);
+      padding:14px; transition:box-shadow .15s;
+    }
+    .lv-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .lv-animal { font-size:15px; font-weight:700; }
+    .lv-price  { font-size:14px; font-weight:700; color:var(--amber-dark); font-family:'DM Mono',monospace; margin-top:4px; }
+    .lv-meta   { font-size:12px; color:var(--muted); margin-top:6px; display:flex; flex-direction:column; gap:3px; }
+
+    /* Badge */
+    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+    .badge.green { background:var(--green-pale); color:var(--green); }
+    .badge.amber { background:var(--amber-pale); color:#92400e; }
+    .badge.blue  { background:#dbeafe; color:#1e40af; }
+    .badge.gray  { background:#f3f4f6; color:var(--mid); }
+
+    /* Reserve modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:28px; width:460px; max-width:95vw; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+    .modal h3 { font-size:18px; font-weight:700; margin-bottom:18px; }
+    .modal-close { float:right; background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; margin-bottom:5px; color:var(--mid); }
+    .form-group input, .form-group textarea {
+      width:100%; padding:10px 12px; border:1px solid var(--border);
+      border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif;
+    }
+    .form-group input:focus, .form-group textarea:focus { outline:none; border-color:var(--green); }
+    .info-box { background:var(--amber-pale); border:1px solid #fde68a; border-radius:8px; padding:10px 14px; font-size:13px; color:#92400e; margin-bottom:14px; }
+    .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+    .msg { font-size:13px; padding:10px 12px; border-radius:8px; margin-top:10px; }
+    .msg.error   { background:#fee2e2; color:#991b1b; }
+    .msg.success { background:var(--green-pale); color:var(--green); }
+
+    /* About card */
+    .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:500px){ .about-grid { grid-template-columns:1fr; } }
+    .about-item { display:flex; flex-direction:column; gap:4px; }
+    .about-label { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; color:var(--muted); }
+    .about-value { font-size:14px; font-weight:500; }
+
+    /* Empty / loading */
+    .empty { text-align:center; padding:48px 20px; color:var(--muted); }
+    .empty .e-icon { font-size:36px; display:block; margin-bottom:10px; }
+    .loading { text-align:center; padding:40px; color:var(--muted); }
+    .spinner { display:inline-block; width:18px; height:18px; border:2px solid #e5e7eb; border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Not found */
+    .not-found { text-align:center; padding:80px 20px; }
+    .not-found .nf-icon { font-size:56px; display:block; margin-bottom:16px; }
+    .not-found h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+    .not-found p { font-size:14px; color:var(--muted); }
+
+    /* Star ratings */
+    .stars { display:inline-flex; gap:1px; font-size:15px; }
+    .star-f { color:#f59e0b; }
+    .star-e { color:#d1d5db; }
+    .reviews-section { margin-bottom:20px; }
+    .review-item { padding:14px 0; border-bottom:1px solid var(--border); }
+    .review-item:last-child { border-bottom:none; }
+    .review-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .review-name { font-size:13px; font-weight:600; }
+    .review-date { font-size:11px; color:var(--muted); }
+    .review-text { font-size:13px; color:var(--mid); margin-top:3px; font-style:italic; }
+    .rating-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+    .rating-bar-label { font-size:12px; color:var(--muted); width:14px; text-align:right; }
+    .rating-bar-track { flex:1; height:6px; background:#f3f4f6; border-radius:999px; overflow:hidden; }
+    .rating-bar-fill { height:100%; background:var(--amber); border-radius:999px; }
+    .rating-bar-count { font-size:11px; color:var(--muted); width:20px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="topbar-back" onclick="history.back()">← Back</button>
+  <h1>Soko<span>Leo</span> · Farmer Profile</h1>
+</div>
+
+<div class="container" id="mainContainer">
+  <div class="loading"><span class="spinner"></span>Loading profile...</div>
+</div>
+
+<!-- Reserve Modal -->
+<div class="modal-overlay" id="reserveModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Reserve Produce</h3>
+    <div id="reserveDetails" style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Your Phone Number</label>
+      <input type="tel" id="traderPhone" placeholder="e.g. 0722345678"/>
+    </div>
+    <div class="form-group">
+      <label>Quantity to Reserve</label>
+      <input type="text" id="reserveQty" placeholder="e.g. 5 bags"/>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="reserveNotes" rows="2" placeholder="Delivery, collection time, grade preference…"></textarea>
+    </div>
+    <div class="info-box">💳 Payment is processed via M-PESA escrow. Funds are held securely until goods are handed over.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-green btn-sm" onclick="submitReservation()">Confirm Reservation</button>
+    </div>
+    <div id="reserveMsg"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+const params   = new URLSearchParams(location.search);
+const farmerId = params.get('id');
+let farmer     = null;
+let selectedListing = null;
+
+// ── Boot ──────────────────────────────────────────────────────────
+async function boot() {
+  if (!farmerId) return showNotFound('No farmer ID in URL. Use ?id=FARMER_ID');
+  try {
+    const [userRes, listingsRes, livestockRes, reviewStats, reviews] = await Promise.all([
+      fetch(`/api/auth/user/${farmerId}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/listings?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/livestock?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/reviews/stats/${farmerId}`).then(r => r.ok ? r.json() : { total: 0, avg_rating: null }),
+      fetch(`/api/reviews/farmer/${farmerId}`).then(r => r.ok ? r.json() : []),
+    ]);
+    if (!userRes) return showNotFound('Farmer profile not found.');
+    farmer = userRes;
+    render(farmer, listingsRes, livestockRes, reviewStats, reviews);
+  } catch (err) {
+    showNotFound('Could not load profile. Check your connection and try again.');
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function render(f, listings, livestock, reviewStats, reviews) {
+  const initials = f.name ? f.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : 'F';
+  const crops    = listings.map(l => l.product);
+  const uniqueCrops = [...new Set(crops)];
+
+  document.title = `${f.name} – SokoLeo`;
+
+  document.getElementById('mainContainer').innerHTML = `
+    <!-- Hero -->
+    <div class="profile-hero">
+      <div class="hero-banner"></div>
+      <div class="hero-body">
+        <div class="avatar-wrap">${initials}</div>
+        <div class="farmer-name">${f.name}</div>
+        <div class="farmer-location">📍 ${f.location || 'Tharaka Nithi County'}</div>
+        ${f.is_verified ? '<span class="verified-badge">✓ Verified Farmer</span>' : ''}
+
+        <div class="hero-meta">
+          <div class="hero-stat">
+            <div class="hero-stat-val">${listings.length}</div>
+            <div class="hero-stat-lab">Active Listings</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val">${livestock.length}</div>
+            <div class="hero-stat-lab">Livestock</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val">${uniqueCrops.length}</div>
+            <div class="hero-stat-lab">Crop Types</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" style="color:var(--amber)">${reviewStats && reviewStats.avg_rating ? reviewStats.avg_rating + ' ★' : '—'}</div>
+            <div class="hero-stat-lab">Rating${reviewStats && reviewStats.total ? ' (' + reviewStats.total + ')' : ''}</div>
+          </div>
+        </div>
+
+        ${uniqueCrops.length ? `<div class="hero-tags">${uniqueCrops.map(c => `<span class="tag green">🌿 ${c}</span>`).join('')}</div>` : ''}
+
+        <div class="action-bar">
+          ${f.phone ? `<a href="tel:${f.phone}" class="btn btn-green" style="text-decoration:none;">📞 Call Farmer</a>` : ''}
+          ${f.phone ? `<a href="https://wa.me/254${f.phone.replace(/^0/,'')}" target="_blank" class="btn btn-outline" style="text-decoration:none;">💬 WhatsApp</a>` : ''}
+          <button class="btn btn-outline" onclick="shareProfile()">📤 Share Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-body">
+        <div class="section-head" style="margin-bottom:16px;"><h2>About This Farm</h2></div>
+        <div class="about-grid">
+          <div class="about-item">
+            <span class="about-label">Location</span>
+            <span class="about-value">📍 ${f.location || '—'}</span>
+          </div>
+          <div class="about-item">
+            <span class="about-label">Member Since</span>
+            <span class="about-value">📅 ${f.created_at ? new Date(f.created_at).toLocaleDateString('en-KE',{month:'long',year:'numeric'}) : '—'}</span>
+          </div>
+          <div class="about-item">
+            <span class="about-label">Contact</span>
+            <span class="about-value">📱 ${f.phone || '—'}</span>
+          </div>
+          <div class="about-item">
+            <span class="about-label">Verification</span>
+            <span class="about-value">${f.is_verified ? '✅ Verified by SokoLeo' : '⏳ Pending verification'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Produce Listings -->
+    <div style="margin-bottom:20px;">
+      <div class="section-head">
+        <h2>🌽 Produce for Sale</h2>
+        <span>${listings.length} listing${listings.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${listings.length ? `
+        <div class="produce-grid">
+          ${listings.map(l => `
+          <div class="produce-card" onclick="openReserve(${JSON.stringify(l).replace(/"/g,'&quot;')})">
+            <div class="produce-name">${l.product}</div>
+            <div class="produce-price">${l.price_per_unit ? 'KES ' + Number(l.price_per_unit).toLocaleString() + '/' + (l.unit||'unit') : 'Negotiable'}</div>
+            <div class="produce-meta">
+              <span>📦 ${l.quantity} ${l.unit || 'units'}</span>
+              <span>📍 ${l.location}</span>
+              <span>🕐 ${l.availability.replace('_',' ')}</span>
+            </div>
+            <div class="produce-foot">
+              <span class="badge green">Available</span>
+              <button class="btn btn-green btn-sm" onclick="event.stopPropagation();openReserve(${JSON.stringify(l).replace(/"/g,'&quot;')})">Reserve</button>
+            </div>
+          </div>`).join('')}
+        </div>` :
+        `<div class="empty"><span class="e-icon">🌱</span><p>No active produce listings right now.</p></div>`
+      }
+    </div>
+
+    <!-- Livestock -->
+    ${livestock.length ? `
+    <div style="margin-bottom:20px;">
+      <div class="section-head">
+        <h2>🐄 Livestock for Sale</h2>
+        <span>${livestock.length} listing${livestock.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="livestock-grid">
+        ${livestock.map(l => `
+        <div class="lv-card">
+          <div class="lv-animal">${animalEmoji(l.animal_type)} ${l.animal_type}${l.breed ? ' · ' + l.breed : ''}</div>
+          <div class="lv-price">KES ${Number(l.price_per_head).toLocaleString()}/head</div>
+          <div class="lv-meta">
+            <span>🐾 ${l.quantity} head</span>
+            ${l.age_months ? `<span>📅 ${l.age_months} months old</span>` : ''}
+            ${l.weight_kg  ? `<span>⚖️ ${l.weight_kg} kg</span>` : ''}
+            <span>💉 Vaccinated: ${l.vaccinated ? 'Yes' : 'No'}</span>
+            <span style="margin-top:6px;"><span class="badge ${l.health_status==='healthy'?'green':l.health_status==='treated'?'amber':'gray'}">${l.health_status}</span></span>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Reviews Section -->
+    <div class="reviews-section card">
+      <div class="card-body">
+        <div class="section-head" style="margin-bottom:${reviews && reviews.length ? '16px' : '0'};">
+          <h2>⭐ Reviews</h2>
+          <span>${reviewStats && reviewStats.total ? reviewStats.total + ' review' + (reviewStats.total !== 1 ? 's' : '') : 'No reviews yet'}</span>
+        </div>
+        ${reviewStats && reviewStats.total > 0 ? `
+          <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px;">
+            <div style="text-align:center;min-width:80px;">
+              <div style="font-size:44px;font-weight:700;font-family:'DM Mono',monospace;color:var(--amber);line-height:1;">${reviewStats.avg_rating}</div>
+              <div class="stars" style="justify-content:center;margin:4px 0;">${renderStars(parseFloat(reviewStats.avg_rating))}</div>
+              <div style="font-size:12px;color:var(--muted);">${reviewStats.total} review${reviewStats.total !== 1 ? 's' : ''}</div>
+            </div>
+            <div style="flex:1;min-width:160px;">
+              ${[5,4,3,2,1].map(n => `
+              <div class="rating-bar-row">
+                <span class="rating-bar-label">${n}</span>
+                <div class="rating-bar-track"><div class="rating-bar-fill" style="width:${reviewStats.total ? Math.round((reviewStats[['','one','two','three','four','five'][n] + '_star'] || 0) / reviewStats.total * 100) : 0}%"></div></div>
+                <span class="rating-bar-count">${reviewStats[['','one_star','two_star','three_star','four_star','five_star'][n]] || 0}</span>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div class="reviews-list">
+            ${reviews.map(rv => `
+            <div class="review-item">
+              <div class="review-header">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--green-pale);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${rv.reviewer_name ? rv.reviewer_name[0].toUpperCase() : '?'}</div>
+                  <div>
+                    <div class="review-name">${rv.reviewer_name || 'Anonymous'}</div>
+                    <div class="stars">${renderStars(rv.rating)}</div>
+                  </div>
+                </div>
+                <div class="review-date">${new Date(rv.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}</div>
+              </div>
+              ${rv.comment ? `<div class="review-text">"${rv.comment}"</div>` : ''}
+            </div>`).join('')}
+          </div>
+        ` : `<div class="empty" style="padding:32px 20px;"><span class="e-icon">⭐</span><p>No reviews yet. Reviews appear here after completed deals.</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+// ── Reserve ───────────────────────────────────────────────────────
+function openReserve(listing) {
+  selectedListing = listing;
+  document.getElementById('reserveDetails').innerHTML = `
+    <strong>${listing.product}</strong><br/>
+    📦 ${listing.quantity} ${listing.unit || 'units'} &nbsp;·&nbsp; 📍 ${listing.location}<br/>
+    💰 ${listing.price_per_unit ? 'KES ' + Number(listing.price_per_unit).toLocaleString() + ' per ' + listing.unit : 'Price negotiable'}`;
+  document.getElementById('reserveQty').value   = '';
+  document.getElementById('traderPhone').value  = '';
+  document.getElementById('reserveNotes').value = '';
+  document.getElementById('reserveMsg').innerHTML = '';
+  document.getElementById('reserveModal').classList.add('open');
+}
+
+async function submitReservation() {
+  if (!selectedListing) return;
+  const phone = document.getElementById('traderPhone').value.trim();
+  const qty   = document.getElementById('reserveQty').value.trim();
+  const notes = document.getElementById('reserveNotes').value.trim();
+  if (!phone) return showMsg('reserveMsg', 'Enter your phone number.', 'error');
+  if (!qty)   return showMsg('reserveMsg', 'Enter quantity to reserve.', 'error');
+
+  try {
+    // Register/find trader by phone then create reservation
+    const regRes = await fetch('/api/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, name: 'Trader', role: 'trader' })
+    });
+    const regData = await regRes.json();
+    const traderId = regData.user?.id || regData.id;
+
+    const r = await fetch('/api/reservations', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ listing_id: selectedListing.id, trader_id: traderId, quantity_reserved: qty, notes })
+    });
+    const d = await r.json();
+    if (!r.ok) return showMsg('reserveMsg', d.error || 'Reservation failed.', 'error');
+    showMsg('reserveMsg', `✅ Reserved! The farmer has been notified and will contact you on ${phone}.`, 'success');
+    setTimeout(closeModal, 2500);
+  } catch { showMsg('reserveMsg', 'Network error. Please try again.', 'error'); }
+}
+
+function closeModal() { document.getElementById('reserveModal').classList.remove('open'); }
+
+// ── Helpers ───────────────────────────────────────────────────────
+function showNotFound(msg) {
+  document.getElementById('mainContainer').innerHTML = `
+    <div class="not-found">
+      <span class="nf-icon">🌾</span>
+      <h2>Profile Not Found</h2>
+      <p>${msg}</p>
+      <button class="btn btn-green" style="margin-top:20px;" onclick="history.back()">← Go Back</button>
+    </div>`;
+}
+
+function showMsg(id, text, type) {
+  document.getElementById(id).innerHTML = `<div class="msg ${type}">${text}</div>`;
+}
+
+function renderStars(rating) {
+  const full  = Math.floor(rating);
+  const empty = 5 - full;
+  return '<span class="star-f">★</span>'.repeat(full) + '<span class="star-e">★</span>'.repeat(empty);
+}
+
+function animalEmoji(type) {
+  const map = { Cattle:'🐄', Goat:'🐐', Sheep:'🐑', Pig:'🐷', Chicken:'🐓', Rabbit:'🐇', Camel:'🐪' };
+  return map[type] || '🐾';
+}
+
+function shareProfile() {
+  const url  = location.href;
+  const name = farmer?.name || 'this farmer';
+  if (navigator.share) {
+    navigator.share({ title: `${name} on SokoLeo`, text: `Browse fresh produce from ${name} on SokoLeo`, url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => alert('Profile link copied!'));
+  }
+}
+
+boot();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

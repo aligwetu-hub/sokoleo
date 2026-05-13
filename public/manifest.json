@@ -1,0 +1,19 @@
+{
+  "name": "SokoLeo — Soko Kila Siku",
+  "short_name": "SokoLeo",
+  "description": "Agricultural marketplace for Tharaka Nithi County, Kenya",
+  "start_url": "/farmer.html",
+  "display": "standalone",
+  "background_color": "#0a1a0f",
+  "theme_color": "#166534",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "shortcuts": [
+    { "name": "Farmer Dashboard", "url": "/farmer.html", "icons": [{ "src": "/logo.png", "sizes": "96x96" }] },
+    { "name": "Trader Portal",    "url": "/trader.html", "icons": [{ "src": "/logo.png", "sizes": "96x96" }] },
+    { "name": "Market Prices",    "url": "/market-prices.html", "icons": [{ "src": "/logo.png", "sizes": "96x96" }] }
+  ]
+}

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Prices – SokoLeo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#166534"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+  <style>
+    :root {
+      --green:#166534; --green-light:#16a34a; --green-pale:#dcfce7;
+      --amber:#f59e0b; --amber-pale:#fef3c7; --red:#ef4444;
+      --dark:#1b1b2f; --mid:#374151; --muted:#6b7280;
+      --border:#e5e7eb; --white:#fff;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Outfit',sans-serif; background:#f3f4f6; color:var(--dark); min-height:100vh; }
+
+    /* Top bar */
+    .topbar {
+      background:var(--green); color:#fff; padding:14px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar-left { display:flex; align-items:center; gap:12px; }
+    .topbar-back {
+      background:rgba(255,255,255,0.15); border:none; color:#fff;
+      border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;
+      font-family:'Outfit',sans-serif; font-weight:500;
+    }
+    .topbar-back:hover { background:rgba(255,255,255,0.25); }
+    .topbar h1 { font-size:18px; font-weight:700; }
+    .topbar h1 span { color:#86efac; }
+    .last-updated { font-size:11px; opacity:0.75; }
+
+    /* Filter bar */
+    .filter-bar {
+      background:#fff; border-bottom:1px solid var(--border);
+      padding:12px 20px; display:flex; gap:10px; flex-wrap:wrap;
+      position:sticky; top:53px; z-index:40;
+    }
+    .filter-bar select, .filter-bar input {
+      padding:8px 12px; border:1px solid var(--border); border-radius:8px;
+      font-size:13px; font-family:'Outfit',sans-serif; flex:1; min-width:130px;
+    }
+    .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--green); }
+    .btn-refresh {
+      background:var(--green); color:#fff; border:none; border-radius:8px;
+      padding:8px 14px; font-size:13px; font-family:'Outfit',sans-serif;
+      font-weight:600; cursor:pointer; white-space:nowrap;
+    }
+    .btn-refresh:hover { background:var(--green-light); }
+
+    /* Main content */
+    .container { max-width:900px; margin:0 auto; padding:20px 16px 80px; }
+
+    /* Section heading */
+    .section-head {
+      display:flex; justify-content:space-between; align-items:center;
+      margin:24px 0 12px;
+    }
+    .section-head h2 { font-size:16px; font-weight:700; }
+    .section-head span { font-size:12px; color:var(--muted); }
+
+    /* Price card grid */
+    .price-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+    .price-card {
+      background:#fff; border-radius:12px; border:1px solid var(--border);
+      padding:14px 16px; position:relative; overflow:hidden;
+    }
+    .price-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    }
+    .price-card.up::before    { background:#16a34a; }
+    .price-card.down::before  { background:var(--red); }
+    .price-card.stable::before{ background:var(--amber); }
+    .price-name { font-size:13px; font-weight:600; color:var(--mid); margin-bottom:6px; }
+    .price-value { font-size:22px; font-weight:700; font-family:'DM Mono',monospace; color:var(--dark); }
+    .price-unit  { font-size:11px; color:var(--muted); margin-top:2px; }
+    .price-trend { position:absolute; top:14px; right:14px; font-size:16px; }
+    .price-range { font-size:11px; color:var(--muted); margin-top:6px; }
+    .badge { display:inline-flex; padding:2px 7px; border-radius:999px; font-size:10px; font-weight:700; margin-top:6px; }
+    .badge.green { background:var(--green-pale); color:var(--green); }
+    .badge.red   { background:#fee2e2; color:#991b1b; }
+    .badge.amber { background:var(--amber-pale); color:#92400e; }
+
+    /* Table view */
+    .table-card { background:#fff; border-radius:12px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+    .table-card table { width:100%; border-collapse:collapse; }
+    th { padding:9px 14px; text-align:left; font-size:11px; text-transform:uppercase;
+         letter-spacing:0.5px; color:var(--muted); font-weight:600; background:#fafafa;
+         border-bottom:1px solid var(--border); }
+    td { padding:11px 14px; font-size:13px; border-bottom:1px solid #f3f4f6; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+    .trend-up   { color:#16a34a; font-weight:600; }
+    .trend-down { color:var(--red); font-weight:600; }
+
+    /* Info banner */
+    .info-banner {
+      background:var(--green-pale); border:1px solid #86efac; border-radius:10px;
+      padding:12px 16px; font-size:13px; color:var(--green); margin-bottom:20px;
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .info-banner .icon { font-size:18px; flex-shrink:0; }
+
+    /* Offline notice */
+    .offline-bar {
+      display:none; background:#1e293b; color:#fff;
+      text-align:center; font-size:13px; padding:8px; position:sticky; top:53px; z-index:39;
+    }
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid #e5e7eb;
+               border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="offline-bar" id="offlineBar">📵 You're offline — showing cached prices</div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="topbar-back" onclick="history.back()">← Back</button>
+    <h1>Soko<span>Leo</span> · Market Prices</h1>
+  </div>
+  <span class="last-updated" id="lastUpdated">Tharaka Nithi County</span>
+</div>
+
+<div class="filter-bar">
+  <input type="text" id="searchCrop" placeholder="Search crop..." oninput="filterPrices()" />
+  <select id="filterCategory" onchange="filterPrices()">
+    <option value="">All Categories</option>
+    <option value="cereals">Cereals & Grains</option>
+    <option value="vegetables">Vegetables</option>
+    <option value="fruits">Fruits</option>
+    <option value="legumes">Legumes</option>
+    <option value="cash">Cash Crops</option>
+    <option value="livestock">Livestock</option>
+  </select>
+  <button class="btn-refresh" onclick="loadPrices()">↻ Refresh</button>
+</div>
+
+<div class="container">
+  <div class="info-banner">
+    <span class="icon">📊</span>
+    <span>Prices are indicative wholesale rates collected from Chuka, Maara and Tharaka markets. Actual prices may vary by grade and volume. Updated daily.</span>
+  </div>
+
+  <div class="section-head">
+    <h2>Today's Prices</h2>
+    <span id="dateDisplay">—</span>
+  </div>
+
+  <div class="price-grid" id="priceGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">
+      <span class="spinner"></span> Loading prices...
+    </div>
+  </div>
+
+  <div class="section-head" style="margin-top:32px;">
+    <h2>Full Price List</h2>
+    <span>Wholesale · Per bag/kg</span>
+  </div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Crop / Product</th>
+          <th>Unit</th>
+          <th>Min (KES)</th>
+          <th>Max (KES)</th>
+          <th>Avg (KES)</th>
+          <th>Trend</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody id="priceTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// Static price data — replace with /api/market-prices endpoint when live
+const PRICES = [
+  { name:'Maize',          unit:'90kg bag', min:2800, max:3500, avg:3150, trend:'up',    cat:'cereals',    icon:'🌽' },
+  { name:'Beans (Rosecoco)',unit:'90kg bag',min:7500, max:9000, avg:8200, trend:'up',    cat:'legumes',    icon:'🫘' },
+  { name:'Beans (Mwezi Moja)',unit:'90kg bag',min:6800,max:8000,avg:7400,trend:'stable',cat:'legumes',    icon:'🫘' },
+  { name:'Tomatoes',        unit:'crate',   min:800,  max:1800, avg:1200, trend:'down',  cat:'vegetables', icon:'🍅' },
+  { name:'Potatoes',        unit:'90kg bag',min:2200, max:3000, avg:2600, trend:'stable',cat:'vegetables', icon:'🥔' },
+  { name:'Onions',          unit:'50kg bag',min:3000, max:4500, avg:3700, trend:'up',    cat:'vegetables', icon:'🧅' },
+  { name:'Kale / Sukumawiki',unit:'bundle', min:20,   max:50,   avg:35,   trend:'stable',cat:'vegetables', icon:'🥬' },
+  { name:'Cabbage',         unit:'piece',   min:40,   max:100,  avg:65,   trend:'down',  cat:'vegetables', icon:'🥦' },
+  { name:'Avocado',         unit:'crate',   min:1200, max:2500, avg:1800, trend:'up',    cat:'fruits',     icon:'🥑' },
+  { name:'Bananas',         unit:'bunch',   min:150,  max:400,  avg:280,  trend:'stable',cat:'fruits',     icon:'🍌' },
+  { name:'Mangoes',         unit:'crate',   min:600,  max:1500, avg:1050, trend:'stable',cat:'fruits',     icon:'🥭' },
+  { name:'Passion Fruit',   unit:'crate',   min:1500, max:3000, avg:2200, trend:'up',    cat:'fruits',     icon:'🍈' },
+  { name:'Sorghum',         unit:'90kg bag',min:3000, max:4000, avg:3500, trend:'stable',cat:'cereals',    icon:'🌾' },
+  { name:'Millet',          unit:'90kg bag',min:3500, max:4500, avg:4000, trend:'stable',cat:'cereals',    icon:'🌾' },
+  { name:'Groundnuts',      unit:'50kg bag',min:6000, max:8000, avg:7000, trend:'up',    cat:'legumes',    icon:'🥜' },
+  { name:'Coffee (FAQ)',    unit:'kg',       min:80,   max:120,  avg:100,  trend:'up',    cat:'cash',       icon:'☕' },
+  { name:'Miraa (Khat)',    unit:'bundle',   min:200,  max:600,  avg:400,  trend:'stable',cat:'cash',       icon:'🌿' },
+  { name:'Sunflower Seeds', unit:'90kg bag',min:4000, max:5500, avg:4800, trend:'up',    cat:'cash',       icon:'🌻' },
+  { name:'Goat (live)',     unit:'head',     min:8000, max:18000,avg:12000,trend:'up',   cat:'livestock',  icon:'🐐' },
+  { name:'Cattle (local)',  unit:'head',     min:40000,max:90000,avg:65000,trend:'stable',cat:'livestock', icon:'🐄' },
+  { name:'Sheep',           unit:'head',     min:6000, max:14000,avg:10000,trend:'stable',cat:'livestock', icon:'🐑' },
+  { name:'Chicken (live)',  unit:'bird',     min:700,  max:1500, avg:1100, trend:'down',  cat:'livestock',  icon:'🐓' },
+];
+
+let filtered = [...PRICES];
+
+function trendIcon(t) { return t === 'up' ? '↑' : t === 'down' ? '↓' : '→'; }
+function trendClass(t){ return t === 'up' ? 'trend-up' : t === 'down' ? 'trend-down' : ''; }
+function trendBadge(t){
+  const map = { up:['green','↑ Rising'], down:['red','↓ Falling'], stable:['amber','→ Stable'] };
+  const [cls, label] = map[t] || ['amber','→ Stable'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function renderGrid(data) {
+  const el = document.getElementById('priceGrid');
+  if (!data.length) { el.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No prices match your search.</p>'; return; }
+  // Show top 12 in card view
+  el.innerHTML = data.slice(0,12).map(p => `
+    <div class="price-card ${p.trend}">
+      <div class="price-trend">${p.icon}</div>
+      <div class="price-name">${p.name}</div>
+      <div class="price-value">KES ${p.avg.toLocaleString()}</div>
+      <div class="price-unit">avg · per ${p.unit}</div>
+      <div class="price-range">KES ${p.min.toLocaleString()} – ${p.max.toLocaleString()}</div>
+      ${trendBadge(p.trend)}
+    </div>`).join('');
+}
+
+function renderTable(data) {
+  document.getElementById('priceTable').innerHTML = data.map(p => `
+    <tr>
+      <td><strong>${p.icon} ${p.name}</strong></td>
+      <td>${p.unit}</td>
+      <td>KES ${p.min.toLocaleString()}</td>
+      <td>KES ${p.max.toLocaleString()}</td>
+      <td><strong>KES ${p.avg.toLocaleString()}</strong></td>
+      <td class="${trendClass(p.trend)}">${trendIcon(p.trend)} ${p.trend}</td>
+      <td style="text-transform:capitalize;">${p.cat}</td>
+    </tr>`).join('');
+}
+
+function filterPrices() {
+  const q   = document.getElementById('searchCrop').value.toLowerCase();
+  const cat = document.getElementById('filterCategory').value;
+  filtered = PRICES.filter(p =>
+    (!q || p.name.toLowerCase().includes(q)) &&
+    (!cat || p.cat === cat)
+  );
+  renderGrid(filtered);
+  renderTable(filtered);
+}
+
+function loadPrices() {
+  document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-KE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-KE', { hour:'2-digit', minute:'2-digit' });
+  renderGrid(PRICES);
+  renderTable(PRICES);
+}
+
+// Offline detection
+window.addEventListener('online',  () => document.getElementById('offlineBar').style.display = 'none');
+window.addEventListener('offline', () => document.getElementById('offlineBar').style.display = 'block');
+if (!navigator.onLine) document.getElementById('offlineBar').style.display = 'block';
+
+loadPrices();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

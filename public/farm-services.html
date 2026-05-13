@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farm Services – SokoLeo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#166534"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+  <style>
+    :root {
+      --green:#166534; --green-light:#16a34a; --green-pale:#dcfce7;
+      --amber:#f59e0b; --dark:#1b1b2f; --mid:#374151; --muted:#6b7280;
+      --border:#e5e7eb; --white:#fff; --red:#ef4444;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Outfit',sans-serif; background:#f3f4f6; color:var(--dark); min-height:100vh; }
+
+    .topbar {
+      background:var(--green); color:#fff; padding:14px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar-left { display:flex; align-items:center; gap:12px; }
+    .topbar-back { background:rgba(255,255,255,0.15); border:none; color:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; font-weight:500; }
+    .topbar-back:hover { background:rgba(255,255,255,0.25); }
+    .topbar h1 { font-size:18px; font-weight:700; }
+    .topbar h1 span { color:#86efac; }
+    .topbar-action { background:#fff; color:var(--green); border:none; border-radius:8px; padding:8px 14px; font-size:13px; font-family:'Outfit',sans-serif; font-weight:700; cursor:pointer; }
+    .topbar-action:hover { background:#f0fdf4; }
+
+    .filter-bar { background:#fff; border-bottom:1px solid var(--border); padding:12px 20px; display:flex; gap:10px; flex-wrap:wrap; position:sticky; top:53px; z-index:40; }
+    .filter-bar input, .filter-bar select { padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'Outfit',sans-serif; flex:1; min-width:130px; }
+    .filter-bar input:focus, .filter-bar select:focus { outline:none; border-color:var(--green); }
+
+    .container { max-width:1000px; margin:0 auto; padding:20px 16px 100px; }
+
+    /* Category chips */
+    .cat-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .chip {
+      padding:7px 14px; border-radius:999px; font-size:13px; font-weight:500;
+      border:1px solid var(--border); background:#fff; cursor:pointer; transition:all 0.15s;
+      white-space:nowrap;
+    }
+    .chip:hover { border-color:var(--green); color:var(--green); }
+    .chip.active { background:var(--green); color:#fff; border-color:var(--green); }
+
+    /* Service cards */
+    .services-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px; }
+    .service-card {
+      background:#fff; border-radius:14px; border:1px solid var(--border); padding:18px;
+      display:flex; flex-direction:column; gap:12px; transition:box-shadow 0.15s;
+    }
+    .service-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+    .service-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .service-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .service-icon.vet        { background:#fef3c7; }
+    .service-icon.agronomy   { background:var(--green-pale); }
+    .service-icon.transport  { background:#dbeafe; }
+    .service-icon.equipment  { background:#f3e8ff; }
+    .service-icon.irrigation { background:#cffafe; }
+    .service-icon.storage    { background:#fce7f3; }
+    .service-icon.input      { background:#fef9c3; }
+    .service-icon.finance    { background:#dcfce7; }
+    .service-icon.other      { background:#f3f4f6; }
+    .service-name { font-size:15px; font-weight:700; }
+    .service-type { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+    .service-meta { font-size:13px; color:var(--mid); display:flex; flex-direction:column; gap:4px; }
+    .service-meta span { display:flex; align-items:baseline; gap:6px; }
+    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+    .badge.green { background:var(--green-pale); color:var(--green); }
+    .badge.gray  { background:#f3f4f6; color:var(--mid); }
+    .service-footer { display:flex; gap:8px; margin-top:auto; }
+    .btn-call { flex:1; background:var(--green); color:#fff; border:none; border-radius:8px; padding:9px; font-size:13px; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; }
+    .btn-call:hover { background:var(--green-light); }
+    .btn-register { background:#fff; border:1px solid var(--border); border-radius:8px; padding:9px 14px; font-size:13px; font-family:'Outfit',sans-serif; font-weight:500; cursor:pointer; color:var(--mid); }
+    .btn-register:hover { background:#f3f4f6; }
+
+    /* Add service form */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:28px; width:500px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal h3 { font-size:18px; font-weight:700; margin-bottom:20px; }
+    .modal-close { float:right; background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; margin-bottom:5px; color:var(--mid); }
+    .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:var(--green); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-grid .full { grid-column:1/-1; }
+    .btn-submit { width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; margin-top:8px; }
+    .btn-submit:hover { background:var(--green-light); }
+    .msg { font-size:13px; padding:10px 12px; border-radius:8px; margin-top:8px; }
+    .msg.error { background:#fee2e2; color:#991b1b; }
+    .msg.success { background:var(--green-pale); color:var(--green); }
+
+    .empty { text-align:center; padding:60px 20px; color:var(--muted); }
+    .empty .e-icon { font-size:48px; display:block; margin-bottom:12px; }
+    .spinner { display:inline-block; width:18px; height:18px; border:2px solid #e5e7eb; border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .loading { text-align:center; padding:40px; color:var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="topbar-back" onclick="history.back()">← Back</button>
+    <h1>Soko<span>Leo</span> · Farm Services</h1>
+  </div>
+  <button class="topbar-action" onclick="openModal()">+ List Your Service</button>
+</div>
+
+<div class="filter-bar">
+  <input type="text" id="searchQ" placeholder="Search services..." oninput="doSearch()" />
+  <select id="filterLoc" onchange="doSearch()">
+    <option value="">All Locations</option>
+    <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+    <option>Nithi</option><option>Igambang'ombe</option>
+  </select>
+</div>
+
+<div class="container">
+  <div class="cat-chips" id="catChips">
+    <button class="chip active" data-cat="" onclick="setCategory(this,'')">All</button>
+    <button class="chip" data-cat="vet"       onclick="setCategory(this,'vet')">🩺 Veterinary</button>
+    <button class="chip" data-cat="agronomy"  onclick="setCategory(this,'agronomy')">🌿 Agronomy</button>
+    <button class="chip" data-cat="transport" onclick="setCategory(this,'transport')">🚛 Transport</button>
+    <button class="chip" data-cat="equipment" onclick="setCategory(this,'equipment')">🚜 Equipment</button>
+    <button class="chip" data-cat="irrigation"onclick="setCategory(this,'irrigation')">💧 Irrigation</button>
+    <button class="chip" data-cat="storage"   onclick="setCategory(this,'storage')">🏭 Storage</button>
+    <button class="chip" data-cat="input"     onclick="setCategory(this,'input')">🌱 Farm Inputs</button>
+    <button class="chip" data-cat="finance"   onclick="setCategory(this,'finance')">💳 Finance</button>
+  </div>
+
+  <div class="services-grid" id="servicesGrid">
+    <div class="loading"><span class="spinner"></span> Loading services...</div>
+  </div>
+</div>
+
+<!-- Add Service Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>List Your Farm Service</h3>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Service Name *</label>
+        <input type="text" id="fName" placeholder="e.g. Chuka Mobile Vet Services" />
+      </div>
+      <div class="form-group">
+        <label>Service Type *</label>
+        <select id="fType">
+          <option value="">Select type...</option>
+          <option value="vet">Veterinary</option>
+          <option value="agronomy">Agronomy / Extension</option>
+          <option value="transport">Transport & Logistics</option>
+          <option value="equipment">Equipment Hire</option>
+          <option value="irrigation">Irrigation</option>
+          <option value="storage">Storage / Warehousing</option>
+          <option value="input">Farm Inputs Supply</option>
+          <option value="finance">Agricultural Finance</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contact Phone *</label>
+        <input type="tel" id="fPhone" placeholder="0712345678" />
+      </div>
+      <div class="form-group">
+        <label>Location *</label>
+        <input type="text" id="fLocation" placeholder="e.g. Chuka Town" />
+      </div>
+      <div class="form-group">
+        <label>Coverage Radius (km)</label>
+        <input type="number" id="fRadius" placeholder="20" min="1" max="200" />
+      </div>
+      <div class="form-group">
+        <label>Price Range (optional)</label>
+        <input type="text" id="fPrice" placeholder="e.g. KES 500–2,000 per visit" />
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <textarea id="fDesc" rows="3" placeholder="Briefly describe your service..."></textarea>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Your phone number will be listed so farmers can contact you directly.</p>
+    <button class="btn-submit" onclick="submitService()">Submit for Listing</button>
+    <div id="formMsg"></div>
+  </div>
+</div>
+
+<script>
+let activeCategory = '';
+
+const TYPE_META = {
+  vet:       { icon:'🩺', label:'Veterinary' },
+  agronomy:  { icon:'🌿', label:'Agronomy / Extension' },
+  transport: { icon:'🚛', label:'Transport & Logistics' },
+  equipment: { icon:'🚜', label:'Equipment Hire' },
+  irrigation:{ icon:'💧', label:'Irrigation' },
+  storage:   { icon:'🏭', label:'Storage' },
+  input:     { icon:'🌱', label:'Farm Inputs' },
+  finance:   { icon:'💳', label:'Finance' },
+  other:     { icon:'🔧', label:'Other' },
+};
+
+// Fallback demo data shown when API is empty or offline
+const DEMO = [
+  { id:'d1', service_name:'Tharaka County Vet Services', service_type:'vet', location:'Chuka', coverage_radius_km:40, contact_phone:'0721234567', price_range:'KES 300–1,500', description:'Mobile veterinary services covering livestock vaccination, treatment and AI.', is_verified:true, rating:4.5, reviews_count:12 },
+  { id:'d2', service_name:'Maara Agri Extension Officers', service_type:'agronomy', location:'Maara', coverage_radius_km:30, contact_phone:'0733456789', price_range:'Free (county subsidised)', description:'Crop advisory, soil testing and field visits for smallholder farmers.', is_verified:true, rating:4.2, reviews_count:8 },
+  { id:'d3', service_name:'Nithi Transporters Sacco', service_type:'transport', location:'Chuka', coverage_radius_km:80, contact_phone:'0745678901', price_range:'KES 50–200/km', description:'Pickup trucks and lorries for farm produce collection and delivery.', is_verified:false, rating:3.9, reviews_count:5 },
+  { id:'d4', service_name:'Tharaka Equipment Hub', service_type:'equipment', location:'Tharaka', coverage_radius_km:50, contact_phone:'0756789012', price_range:'KES 2,000–8,000/day', description:'Tractor hire, ploughing, harrowing and shelling services.', is_verified:true, rating:4.7, reviews_count:20 },
+  { id:'d5', service_name:'Chuka Irrigation Supplies', service_type:'irrigation', location:'Chuka', coverage_radius_km:60, contact_phone:'0767890123', price_range:'Varies by project', description:'Drip irrigation installation, pipe supply and borehole connections.', is_verified:false, rating:4.0, reviews_count:3 },
+  { id:'d6', service_name:'Igambang\'ombe Grain Store', service_type:'storage', location:'Igambang\'ombe', coverage_radius_km:20, contact_phone:'0778901234', price_range:'KES 50/bag/month', description:'Dry secure storage for maize, beans and other grains. Fumigation available.', is_verified:true, rating:4.3, reviews_count:15 },
+];
+
+function renderServices(data) {
+  const el = document.getElementById('servicesGrid');
+  if (!data.length) {
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1;"><span class="e-icon">🔧</span><p>No services found. Be the first to list yours!</p></div>`;
+    return;
+  }
+  el.innerHTML = data.map(s => {
+    const meta = TYPE_META[s.service_type] || TYPE_META.other;
+    return `
+    <div class="service-card">
+      <div class="service-header">
+        <div style="display:flex;gap:12px;align-items:flex-start;flex:1;">
+          <div class="service-icon ${s.service_type}">${meta.icon}</div>
+          <div>
+            <div class="service-name">${s.service_name}</div>
+            <div class="service-type">${meta.label}</div>
+          </div>
+        </div>
+        ${s.is_verified ? '<span class="badge green">✓ Verified</span>' : '<span class="badge gray">Unverified</span>'}
+      </div>
+      <div class="service-meta">
+        <span>📍 ${s.location}${s.coverage_radius_km ? ' · ' + s.coverage_radius_km + ' km radius' : ''}</span>
+        ${s.price_range ? `<span>💰 ${s.price_range}</span>` : ''}
+        ${s.rating ? `<span>⭐ ${s.rating} ${s.reviews_count ? '(' + s.reviews_count + ' reviews)' : ''}</span>` : ''}
+        ${s.description ? `<span style="margin-top:4px;font-style:italic;color:var(--muted);">${s.description.slice(0,90)}${s.description.length>90?'…':''}</span>` : ''}
+      </div>
+      <div class="service-footer">
+        ${s.contact_phone
+          ? `<a href="tel:${s.contact_phone}" class="btn-call">📞 Call ${s.contact_phone}</a>`
+          : '<span class="btn-call" style="opacity:0.4;cursor:default;">No contact listed</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadServices() {
+  const el = document.getElementById('servicesGrid');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span> Loading services...</div>';
+  const q    = document.getElementById('searchQ').value.trim();
+  const loc  = document.getElementById('filterLoc').value;
+  let url = '/api/services?status=active';
+  if (activeCategory) url += `&service_type=${activeCategory}`;
+  if (q)   url += `&q=${encodeURIComponent(q)}`;
+  if (loc) url += `&location=${encodeURIComponent(loc)}`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('API error');
+    const data = await r.json();
+    renderServices(data.length ? data : DEMO);
+  } catch {
+    renderServices(DEMO); // show demo data when offline or API unavailable
+  }
+}
+
+function setCategory(btn, cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  loadServices();
+}
+
+function doSearch() {
+  clearTimeout(window._st);
+  window._st = setTimeout(loadServices, 350);
+}
+
+function openModal()  { document.getElementById('addModal').classList.add('open'); }
+function closeModal() { document.getElementById('addModal').classList.remove('open'); }
+
+async function submitService() {
+  const body = {
+    provider_id:  'guest',
+    service_name: document.getElementById('fName').value.trim(),
+    service_type: document.getElementById('fType').value,
+    contact_phone:document.getElementById('fPhone').value.trim(),
+    location:     document.getElementById('fLocation').value.trim(),
+    coverage_radius_km: parseInt(document.getElementById('fRadius').value) || 20,
+    price_range:  document.getElementById('fPrice').value.trim() || null,
+    description:  document.getElementById('fDesc').value.trim() || null,
+  };
+  if (!body.service_name || !body.service_type || !body.location)
+    return showMsg('formMsg', 'Service name, type and location are required.', 'error');
+  try {
+    const r = await fetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) return showMsg('formMsg', d.error || 'Submission failed.', 'error');
+    showMsg('formMsg', '✅ Submitted! Your service will appear after admin review.', 'success');
+    setTimeout(closeModal, 2000);
+    loadServices();
+  } catch { showMsg('formMsg', 'Network error. Please try again.', 'error'); }
+}
+
+function showMsg(id, text, type) {
+  document.getElementById(id).innerHTML = `<div class="msg ${type}">${text}</div>`;
+}
+
+loadServices();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

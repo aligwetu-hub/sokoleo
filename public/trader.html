@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SokoLeo – Trader Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --amber: #f4a261; --amber-dark: #e76f51; --amber-pale: #fef3c7;
+      --green: #2d6a4f; --green-light: #40916c; --green-pale: #d8f3dc;
+      --dark: #1b1b2f; --mid: #374151; --muted: #6b7280;
+      --border: #e5e7eb; --white: #fff; --red: #ef4444; --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f3f4f6; color: var(--dark); }
+
+    /* Auth */
+    .auth-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #1b1b2f 0%, #374151 100%); }
+    .auth-card { background:white; border-radius:20px; padding:40px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .auth-logo { text-align:center; margin-bottom:28px; }
+    .auth-logo h1 { font-size:28px; font-weight:700; color:var(--dark); }
+    .auth-logo h1 span { color:var(--amber); }
+    .auth-logo p { font-size:13px; color:var(--muted); margin-top:4px; }
+    .auth-step { display:none; }
+    .auth-step.active { display:block; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--mid); }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:10px 14px; border:1px solid var(--border);
+      border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif; outline:none; transition:border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--amber); box-shadow:0 0 0 3px rgba(244,162,97,0.15); }
+    .btn { width:100%; padding:12px; border-radius:10px; font-size:15px; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; border:none; transition:all 0.15s; }
+    .btn-amber { background:var(--amber); color:white; }
+    .btn-amber:hover { background:var(--amber-dark); }
+    .btn-green { background:var(--green); color:white; }
+    .btn-green:hover { background:var(--green-light); }
+    .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--mid); }
+    .btn-ghost:hover { background:#f3f4f6; }
+    .btn-sm { width:auto; padding:7px 14px; font-size:13px; border-radius:7px; }
+    .btn-danger { background:#fee2e2; color:var(--red); border:none; }
+    .msg { font-size:13px; margin-top:8px; padding:10px 12px; border-radius:8px; }
+    .msg.error { background:#fee2e2; color:#991b1b; }
+    .msg.success { background:var(--green-pale); color:var(--green); }
+
+    /* App layout */
+    .app { display:none; }
+    .app.visible { display:flex; }
+    .sidebar {
+      position:fixed; top:0; left:0; width:220px; height:100vh;
+      background:#1b1b2f; display:flex; flex-direction:column; z-index:100;
+    }
+    .logo { padding:24px 20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .logo h2 { font-size:20px; font-weight:700; color:white; }
+    .logo h2 span { color:var(--amber); }
+    .logo p { font-size:11px; color:rgba(255,255,255,0.35); margin-top:2px; }
+    .nav { flex:1; padding:14px 10px; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:8px; color:rgba(255,255,255,0.5);
+      font-size:14px; font-weight:500; cursor:pointer; margin-bottom:2px; transition:all 0.15s;
+    }
+    .nav-item:hover { background:rgba(255,255,255,0.06); color:white; }
+    .nav-item.active { background:var(--amber-dark); color:white; }
+    .nav-item .icon { font-size:18px; width:22px; text-align:center; }
+    .sidebar-user { padding:16px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; }
+    .avatar { width:36px; height:36px; border-radius:50%; background:var(--amber-dark); display:flex; align-items:center; justify-content:center; font-size:16px; color:white; font-weight:700; flex-shrink:0; }
+    .user-info { overflow:hidden; }
+    .user-name { font-size:13px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:11px; color:rgba(255,255,255,0.35); }
+    .main { margin-left:220px; padding:28px; min-height:100vh; flex:1; }
+    .page { display:none; }
+    .page.active { display:block; }
+    .page-header { margin-bottom:24px; }
+    .page-header h2 { font-size:24px; font-weight:700; }
+    .page-header p { font-size:14px; color:var(--muted); margin-top:4px; }
+
+    /* Stats */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+    .stat { background:white; border-radius:12px; padding:18px; border:1px solid var(--border); }
+    .stat-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:500; }
+    .stat-value { font-size:28px; font-weight:700; margin-top:6px; font-family:'DM Mono',monospace; }
+    .stat.amber .stat-value { color:var(--amber-dark); }
+    .stat.green .stat-value { color:var(--green); }
+    .stat.blue .stat-value { color:var(--blue); }
+
+    /* Cards */
+    .card { background:white; border-radius:14px; border:1px solid var(--border); margin-bottom:20px; }
+    .card-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .card-header h3 { font-size:15px; font-weight:600; }
+    .card-body { padding:20px; }
+    table { width:100%; border-collapse:collapse; }
+    th { padding:9px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-weight:600; background:#fafafa; border-bottom:1px solid var(--border); }
+    td { padding:11px 14px; font-size:13px; border-bottom:1px solid #f3f4f6; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+    .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+    .badge.green { background:var(--green-pale); color:var(--green); }
+    .badge.amber { background:var(--amber-pale); color:#92400e; }
+    .badge.red { background:#fee2e2; color:#991b1b; }
+    .badge.blue { background:#dbeafe; color:#1e40af; }
+    .badge.gray { background:#f3f4f6; color:#374151; }
+
+    /* Search / Filter bar */
+    .search-bar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .search-bar input, .search-bar select { padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'Outfit',sans-serif; flex:1; min-width:140px; }
+    .search-bar input:focus, .search-bar select:focus { outline:none; border-color:var(--amber); }
+
+    /* Market listing cards grid */
+    .market-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .market-card {
+      background:white; border-radius:14px; border:1px solid var(--border); padding:18px;
+      transition:box-shadow 0.15s;
+    }
+    .market-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+    .market-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .market-card-product { font-size:18px; font-weight:700; }
+    .market-card-price { font-size:15px; font-weight:700; color:var(--green); font-family:'DM Mono',monospace; }
+    .market-card-meta { font-size:12px; color:var(--muted); margin-bottom:10px; display:flex; flex-direction:column; gap:4px; }
+    .market-card-meta span { display:flex; align-items:center; gap:5px; }
+    .market-card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+
+    /* Route planner */
+    .route-list { display:flex; flex-direction:column; gap:12px; }
+    .route-card { background:#f9fafb; border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    .route-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .route-card-title { font-weight:600; font-size:14px; }
+    .route-stops { display:flex; flex-direction:column; gap:6px; padding-left:12px; border-left:2px solid var(--amber); }
+    .route-stop { font-size:13px; display:flex; gap:8px; align-items:flex-start; }
+    .route-stop-dot { width:8px; height:8px; border-radius:50%; background:var(--amber); flex-shrink:0; margin-top:4px; }
+    .route-stat { font-size:12px; color:var(--muted); margin-top:8px; display:flex; gap:16px; }
+
+    /* AI Vision */
+    .upload-zone {
+      border:2px dashed var(--border); border-radius:12px; padding:40px; text-align:center;
+      cursor:pointer; transition:all 0.2s; background:#fafafa;
+    }
+    .upload-zone:hover, .upload-zone.dragging { border-color:var(--amber); background:var(--amber-pale); }
+    .upload-zone .u-icon { font-size:40px; margin-bottom:10px; }
+    .upload-zone p { font-size:14px; color:var(--muted); }
+    .upload-zone input[type=file] { display:none; }
+    .vision-result { background:#f9fafb; border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:16px; }
+    .vision-result h4 { font-size:14px; font-weight:600; margin-bottom:8px; }
+    .vision-result p { font-size:13px; color:var(--mid); line-height:1.6; }
+
+    /* Misc */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-grid .full { grid-column:1/-1; }
+    .action-row { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+    .empty { text-align:center; padding:48px; color:var(--muted); }
+    .empty .e-icon { font-size:40px; margin-bottom:10px; }
+    .empty p { font-size:14px; }
+    .loading { text-align:center; padding:32px; color:var(--muted); font-size:14px; }
+    .spinner { display:inline-block; width:18px; height:18px; border:2px solid #e5e7eb; border-top-color:var(--amber); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    /* Boosted listings */
+    .market-card.boosted { border-top: 3px solid #fbbf24; }
+    .boost-featured-badge { position:absolute; top:12px; right:12px; background:#f59e0b; color:#fff; font-size:10px; font-weight:700; border-radius:999px; padding:3px 9px; }
+    .market-card { position:relative; }
+
+    /* Messaging */
+    .msg-badge { display:inline-flex; align-items:center; justify-content:center; background:#ef4444; color:#fff; font-size:10px; font-weight:700; border-radius:999px; min-width:16px; height:16px; padding:0 4px; margin-left:4px; vertical-align:middle; }
+    .msg-badge:empty { display:none; }
+    .inbox-list { display:flex; flex-direction:column; gap:2px; }
+    .inbox-item { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#fff; border-radius:12px; border:1px solid var(--border); cursor:pointer; transition:box-shadow .15s; }
+    .inbox-item:hover { box-shadow:0 2px 12px rgba(0,0,0,.08); }
+    .inbox-avatar { width:44px; height:44px; border-radius:50%; background:var(--amber-pale); color:var(--amber-dark); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+    .inbox-body { flex:1; min-width:0; }
+    .inbox-name { font-size:14px; font-weight:600; }
+    .inbox-preview { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+    .inbox-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+    .inbox-time { font-size:11px; color:var(--muted); }
+    .inbox-unread { background:#ef4444; color:#fff; border-radius:999px; font-size:10px; font-weight:700; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+    .thread-wrap { display:flex; flex-direction:column; height:calc(100vh - 200px); }
+    .thread-topbar { display:flex; align-items:center; gap:12px; padding:12px 0 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .back-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; font-family:'Outfit',sans-serif; cursor:pointer; font-weight:500; }
+    .back-btn:hover { background:#f3f4f6; }
+    .thread-name { font-size:15px; font-weight:700; }
+    .thread-messages { flex:1; overflow-y:auto; padding:16px 0; display:flex; flex-direction:column; gap:10px; }
+    .bubble-row { display:flex; }
+    .bubble-row.mine { justify-content:flex-end; }
+    .bubble-row.theirs { justify-content:flex-start; }
+    .bubble { max-width:70%; padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; word-break:break-word; }
+    .bubble.mine { background:var(--amber-dark); color:#fff; border-bottom-right-radius:4px; }
+    .bubble.theirs { background:#f3f4f6; color:var(--dark); border-bottom-left-radius:4px; }
+    .bubble-time { font-size:10px; opacity:.6; margin-top:3px; text-align:right; }
+    .thread-input { display:flex; gap:8px; padding:12px 0 4px; border-top:1px solid var(--border); flex-shrink:0; }
+    .thread-input textarea { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:'Outfit',sans-serif; resize:none; outline:none; }
+    .thread-input textarea:focus { border-color:var(--amber); }
+    .thread-input button { padding:10px 18px; background:var(--amber-dark); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; font-family:'Outfit',sans-serif; cursor:pointer; flex-shrink:0; }
+    .thread-input button:hover { background:var(--amber); }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:white; border-radius:16px; padding:28px; width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { font-size:18px; font-weight:700; margin-bottom:18px; }
+    .modal-close { float:right; background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+    /* Star picker */
+    .stars-picker { display:flex; gap:4px; margin-top:8px; }
+    .star-btn { background:none; border:none; font-size:36px; cursor:pointer; color:#d1d5db; transition:color .1s; padding:0; line-height:1; }
+    .star-btn.lit { color:#f59e0b; }
+    .rating-label { font-size:13px; color:var(--muted); margin-top:6px; min-height:18px; }
+    .btn-rate { width:auto; padding:5px 12px; font-size:12px; border-radius:6px; border:1px solid var(--amber); background:#fff; color:var(--amber-dark); font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; transition:all .15s; }
+    .btn-rate:hover { background:var(--amber-pale); }
+    .btn-rated { width:auto; padding:5px 12px; font-size:12px; border-radius:6px; border:1px solid #d1d5db; background:#f9fafb; color:var(--muted); font-family:'Outfit',sans-serif; font-weight:500; cursor:default; }
+    .alert { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:20px; }
+    .alert.info { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
+    .alert.warn { background:var(--amber-pale); color:#92400e; border:1px solid #fde68a; }
+    .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+  </style>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#166534"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Soko<span>Leo</span></h1>
+      <p>Trader Portal · Tharaka Nithi County</p>
+    </div>
+    <div class="auth-step active" id="stepPhone">
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="authPhone" placeholder="e.g. 0722345678" />
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="authName" placeholder="e.g. Peter Kamau" />
+      </div>
+      <button class="btn btn-amber" onclick="requestOTP()">Get OTP Code</button>
+      <div id="phoneMsg"></div>
+    </div>
+    <div class="auth-step" id="stepOTP">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Enter the 6-digit code sent to <strong id="otpPhoneDisplay"></strong></p>
+      <div class="form-group">
+        <label>OTP Code</label>
+        <input type="text" id="authOTP" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;" />
+      </div>
+      <button class="btn btn-amber" onclick="verifyOTP()">Login / Register</button>
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="showStep('stepPhone')">← Back</button>
+      <div id="otpMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appScreen">
+  <div class="sidebar">
+    <div class="logo">
+      <h2>Soko<span>Leo</span></h2>
+      <p>Trader Portal</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active"  onclick="showPage('market')">     <span class="icon">🛒</span> Marketplace</div>
+      <div class="nav-item"         onclick="showPage('livestock')">   <span class="icon">🐄</span> Livestock Market</div>
+      <div class="nav-item"         onclick="showPage('reservations')"><span class="icon">📦</span> My Orders</div>
+      <div class="nav-item"         onclick="showPage('route')">       <span class="icon">🗺️</span> Route Planner</div>
+      <div class="nav-item"         onclick="showPage('vision')">      <span class="icon">🔍</span> AI Crop Check</div>
+      <div class="nav-item"         onclick="showPage('services')">    <span class="icon">🔧</span> Farm Services</div>
+      <div class="nav-item"         onclick="showPage('spending')">    <span class="icon">💳</span> Spending</div>
+      <div class="nav-item"         onclick="showPage('messages')">   <span class="icon">💬</span> Messages <span id="traderMsgBadge" class="msg-badge"></span></div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebarAvatar">T</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Trader</div>
+        <div class="user-role">Trader</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- MARKETPLACE -->
+    <div class="page active" id="page-market">
+      <div class="page-header">
+        <h2>Produce Marketplace</h2>
+        <p>Browse fresh produce from farmers in Tharaka Nithi</p>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="searchQuery" placeholder="Search produce (e.g. Maize, Beans)..." oninput="searchListings()" />
+        <select id="filterAvail" onchange="searchListings()">
+          <option value="">All Availability</option>
+          <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
+          <option value="this_week">This Week</option>
+        </select>
+        <select id="filterLoc" onchange="searchListings()">
+          <option value="">All Locations</option>
+          <option>Chuka</option><option>Maara</option><option>Tharaka</option>
+          <option>Meru Town Road</option><option>Nithi</option>
+        </select>
+      </div>
+      <div class="market-grid" id="marketGrid">
+        <div class="loading"><span class="spinner"></span> Loading produce...</div>
+      </div>
+    </div>
+
+    <!-- LIVESTOCK MARKET -->
+    <div class="page" id="page-livestock">
+      <div class="page-header">
+        <h2>Livestock Market</h2>
+        <p>Buy cattle, goats, sheep and more directly from farmers</p>
+      </div>
+      <div class="search-bar">
+        <select id="lvFilter" onchange="loadLivestock()">
+          <option value="">All Animals</option>
+          <option value="Cattle">Cattle</option>
+          <option value="Goat">Goat</option>
+          <option value="Sheep">Sheep</option>
+          <option value="Pig">Pig</option>
+          <option value="Chicken">Chicken</option>
+        </select>
+      </div>
+      <div class="market-grid" id="livestockGrid">
+        <div class="loading"><span class="spinner"></span> Loading livestock...</div>
+      </div>
+    </div>
+
+    <!-- MY ORDERS -->
+    <div class="page" id="page-reservations">
+      <div class="page-header">
+        <h2>My Orders</h2>
+        <p>Track your reservations and escrow payments</p>
+      </div>
+      <div class="card">
+        <div id="myOrders"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- ROUTE PLANNER -->
+    <div class="page" id="page-route">
+      <div class="page-header">
+        <h2>Route Planner</h2>
+        <p>Optimise your collection route across multiple farms</p>
+      </div>
+      <div class="card card-body" style="padding:20px;">
+        <div class="alert info">📍 Add farm stops below and we'll calculate the most efficient collection route from your base.</div>
+        <div class="form-group">
+          <label>Your Base Location</label>
+          <input type="text" id="routeBase" placeholder="e.g. Chuka Town" />
+        </div>
+        <div id="routeStops">
+          <div class="route-stop-input" style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" class="stop-input" placeholder="Farm stop (e.g. Maara, Tharaka)" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:Outfit,sans-serif;" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-ghost btn-sm" onclick="addStop()">+ Add Stop</button>
+          <button class="btn btn-amber btn-sm" onclick="planRoute()">Plan Route</button>
+        </div>
+        <div id="routeResult"></div>
+      </div>
+    </div>
+
+    <!-- AI CROP VISION -->
+    <div class="page" id="page-vision">
+      <div class="page-header">
+        <h2>AI Crop Disease Check</h2>
+        <p>Upload a crop photo for instant disease detection and advice</p>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('cropImage').click()" ondragover="dragOver(event)" ondrop="dropFile(event)" ondragleave="dragLeave(event)">
+            <div class="u-icon">📸</div>
+            <p>Click or drag a crop photo here</p>
+            <p style="font-size:12px;margin-top:4px;">Supports JPG, PNG, WEBP</p>
+            <input type="file" id="cropImage" accept="image/*" onchange="handleImageSelect(event)" />
+          </div>
+          <div id="visionPreview" style="display:none;margin-top:16px;text-align:center;">
+            <img id="previewImg" style="max-width:100%;max-height:280px;border-radius:10px;border:1px solid var(--border);" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-amber btn-sm" onclick="analyzeImage()" id="analyzeBtn" disabled>🔍 Analyse Crop</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearVision()">Clear</button>
+          </div>
+          <div id="visionResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FARM SERVICES -->
+    <div class="page" id="page-services">
+      <div class="page-header">
+        <h2>Farm Services Directory</h2>
+        <p>Find vets, agronomists, equipment hire, transporters & more</p>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="servicesSearch" placeholder="Search services..." oninput="searchServices()" />
+        <select id="servicesCategory" onchange="searchServices()">
+          <option value="">All Categories</option>
+          <option value="vet">Veterinary</option>
+          <option value="agronomy">Agronomy / Extension</option>
+          <option value="transport">Transport & Logistics</option>
+          <option value="equipment">Equipment Hire</option>
+          <option value="irrigation">Irrigation</option>
+          <option value="storage">Storage / Warehousing</option>
+          <option value="input">Farm Inputs Supply</option>
+        </select>
+      </div>
+      <div class="market-grid" id="servicesGrid">
+        <div class="loading"><span class="spinner"></span> Loading services...</div>
+      </div>
+    </div>
+
+    <!-- SPENDING -->
+    <div class="page" id="page-spending">
+      <div class="page-header">
+        <h2>Spending</h2>
+        <p>Your purchase history and escrow transactions</p>
+      </div>
+      <div class="stats-row" id="spendingStats">
+        <div class="loading"><span class="spinner"></span></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Transaction History</h3></div>
+        <div id="spendingList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="page" id="page-messages">
+      <div class="page-header">
+        <h2>💬 Messages</h2>
+        <p>Chat with farmers securely — no phone numbers shared</p>
+      </div>
+      <div id="traderInboxView">
+        <div id="traderInboxList" class="inbox-list">
+          <div class="loading"><span class="spinner"></span> Loading messages…</div>
+        </div>
+      </div>
+      <div id="traderThreadView" style="display:none;">
+        <div class="thread-wrap">
+          <div class="thread-topbar">
+            <button class="back-btn" onclick="traderBackToInbox()">← Back</button>
+            <div id="traderThreadName" class="thread-name"></div>
+          </div>
+          <div class="thread-messages" id="traderThreadMessages"></div>
+          <div class="thread-input">
+            <textarea id="traderMsgInput" rows="1" placeholder="Type a message…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();traderSendMessage();}"></textarea>
+            <button onclick="traderSendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Reserve Modal -->
+<div class="modal-overlay" id="reserveModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('reserveModal')">×</button>
+    <h3>Reserve Produce</h3>
+    <div id="reserveDetails" style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Quantity to Reserve</label>
+      <input type="text" id="reserveQty" placeholder="e.g. 5 bags" />
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="reserveNotes" rows="2" placeholder="Any special requirements..."></textarea>
+    </div>
+    <div class="alert warn" style="margin-top:0;">
+      Payment will be processed via M-PESA escrow. Funds are held securely until goods are delivered.
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('reserveModal')">Cancel</button>
+      <button class="btn btn-amber btn-sm" onclick="submitReservation()">Reserve & Pay</button>
+    </div>
+    <div id="reserveMsg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('reviewModal')">×</button>
+    <h3>⭐ Rate This Seller</h3>
+    <div id="reviewDealInfo" style="background:#f9fafb;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Your Rating <span style="color:var(--red)">*</span></label>
+      <div class="stars-picker" id="starsPicker">
+        <button class="star-btn" data-v="1" onclick="setRating(1)">★</button>
+        <button class="star-btn" data-v="2" onclick="setRating(2)">★</button>
+        <button class="star-btn" data-v="3" onclick="setRating(3)">★</button>
+        <button class="star-btn" data-v="4" onclick="setRating(4)">★</button>
+        <button class="star-btn" data-v="5" onclick="setRating(5)">★</button>
+      </div>
+      <div class="rating-label" id="ratingLabel">Tap a star to rate</div>
+    </div>
+    <div class="form-group">
+      <label>Comment <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+      <textarea id="reviewComment" rows="3" placeholder="Share your experience with this seller…" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Outfit',sans-serif;resize:vertical;"></textarea>
+    </div>
+    <div class="action-row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('reviewModal')">Cancel</button>
+      <button class="btn btn-amber btn-sm" onclick="submitRating()">Submit Review</button>
+    </div>
+    <div id="reviewMsg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+  let currentPhone = '';
+  let selectedListing = null;
+  let selectedImageFile = null;
+  const BASE = '';
+
+  // ── Auth ──────────────────────────────────────────────────────────
+  function showStep(id) {
+    document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function requestOTP() {
+    const phone = document.getElementById('authPhone').value.trim();
+    const name  = document.getElementById('authName').value.trim();
+    if (!phone || !name) return showMsg('phoneMsg', 'Phone and name required.', 'error');
+    showMsg('phoneMsg', 'Sending OTP...', '');
+    try {
+      const r = await fetch(`${BASE}/api/auth/register`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone, name, role: 'trader' })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('phoneMsg', d.error || 'Failed to send OTP.', 'error');
+      currentPhone = phone;
+      document.getElementById('otpPhoneDisplay').textContent = phone;
+      showStep('stepOTP');
+    } catch { showMsg('phoneMsg', 'Network error.', 'error'); }
+  }
+
+  async function verifyOTP() {
+    const otp = document.getElementById('authOTP').value.trim();
+    if (!otp) return showMsg('otpMsg', 'Enter the OTP.', 'error');
+    try {
+      const r = await fetch(`${BASE}/api/auth/verify-otp`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone: currentPhone, otp })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('otpMsg', d.error || 'Invalid OTP.', 'error');
+      currentUser = d.user;
+      bootApp();
+    } catch { showMsg('otpMsg', 'Network error.', 'error'); }
+  }
+
+  function bootApp() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('visible');
+    const n = currentUser.name || 'Trader';
+    document.getElementById('sidebarName').textContent = n;
+    document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
+    loadMarket();
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(`'${id}'`)) n.classList.add('active');
+    });
+    if (id === 'market')       loadMarket();
+    if (id === 'livestock')    loadLivestock();
+    if (id === 'reservations') loadMyOrders();
+    if (id === 'services')     loadServices();
+    if (id === 'spending')     loadSpending();
+    if (id === 'messages')     loadTraderInbox();
+    if (id !== 'messages')     stopTraderPoll();
+  }
+
+  // ── Marketplace ───────────────────────────────────────────────────
+  async function loadMarket() {
+    const q = document.getElementById('searchQuery').value.trim();
+    const avail = document.getElementById('filterAvail').value;
+    const loc = document.getElementById('filterLoc').value;
+    let url = `/api/listings?status=active`;
+    if (q) url += `&product=${encodeURIComponent(q)}`;
+    if (avail) url += `&availability=${avail}`;
+    if (loc) url += `&location=${encodeURIComponent(loc)}`;
+    const el = document.getElementById('marketGrid');
+    el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
+    try {
+      const data = await apiFetch(url);
+      if (!data.length) { el.innerHTML = emptyState('No produce found matching your search.'); return; }
+      el.innerHTML = data.map(l => {
+        const boostActive = l.is_boosted && l.boosted_until && new Date(l.boosted_until) > new Date();
+        return `
+        <div class="market-card${boostActive ? ' boosted' : ''}">
+          ${boostActive ? '<span class="boost-featured-badge">🚀 Featured</span>' : ''}
+          <div class="market-card-header">
+            <span class="market-card-product">${l.product}</span>
+            <span class="market-card-price">${l.price_per_unit ? 'KES ' + Number(l.price_per_unit).toLocaleString() + '/' + (l.unit||'unit') : 'Negotiate'}</span>
+          </div>
+          <div class="market-card-meta">
+            <span>📦 ${l.quantity} ${l.unit || 'units'} available</span>
+            <span>📍 ${l.location}</span>
+            <span>🕐 Available: ${l.availability.replace('_',' ')}</span>
+            ${l.description ? `<span style="margin-top:4px;font-style:italic;">${l.description}</span>` : ''}
+            <span>🌾 ${l.farmer_name || 'Farmer'}</span>
+          </div>
+          <div class="market-card-footer">
+            <span class="badge ${boostActive ? 'amber' : 'green'}">${boostActive ? '🚀 Boosted' : 'Active'}</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="startConversation('${l.farmer_id}','${l.id}')">💬 Chat</button>
+              <button class="btn btn-amber btn-sm" onclick="openReserve(${JSON.stringify(l).replace(/"/g,'&quot;')})">Reserve</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch { el.innerHTML = '<p style="color:red;padding:20px;">Failed to load listings.</p>'; }
+  }
+
+  function searchListings() { clearTimeout(window._searchTimer); window._searchTimer = setTimeout(loadMarket, 400); }
+
+  function openReserve(listing) {
+    selectedListing = listing;
+    document.getElementById('reserveDetails').innerHTML = `
+      <strong>${listing.product}</strong><br/>
+      📦 ${listing.quantity} ${listing.unit || 'units'} · 📍 ${listing.location}<br/>
+      💰 ${listing.price_per_unit ? 'KES ' + Number(listing.price_per_unit).toLocaleString() + '/' + listing.unit : 'Price negotiable'}`;
+    document.getElementById('reserveQty').value = '';
+    document.getElementById('reserveNotes').value = '';
+    document.getElementById('reserveMsg').innerHTML = '';
+    document.getElementById('reserveModal').classList.add('open');
+  }
+
+  async function submitReservation() {
+    if (!selectedListing) return;
+    const qty   = document.getElementById('reserveQty').value.trim();
+    const notes = document.getElementById('reserveNotes').value.trim();
+    if (!qty) return showMsg('reserveMsg', 'Enter quantity to reserve.', 'error');
+    try {
+      const r = await fetch(`${BASE}/api/reservations`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ listing_id: selectedListing.id, trader_id: currentUser.id, quantity_reserved: qty, notes })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('reserveMsg', d.error || 'Reservation failed.', 'error');
+      showMsg('reserveMsg', '✅ Reserved! Farmer has been notified.', 'success');
+      setTimeout(() => closeModal('reserveModal'), 1800);
+    } catch { showMsg('reserveMsg', 'Network error.', 'error'); }
+  }
+
+  // ── Livestock ─────────────────────────────────────────────────────
+  async function loadLivestock() {
+    const type = document.getElementById('lvFilter') ? document.getElementById('lvFilter').value : '';
+    let url = `/api/livestock?status=active`;
+    if (type) url += `&animal_type=${encodeURIComponent(type)}`;
+    const el = document.getElementById('livestockGrid');
+    el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
+    try {
+      const data = await apiFetch(url);
+      if (!data.length) { el.innerHTML = emptyState('No livestock available right now.'); return; }
+      el.innerHTML = data.map(l => `
+        <div class="market-card">
+          <div class="market-card-header">
+            <span class="market-card-product">${l.animal_type} ${l.breed ? '· ' + l.breed : ''}</span>
+            <span class="market-card-price">KES ${Number(l.price_per_head).toLocaleString()}/head</span>
+          </div>
+          <div class="market-card-meta">
+            <span>🐾 ${l.quantity} head available</span>
+            ${l.age_months ? `<span>📅 Age: ${l.age_months} months</span>` : ''}
+            ${l.weight_kg ? `<span>⚖️ ${l.weight_kg} kg</span>` : ''}
+            <span>📍 ${l.location}</span>
+            <span>💉 Vaccinated: ${l.vaccinated ? 'Yes' : 'No'} · ${l.health_status}</span>
+          </div>
+          <div class="market-card-footer">
+            <span class="badge green">Available</span>
+            <button class="btn btn-amber btn-sm" onclick="contactFarmer('${l.farmer_phone || ''}', '${l.animal_type}')">Contact Farmer</button>
+          </div>
+        </div>`).join('');
+    } catch { el.innerHTML = '<p style="color:red;padding:20px;">Failed to load livestock.</p>'; }
+  }
+
+  function contactFarmer(phone, item) {
+    if (phone) alert(`📞 Call farmer at ${phone} to arrange purchase of ${item}.`);
+    else alert('Contact details are not public. Reserve through USSD *789# or contact the admin.');
+  }
+
+  // ── My Orders ─────────────────────────────────────────────────────
+  async function loadMyOrders() {
+    const el = document.getElementById('myOrders');
+    el.innerHTML = loadingHTML();
+    try {
+      const data = await apiFetch(`/api/reservations?trader_id=${currentUser.id}`);
+      if (!data.length) { el.innerHTML = `<div style="padding:20px;">${emptyState('No orders yet. Browse the marketplace to reserve produce.')}</div>`; return; }
+      el.innerHTML = `<table>
+        <thead><tr><th>Product</th><th>Farmer</th><th>Qty</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>${data.map(r => `<tr>
+          <td><strong>${r.product || '–'}</strong></td>
+          <td>${r.farmer_name || r.farmer_phone || '–'}</td>
+          <td>${r.quantity_reserved || '–'}</td>
+          <td>${badge(r.payment_status, {paid:'green',pending:'amber',failed:'red'})}</td>
+          <td>${badge(r.status, {confirmed:'green',pending:'amber',cancelled:'red',completed:'blue'})}</td>
+          <td>${fmtDate(r.created_at)}</td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch { el.innerHTML = '<p style="color:red;padding:16px;">Failed to load orders.</p>'; }
+  }
+
+  // ── Route Planner ─────────────────────────────────────────────────
+  function addStop() {
+    const div = document.createElement('div');
+    div.className = 'route-stop-input';
+    div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+    div.innerHTML = `
+      <input type="text" class="stop-input" placeholder="Farm stop (e.g. Maara)" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:Outfit,sans-serif;" />
+      <button onclick="this.parentElement.remove()" style="padding:0 10px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:16px;color:var(--muted);">×</button>
+    `;
+    document.getElementById('routeStops').appendChild(div);
+  }
+
+  function planRoute() {
+    const base  = document.getElementById('routeBase').value.trim();
+    const stops = Array.from(document.querySelectorAll('.stop-input')).map(i => i.value.trim()).filter(Boolean);
+    if (!base)         return alert('Enter your base location.');
+    if (!stops.length) return alert('Add at least one farm stop.');
+
+    // Simulate route optimisation (in production: use OSRM or Google Maps API)
+    const shuffled = stops.slice().sort(() => Math.random() - 0.5);
+    const totalKm  = Math.round(stops.length * 8 + Math.random() * 20);
+    const minutes  = totalKm * 3;
+    const fuelEst  = Math.round(totalKm * 0.12 * 100) / 100;
+
+    document.getElementById('routeResult').innerHTML = `
+      <div class="route-list" style="margin-top:16px;">
+        <div class="route-card">
+          <div class="route-card-header">
+            <span class="route-card-title">📍 Optimised Route</span>
+            <span class="badge green">Ready</span>
+          </div>
+          <div class="route-stops">
+            <div class="route-stop"><div class="route-stop-dot"></div><strong>START</strong>: ${base}</div>
+            ${shuffled.map((s,i) => `<div class="route-stop"><div class="route-stop-dot"></div>Stop ${i+1}: ${s}</div>`).join('')}
+            <div class="route-stop"><div class="route-stop-dot"></div><strong>RETURN</strong>: ${base}</div>
+          </div>
+          <div class="route-stat">
+            <span>📏 ~${totalKm} km</span>
+            <span>⏱ ~${Math.floor(minutes/60)}h ${minutes%60}min</span>
+            <span>⛽ ~${fuelEst} L fuel</span>
+            <span>🛑 ${stops.length} stops</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── AI Vision ─────────────────────────────────────────────────────
+  function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedImageFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('previewImg').src = url;
+    document.getElementById('visionPreview').style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('visionResult').innerHTML = '';
+  }
+
+  function dragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragging'); }
+  function dragLeave()  { document.getElementById('uploadZone').classList.remove('dragging'); }
+  function dropFile(e)  {
+    e.preventDefault(); dragLeave();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      selectedImageFile = file;
+      const url = URL.createObjectURL(file);
+      document.getElementById('previewImg').src = url;
+      document.getElementById('visionPreview').style.display = 'block';
+      document.getElementById('analyzeBtn').disabled = false;
+    }
+  }
+
+  async function analyzeImage() {
+    if (!selectedImageFile) return;
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true; btn.textContent = 'Analysing...';
+    const el = document.getElementById('visionResult');
+    el.innerHTML = `<div class="vision-result"><p>🔍 Sending image to AI...</p></div>`;
+    try {
+      const fd = new FormData();
+      fd.append('image', selectedImageFile);
+      if (currentUser) fd.append('user_id', currentUser.id);
+      const r = await fetch(`${BASE}/api/vision/analyze`, { method:'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Analysis failed');
+      el.innerHTML = `
+        <div class="vision-result">
+          <h4>🌿 AI Analysis Result</h4>
+          <p><strong>Crop:</strong> ${d.crop || 'Not identified'}</p>
+          <p><strong>Health Status:</strong> ${d.health_status || '–'}</p>
+          <p><strong>Issues Detected:</strong> ${d.issues || 'None detected'}</p>
+          <p><strong>Recommendations:</strong></p>
+          <p>${d.recommendations || 'No specific recommendations.'}</p>
+          ${d.urgency ? `<p style="margin-top:8px;"><span class="badge ${d.urgency==='high'?'red':d.urgency==='medium'?'amber':'green'}">${d.urgency.toUpperCase()} URGENCY</span></p>` : ''}
+        </div>`;
+    } catch (err) {
+      el.innerHTML = `<div class="vision-result"><p style="color:var(--red);">❌ ${err.message}</p></div>`;
+    }
+    btn.disabled = false; btn.textContent = '🔍 Analyse Crop';
+  }
+
+  function clearVision() {
+    selectedImageFile = null;
+    document.getElementById('previewImg').src = '';
+    document.getElementById('visionPreview').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('visionResult').innerHTML = '';
+    document.getElementById('cropImage').value = '';
+  }
+
+  // ── Farm Services ─────────────────────────────────────────────────
+  async function loadServices() {
+    const q   = document.getElementById('servicesSearch').value.trim();
+    const cat = document.getElementById('servicesCategory').value;
+    let url = '/api/services?status=active';
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    if (cat) url += `&service_type=${encodeURIComponent(cat)}`;
+    const el = document.getElementById('servicesGrid');
+    el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
+    try {
+      const data = await apiFetch(url);
+      if (!data.length) { el.innerHTML = emptyState('No services found. Try a different category.'); return; }
+      el.innerHTML = data.map(s => `
+        <div class="market-card">
+          <div class="market-card-header">
+            <span class="market-card-product" style="font-size:15px;">${s.service_name}</span>
+            ${s.rating ? `<span style="font-size:13px;">⭐ ${s.rating}</span>` : ''}
+          </div>
+          <div class="market-card-meta">
+            <span>🏷️ ${s.service_type}</span>
+            <span>📍 ${s.location}${s.coverage_radius_km ? ' · ' + s.coverage_radius_km + 'km radius' : ''}</span>
+            ${s.price_range ? `<span>💰 ${s.price_range}</span>` : ''}
+            ${s.description ? `<span style="margin-top:4px;font-style:italic;">${s.description.slice(0,80)}${s.description.length>80?'…':''}</span>` : ''}
+          </div>
+          <div class="market-card-footer">
+            ${s.is_verified ? '<span class="badge green">✓ Verified</span>' : '<span class="badge gray">Unverified</span>'}
+            ${s.contact_phone ? `<a href="tel:${s.contact_phone}" class="btn btn-amber btn-sm" style="text-decoration:none;">📞 Call</a>` : ''}
+          </div>
+        </div>`).join('');
+    } catch { el.innerHTML = '<p style="color:red;padding:20px;">Failed to load services.</p>'; }
+  }
+
+  function searchServices() { clearTimeout(window._svcTimer); window._svcTimer = setTimeout(loadServices, 400); }
+
+  // ── Spending ──────────────────────────────────────────────────────
+  async function loadSpending() {
+    const statsEl = document.getElementById('spendingStats');
+    const listEl  = document.getElementById('spendingList');
+    statsEl.innerHTML = loadingHTML(); listEl.innerHTML = loadingHTML();
+    try {
+      const txns = await apiFetch(`/api/escrow/buyer/${currentUser.id}`);
+      const done = txns.filter(t => t.status === 'confirmed');
+      const totalSpent = done.reduce((s,t) => s + parseFloat(t.buyer_pays||0), 0);
+      const inEscrow = txns.filter(t => t.status === 'in_escrow').length;
+      statsEl.innerHTML = `
+        <div class="stat amber"><div class="stat-label">Total Spent</div><div class="stat-value">KES ${totalSpent.toLocaleString()}</div></div>
+        <div class="stat blue"><div class="stat-label">In Escrow</div><div class="stat-value">${inEscrow}</div></div>
+        <div class="stat green"><div class="stat-label">Completed Deals</div><div class="stat-value">${done.length}</div></div>
+      `;
+      if (!txns.length) { listEl.innerHTML = emptyState('No transactions yet.'); return; }
+      listEl.innerHTML = `<table>
+        <thead><tr><th>Item</th><th>Seller</th><th>You Paid</th><th>Status</th><th>Date</th><th>Rate</th></tr></thead>
+        <tbody>${txns.map(t => {
+          const alreadyRated = localStorage.getItem('sokoleo_rated_' + t.id);
+          const rateCell = t.status === 'confirmed'
+            ? (alreadyRated
+                ? `<td><span class="btn-rated">★ Rated</span></td>`
+                : `<td><button class="btn-rate" onclick="openRateModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">Rate Seller</button></td>`)
+            : `<td><span style="color:#d1d5db;font-size:12px;">—</span></td>`;
+          return `<tr>
+            <td>${t.item_description || t.category || '–'}</td>
+            <td>${t.seller_name || '–'}</td>
+            <td>KES ${Number(t.buyer_pays).toLocaleString()}</td>
+            <td>${badge(t.status, {confirmed:'green',in_escrow:'amber',pending:'gray',disputed:'red'})}</td>
+            <td>${fmtDate(t.created_at)}</td>
+            ${rateCell}
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    } catch {
+      statsEl.innerHTML = ''; listEl.innerHTML = emptyState('No spending data yet.');
+    }
+  }
+
+  // ── Ratings ───────────────────────────────────────────────────────
+  let reviewTxn = null;
+  let selectedRating = 0;
+
+  const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+  function openRateModal(txn) {
+    reviewTxn = txn;
+    selectedRating = 0;
+    document.getElementById('reviewDealInfo').innerHTML =
+      `<strong>${txn.item_description || txn.category || 'Deal'}</strong><br/>
+       Seller: ${txn.seller_name || '–'} &nbsp;·&nbsp; KES ${Number(txn.buyer_pays).toLocaleString()} &nbsp;·&nbsp; ${fmtDate(txn.created_at)}`;
+    document.getElementById('reviewComment').value = '';
+    document.getElementById('reviewMsg').innerHTML = '';
+    setRating(0);
+    document.getElementById('reviewModal').classList.add('open');
+  }
+
+  function setRating(n) {
+    selectedRating = n;
+    document.querySelectorAll('#starsPicker .star-btn').forEach(btn => {
+      btn.classList.toggle('lit', parseInt(btn.dataset.v) <= n);
+    });
+    document.getElementById('ratingLabel').textContent = n ? RATING_LABELS[n] : 'Tap a star to rate';
+  }
+
+  async function submitRating() {
+    if (!selectedRating) return showMsg('reviewMsg', 'Please select a star rating.', 'error');
+    const comment = document.getElementById('reviewComment').value.trim();
+    try {
+      const r = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reviewer_id: currentUser.id,
+          farmer_id: reviewTxn.seller_id,
+          transaction_id: reviewTxn.id,
+          rating: selectedRating,
+          comment: comment || null
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('reviewMsg', d.error || 'Failed to submit review.', 'error');
+      localStorage.setItem('sokoleo_rated_' + reviewTxn.id, '1');
+      showMsg('reviewMsg', '✅ Review submitted! Thank you.', 'success');
+      setTimeout(() => { closeModal('reviewModal'); loadSpending(); }, 1800);
+    } catch { showMsg('reviewMsg', 'Network error. Try again.', 'error'); }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  async function apiFetch(url) {
+    const r = await fetch(BASE + url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.innerHTML = text ? `<div class="msg ${type}">${text}</div>` : '';
+  }
+  function badge(val, map) {
+    const cls = map[val] || 'gray';
+    return `<span class="badge ${cls}">${val || '–'}</span>`;
+  }
+  function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '–'; }
+  function loadingHTML() { return `<div class="loading"><span class="spinner"></span> Loading...</div>`; }
+  function emptyState(msg) { return `<div class="empty"><div class="e-icon">🛒</div><p>${msg}</p></div>`; }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  // ── Messaging ─────────────────────────────────────────────────────
+  let traderActiveConvId = null;
+  let traderPollTimer    = null;
+
+  function stopTraderPoll() {
+    clearInterval(traderPollTimer);
+    traderPollTimer = null;
+  }
+
+  // Called from "💬 Chat" button on a listing card
+  async function startConversation(farmerId, listingId) {
+    try {
+      const r = await fetch('/api/messages/conversation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: farmerId, trader_id: currentUser.id, listing_id: listingId })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      showPage('messages');
+      // Small delay so the page renders before opening thread
+      setTimeout(() => traderOpenThread(d.conversation.id, 'Farmer'), 100);
+    } catch (err) {
+      alert('Could not open chat. Please try again.');
+    }
+  }
+
+  async function loadTraderInbox() {
+    const el = document.getElementById('traderInboxList');
+    try {
+      const convs = await apiFetch(`/api/messages/inbox/${currentUser.id}`);
+      const totalUnread = convs.reduce((s, c) => s + (c.unread_count || 0), 0);
+      const badge = document.getElementById('traderMsgBadge');
+      badge.textContent = totalUnread > 0 ? totalUnread : '';
+
+      if (!convs.length) {
+        el.innerHTML = `<div class="empty"><div class="e-icon">💬</div><p>No messages yet. Use the 💬 Chat button on any listing to contact a farmer.</p></div>`;
+        return;
+      }
+      el.innerHTML = convs.map(c => {
+        const otherName = c.farmer_name || 'Farmer';
+        const initials  = otherName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        const preview   = c.last_message ? c.last_message.slice(0,60) + (c.last_message.length > 60 ? '…' : '') : 'No messages yet';
+        const timeStr   = c.last_message_at ? fmtTime(c.last_message_at) : '';
+        return `<div class="inbox-item" onclick="traderOpenThread('${c.id}','${otherName}')">
+          <div class="inbox-avatar">${initials}</div>
+          <div class="inbox-body">
+            <div class="inbox-name">${otherName}</div>
+            <div class="inbox-preview">${preview}</div>
+          </div>
+          <div class="inbox-meta">
+            <span class="inbox-time">${timeStr}</span>
+            ${c.unread_count > 0 ? `<span class="inbox-unread">${c.unread_count}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } catch {
+      el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Could not load messages.</p></div>`;
+    }
+    if (!traderPollTimer) {
+      traderPollTimer = setInterval(() => {
+        if (traderActiveConvId) traderLoadThread(traderActiveConvId);
+        else loadTraderInbox();
+      }, 5000);
+    }
+  }
+
+  async function traderOpenThread(convId, otherName) {
+    traderActiveConvId = convId;
+    document.getElementById('traderInboxView').style.display  = 'none';
+    document.getElementById('traderThreadView').style.display = 'block';
+    document.getElementById('traderThreadName').textContent   = otherName;
+    document.getElementById('traderThreadMessages').innerHTML = loadingHTML();
+    await traderLoadThread(convId);
+    fetch(`/api/messages/read/${convId}/${currentUser.id}`, { method: 'PATCH' });
+  }
+
+  async function traderLoadThread(convId) {
+    try {
+      const msgs = await apiFetch(`/api/messages/thread/${convId}`);
+      const el   = document.getElementById('traderThreadMessages');
+      if (!msgs.length) {
+        el.innerHTML = `<div class="empty" style="padding:24px;"><p>Say hello! Ask about the produce, quantity, or delivery.</p></div>`;
+        return;
+      }
+      el.innerHTML = msgs.map(m => {
+        const mine = m.sender_id === currentUser.id;
+        return `<div class="bubble-row ${mine ? 'mine' : 'theirs'}">
+          <div class="bubble ${mine ? 'mine' : 'theirs'}">
+            ${escHtml(m.body)}
+            <div class="bubble-time">${fmtTime(m.created_at)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      el.scrollTop = el.scrollHeight;
+    } catch { /* silent */ }
+  }
+
+  async function traderSendMessage() {
+    const input = document.getElementById('traderMsgInput');
+    const body  = input.value.trim();
+    if (!body || !traderActiveConvId) return;
+    input.value = '';
+    try {
+      await fetch('/api/messages/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: traderActiveConvId, sender_id: currentUser.id, body })
+      });
+      await traderLoadThread(traderActiveConvId);
+    } catch { input.value = body; }
+  }
+
+  function traderBackToInbox() {
+    traderActiveConvId = null;
+    document.getElementById('traderThreadView').style.display = 'none';
+    document.getElementById('traderInboxView').style.display  = 'block';
+    loadTraderInbox();
+  }
+
+  function fmtTime(d) {
+    if (!d) return '';
+    const dt  = new Date(d);
+    const now = new Date();
+    const diff = now - dt;
+    if (diff < 60000)    return 'Just now';
+    if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+    if (diff < 86400000) return dt.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+    return dt.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SokoLeo – Farmer Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #2d6a4f; --green-light: #40916c; --green-pale: #d8f3dc;
+      --amber: #f4a261; --amber-dark: #e76f51; --cream: #fefae0;
+      --dark: #1b1b2f; --mid: #374151; --muted: #6b7280;
+      --border: #e5e7eb; --white: #ffffff; --red: #ef4444; --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f3f4f6; color: var(--dark); min-height: 100vh; }
+
+    /* Auth screen */
+    .auth-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+    }
+    .auth-card {
+      background: white; border-radius: 20px; padding: 40px; width: 360px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .auth-logo { text-align: center; margin-bottom: 28px; }
+    .auth-logo h1 { font-size: 28px; font-weight: 700; color: var(--dark); }
+    .auth-logo h1 span { color: var(--amber); }
+    .auth-logo p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .auth-step { display: none; }
+    .auth-step.active { display: block; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--mid); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: 'Outfit', sans-serif;
+      outline: none; transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(64,145,108,0.1);
+    }
+    .btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 15px;
+      font-family: 'Outfit', sans-serif; font-weight: 600; cursor: pointer; border: none;
+      transition: all 0.15s; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: var(--green-light); }
+    .btn-amber { background: var(--amber); color: white; }
+    .btn-amber:hover { background: var(--amber-dark); }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--mid); }
+    .btn-ghost:hover { background: #f3f4f6; }
+    .btn-sm { width: auto; padding: 7px 14px; font-size: 13px; border-radius: 7px; }
+    .msg { font-size: 13px; margin-top: 8px; padding: 10px 12px; border-radius: 8px; }
+    .msg.error { background: #fee2e2; color: #991b1b; }
+    .msg.success { background: var(--green-pale); color: var(--green); }
+
+    /* Main app layout */
+    .app { display: none; }
+    .app.visible { display: flex; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
+      background: var(--dark); display: flex; flex-direction: column; z-index: 100;
+    }
+    .logo { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .logo h2 { font-size: 20px; font-weight: 700; color: white; }
+    .logo h2 span { color: var(--amber); }
+    .logo p { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .nav { flex: 1; padding: 14px 10px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.5);
+      font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+    .nav-item.active { background: var(--green); color: white; }
+    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+    .sidebar-user {
+      padding: 16px; border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: white; font-weight: 700; flex-shrink: 0;
+    }
+    .user-info { overflow: hidden; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 11px; color: rgba(255,255,255,0.35); }
+    .main { margin-left: 220px; padding: 28px; min-height: 100vh; flex: 1; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { margin-bottom: 24px; }
+    .page-header h2 { font-size: 24px; font-weight: 700; }
+    .page-header p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat { background: white; border-radius: 12px; padding: 18px; border: 1px solid var(--border); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-top: 6px; font-family: 'DM Mono', monospace; }
+    .stat.green .stat-value { color: var(--green); }
+    .stat.amber .stat-value { color: var(--amber-dark); }
+    .stat.blue .stat-value { color: var(--blue); }
+
+    /* Cards */
+    .card { background: white; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .card-header h3 { font-size: 15px; font-weight: 600; }
+    .card-body { padding: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 9px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; background: #fafafa; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge.green { background: var(--green-pale); color: var(--green); }
+    .badge.amber { background: #fef3c7; color: #92400e; }
+    .badge.red { background: #fee2e2; color: #991b1b; }
+    .badge.blue { background: #dbeafe; color: #1e40af; }
+    .badge.gray { background: #f3f4f6; color: #374151; }
+
+    /* Form card */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .full { grid-column: 1/-1; }
+    .form-section-title { font-size: 13px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 14px; }
+    .action-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 48px; color: var(--muted); }
+    .empty .e-icon { font-size: 40px; margin-bottom: 10px; }
+    .empty p { font-size: 14px; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e5e7eb; border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
+
+    /* Boost */
+    .btn-boost { padding:5px 12px; font-size:12px; border-radius:6px; border:1px solid #f59e0b; background:#fffbeb; color:#92400e; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .btn-boost:hover { background:#fef3c7; }
+    .boost-live-badge { display:inline-block; font-size:10px; font-weight:700; color:#92400e; background:#fef3c7; border:1px solid #f59e0b; border-radius:999px; padding:1px 8px; margin-top:3px; }
+    .boost-tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+    .boost-tier { border:2px solid var(--border); border-radius:12px; padding:16px 12px; text-align:center; cursor:pointer; transition:all .15s; position:relative; }
+    .boost-tier:hover { border-color:#f59e0b; background:#fffbeb; }
+    .boost-tier.selected { border-color:#f59e0b; background:#fffbeb; box-shadow:0 0 0 3px rgba(245,158,11,.2); }
+    .boost-tier.popular { border-color:#16a34a; }
+    .boost-tier.popular.selected { border-color:#16a34a; background:var(--green-pale); box-shadow:0 0 0 3px rgba(22,163,74,.2); }
+    .boost-popular-label { position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--green); color:#fff; font-size:10px; font-weight:700; border-radius:999px; padding:2px 10px; white-space:nowrap; }
+    .boost-tier-price { font-size:22px; font-weight:700; font-family:'DM Mono',monospace; color:var(--amber-dark); }
+    .boost-tier-dur { font-size:13px; font-weight:600; margin:4px 0 2px; }
+    .boost-tier-note { font-size:11px; color:var(--muted); }
+    .boost-pay-box { background:#fffbeb; border:1px solid #f59e0b; border-radius:10px; padding:14px 16px; margin:16px 0; font-size:13px; line-height:1.8; }
+    .boost-pay-box strong { font-family:'DM Mono',monospace; color:var(--amber-dark); }
+    @media(max-width:480px){ .boost-tiers { grid-template-columns:1fr; } }
+
+    /* Messaging */
+    .msg-badge { display:inline-flex; align-items:center; justify-content:center; background:#ef4444; color:#fff; font-size:10px; font-weight:700; border-radius:999px; min-width:16px; height:16px; padding:0 4px; margin-left:4px; vertical-align:middle; }
+    .msg-badge:empty { display:none; }
+    .inbox-list { display:flex; flex-direction:column; gap:2px; }
+    .inbox-item { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#fff; border-radius:12px; border:1px solid var(--border); cursor:pointer; transition:box-shadow .15s; }
+    .inbox-item:hover { box-shadow:0 2px 12px rgba(0,0,0,.08); }
+    .inbox-avatar { width:44px; height:44px; border-radius:50%; background:var(--green-pale); color:var(--green); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+    .inbox-body { flex:1; min-width:0; }
+    .inbox-name { font-size:14px; font-weight:600; }
+    .inbox-preview { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+    .inbox-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+    .inbox-time { font-size:11px; color:var(--muted); }
+    .inbox-unread { background:#ef4444; color:#fff; border-radius:999px; font-size:10px; font-weight:700; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+    .thread-wrap { display:flex; flex-direction:column; height:calc(100vh - 200px); }
+    .thread-topbar { display:flex; align-items:center; gap:12px; padding:12px 0 16px; border-bottom:1px solid var(--border); margin-bottom:0; flex-shrink:0; }
+    .back-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; font-family:'Outfit',sans-serif; cursor:pointer; font-weight:500; }
+    .back-btn:hover { background:#f3f4f6; }
+    .thread-name { font-size:15px; font-weight:700; }
+    .thread-messages { flex:1; overflow-y:auto; padding:16px 0; display:flex; flex-direction:column; gap:10px; }
+    .bubble-row { display:flex; }
+    .bubble-row.mine { justify-content:flex-end; }
+    .bubble-row.theirs { justify-content:flex-start; }
+    .bubble { max-width:70%; padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; word-break:break-word; }
+    .bubble.mine { background:var(--green); color:#fff; border-bottom-right-radius:4px; }
+    .bubble.theirs { background:#f3f4f6; color:var(--dark); border-bottom-left-radius:4px; }
+    .bubble-time { font-size:10px; opacity:.6; margin-top:3px; text-align:right; }
+    .thread-input { display:flex; gap:8px; padding:12px 0 4px; border-top:1px solid var(--border); flex-shrink:0; }
+    .thread-input textarea { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:'Outfit',sans-serif; resize:none; outline:none; }
+    .thread-input textarea:focus { border-color:var(--green-light); }
+    .thread-input button { padding:10px 18px; background:var(--green); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; font-family:'Outfit',sans-serif; cursor:pointer; flex-shrink:0; }
+    .thread-input button:hover { background:var(--green-light); }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 16px; padding: 28px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .modal-close { float: right; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); line-height: 1; }
+
+    /* Alert banner */
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; }
+    .alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  </style>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#166534"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ────────────────────────────────────────────────── -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Soko<span>Leo</span></h1>
+      <p>Farmer Portal · Tharaka Nithi County</p>
+    </div>
+
+    <!-- Step 1: Phone -->
+    <div class="auth-step active" id="stepPhone">
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="authPhone" placeholder="e.g. 0712345678" />
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="authName" placeholder="e.g. Jane Mwenda" />
+      </div>
+      <button class="btn btn-green" onclick="requestOTP()">Get OTP Code</button>
+      <div id="phoneMsg"></div>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="auth-step" id="stepOTP">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Enter the 6-digit code sent to <strong id="otpPhoneDisplay"></strong></p>
+      <div class="form-group">
+        <label>OTP Code</label>
+        <input type="text" id="authOTP" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;" />
+      </div>
+      <button class="btn btn-green" onclick="verifyOTP()">Login / Register</button>
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="showStep('stepPhone')">← Back</button>
+      <div id="otpMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────────────── -->
+<div class="app" id="appScreen">
+  <div class="sidebar">
+    <div class="logo">
+      <h2>Soko<span>Leo</span></h2>
+      <p>Farmer Portal</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPage('overview')"><span class="icon">🏠</span> Overview</div>
+      <div class="nav-item" onclick="showPage('listings')"><span class="icon">🌽</span> My Listings</div>
+      <div class="nav-item" onclick="showPage('add-listing')"><span class="icon">➕</span> Add Listing</div>
+      <div class="nav-item" onclick="showPage('livestock')"><span class="icon">🐄</span> My Livestock</div>
+      <div class="nav-item" onclick="showPage('reservations')"><span class="icon">📦</span> Orders</div>
+      <div class="nav-item" onclick="showPage('earnings')"><span class="icon">💰</span> Earnings</div>
+      <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebarAvatar">F</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Farmer</div>
+        <div class="user-role">Farmer</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <h2>Welcome back, <span id="welcomeName">Farmer</span> 👋</h2>
+        <p>Here's what's happening on your farm today</p>
+      </div>
+      <div class="alert info">📱 Your USSD code is <strong>*789#</strong> — use it from any phone to manage listings without internet.</div>
+      <div class="stats-row" id="overviewStats">
+        <div class="loading"><span class="spinner"></span> Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📋 Recent Orders</h3></div>
+        <div id="recentOrders"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- MY LISTINGS -->
+    <div class="page" id="page-listings">
+      <div class="page-header">
+        <h2>My Produce Listings</h2>
+        <p>Manage everything you're selling</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Active Listings</h3>
+          <button class="btn btn-green btn-sm" onclick="showPage('add-listing')">+ New Listing</button>
+        </div>
+        <div id="myListings"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- ADD LISTING -->
+    <div class="page" id="page-add-listing">
+      <div class="page-header">
+        <h2>Add Produce Listing</h2>
+        <p>List your farm produce for traders to find</p>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <p class="form-section-title">Produce Details</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Product / Crop</label>
+              <select id="lProduct">
+                <option value="">Select produce...</option>
+                <option>Maize</option><option>Beans</option><option>Tomatoes</option>
+                <option>Potatoes</option><option>Onions</option><option>Cabbage</option>
+                <option>Kale / Sukumawiki</option><option>Bananas</option>
+                <option>Mangoes</option><option>Avocados</option><option>Coffee</option>
+                <option>Tea</option><option>Miraa / Khat</option><option>Sorghum</option>
+                <option>Millet</option><option>Cassava</option><option>Sweet Potatoes</option>
+                <option>Groundnuts</option><option>Sunflower Seeds</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Custom Product (if Other)</label>
+              <input type="text" id="lProductCustom" placeholder="e.g. Passion Fruits" />
+            </div>
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="lQty" placeholder="e.g. 10" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Unit</label>
+              <select id="lUnit">
+                <option value="bags">Bags</option>
+                <option value="kg">Kilograms (kg)</option>
+                <option value="tonnes">Tonnes</option>
+                <option value="crates">Crates</option>
+                <option value="gorogoros">Gorogoros</option>
+                <option value="bunches">Bunches</option>
+                <option value="pieces">Pieces</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Price per Unit (KES)</label>
+              <input type="number" id="lPrice" placeholder="e.g. 2500" min="0" />
+            </div>
+            <div class="form-group">
+              <label>Availability</label>
+              <select id="lAvailability">
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="this_week">This Week</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Location (Sub-County / Village)</label>
+              <input type="text" id="lLocation" placeholder="e.g. Maara, Meru Town Road" />
+            </div>
+            <div class="form-group full">
+              <label>Description (optional)</label>
+              <textarea id="lDescription" rows="3" placeholder="e.g. Freshly harvested, grade A..."></textarea>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-ghost btn-sm" onclick="showPage('listings')">Cancel</button>
+            <button class="btn btn-green btn-sm" onclick="submitListing()">Post Listing</button>
+          </div>
+          <div id="listingMsg" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVESTOCK -->
+    <div class="page" id="page-livestock">
+      <div class="page-header">
+        <h2>My Livestock</h2>
+        <p>List cattle, goats, sheep, and more</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Livestock Listings</h3>
+          <button class="btn btn-amber btn-sm" onclick="openLivestockModal()">+ List Animal</button>
+        </div>
+        <div id="myLivestock"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- ORDERS / RESERVATIONS -->
+    <div class="page" id="page-reservations">
+      <div class="page-header">
+        <h2>Orders & Reservations</h2>
+        <p>Traders who have reserved your produce</p>
+      </div>
+      <div class="card">
+        <div id="myReservations"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- EARNINGS -->
+    <div class="page" id="page-earnings">
+      <div class="page-header">
+        <h2>Earnings</h2>
+        <p>Your payments and escrow transactions</p>
+      </div>
+      <div class="stats-row" id="earningsStats">
+        <div class="loading"><span class="spinner"></span></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Transaction History</h3></div>
+        <div id="earningsList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="page" id="page-messages">
+      <div class="page-header">
+        <h2>💬 Messages</h2>
+        <p>Chat with traders securely — no phone numbers shared</p>
+      </div>
+      <div id="farmInboxView">
+        <div id="farmInboxList" class="inbox-list">
+          <div class="loading"><span class="spinner"></span> Loading messages…</div>
+        </div>
+      </div>
+      <div id="farmThreadView" style="display:none;">
+        <div class="thread-wrap">
+          <div class="thread-topbar">
+            <button class="back-btn" onclick="farmBackToInbox()">← Back</button>
+            <div id="farmThreadName" class="thread-name"></div>
+          </div>
+          <div class="thread-messages" id="farmThreadMessages"></div>
+          <div class="thread-input">
+            <textarea id="farmMsgInput" rows="1" placeholder="Type a message…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();farmSendMessage();}"></textarea>
+            <button onclick="farmSendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Livestock Modal -->
+<div class="modal-overlay" id="livestockModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('livestockModal')">×</button>
+    <h3>List Livestock for Sale</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Animal Type</label>
+        <select id="lvAnimal">
+          <option value="Cattle">Cattle</option><option value="Goat">Goat</option>
+          <option value="Sheep">Sheep</option><option value="Pig">Pig</option>
+          <option value="Chicken">Chicken</option><option value="Rabbit">Rabbit</option>
+          <option value="Camel">Camel</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Breed (optional)</label>
+        <input type="text" id="lvBreed" placeholder="e.g. Friesian, Dorper" />
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="lvQty" value="1" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Price per Head (KES)</label>
+        <input type="number" id="lvPrice" placeholder="e.g. 15000" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Age (months, optional)</label>
+        <input type="number" id="lvAge" placeholder="e.g. 24" />
+      </div>
+      <div class="form-group">
+        <label>Weight (kg, optional)</label>
+        <input type="number" id="lvWeight" placeholder="e.g. 120" />
+      </div>
+      <div class="form-group full">
+        <label>Location</label>
+        <input type="text" id="lvLocation" placeholder="e.g. Chuka Town, Tharaka Nithi" />
+      </div>
+      <div class="form-group">
+        <label>Health Status</label>
+        <select id="lvHealth">
+          <option value="healthy">Healthy</option>
+          <option value="treated">Recently Treated</option>
+          <option value="needs_vet">Needs Vet</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Vaccinated?</label>
+        <select id="lvVaccinated">
+          <option value="true">Yes</option><option value="false">No</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Description (optional)</label>
+        <textarea id="lvDesc" rows="2" placeholder="e.g. Good milking cow, calm temperament..."></textarea>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('livestockModal')">Cancel</button>
+      <button class="btn btn-amber btn-sm" onclick="submitLivestock()">List Animal</button>
+    </div>
+    <div id="lvMsg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- Boost Modal -->
+<div class="modal-overlay" id="boostModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('boostModal')">×</button>
+    <h3>🚀 Boost This Listing</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:4px;">Push your listing to the top — more traders will see it first</p>
+    <div id="boostListingName" style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:12px;"></div>
+
+    <!-- Tier picker -->
+    <div class="boost-tiers">
+      <div class="boost-tier" id="tier-50" onclick="selectBoostTier(50, 24)">
+        <div class="boost-tier-price">KES 50</div>
+        <div class="boost-tier-dur">24 hours</div>
+        <div class="boost-tier-note">Good for quick sales</div>
+      </div>
+      <div class="boost-tier popular" id="tier-100" onclick="selectBoostTier(100, 72)">
+        <div class="boost-popular-label">⭐ Most Popular</div>
+        <div class="boost-tier-price">KES 100</div>
+        <div class="boost-tier-dur">72 hours</div>
+        <div class="boost-tier-note">3 days of top placement</div>
+      </div>
+      <div class="boost-tier" id="tier-200" onclick="selectBoostTier(200, 168)">
+        <div class="boost-tier-price">KES 200</div>
+        <div class="boost-tier-dur">7 days</div>
+        <div class="boost-tier-note">Best value</div>
+      </div>
+    </div>
+
+    <!-- Payment instructions (shown after tier selected) -->
+    <div id="boostPayBox" class="boost-pay-box" style="display:none;">
+      <div style="font-weight:600;margin-bottom:6px;">Pay via M-PESA</div>
+      Paybill: <strong>522522</strong><br/>
+      Account: <strong id="boostAccount">BOOST-…</strong><br/>
+      Amount: <strong id="boostAmount">KES –</strong>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);">Send the payment, then click the button below to activate your boost.</div>
+    </div>
+
+    <div id="boostMsg" style="margin-top:8px;"></div>
+
+    <div class="action-row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('boostModal')">Cancel</button>
+      <button class="btn btn-sm" id="boostActivateBtn"
+        style="background:#f59e0b;color:#fff;border:none;display:none;"
+        onclick="activateBoost()">I Have Paid — Activate Boost</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────
+  let currentUser = null;
+  let currentPhone = '';
+  const BASE = '';  // same-origin
+
+  // ── Auth ──────────────────────────────────────────────────────────
+  function showStep(stepId) {
+    document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(stepId).classList.add('active');
+  }
+
+  async function requestOTP() {
+    const phone = document.getElementById('authPhone').value.trim();
+    const name  = document.getElementById('authName').value.trim();
+    if (!phone || !name) return showMsg('phoneMsg', 'Phone and name are required.', 'error');
+
+    showMsg('phoneMsg', 'Sending OTP...', '');
+    try {
+      const r = await fetch(`${BASE}/api/auth/register`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name, role: 'farmer' })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('phoneMsg', d.error || 'Failed to send OTP.', 'error');
+      currentPhone = phone;
+      document.getElementById('otpPhoneDisplay').textContent = phone;
+      showStep('stepOTP');
+      showMsg('phoneMsg', '', '');
+    } catch { showMsg('phoneMsg', 'Network error. Please try again.', 'error'); }
+  }
+
+  async function verifyOTP() {
+    const otp = document.getElementById('authOTP').value.trim();
+    if (!otp) return showMsg('otpMsg', 'Enter the OTP code.', 'error');
+    showMsg('otpMsg', 'Verifying...', '');
+    try {
+      const r = await fetch(`${BASE}/api/auth/verify-otp`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentPhone, otp })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('otpMsg', d.error || 'Invalid OTP.', 'error');
+      currentUser = d.user;
+      bootApp();
+    } catch { showMsg('otpMsg', 'Network error.', 'error'); }
+  }
+
+  function bootApp() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('visible');
+    const n = currentUser.name || 'Farmer';
+    document.getElementById('welcomeName').textContent = n.split(' ')[0];
+    document.getElementById('sidebarName').textContent = n;
+    document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
+    loadOverview();
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(`'${id}'`))
+        n.classList.add('active');
+    });
+    if (id === 'listings')     loadMyListings();
+    if (id === 'livestock')    loadMyLivestock();
+    if (id === 'reservations') loadMyReservations();
+    if (id === 'earnings')     loadEarnings();
+    if (id === 'messages')     loadFarmInbox();
+    if (id !== 'messages')     stopFarmPoll();
+  }
+
+  // ── Overview ──────────────────────────────────────────────────────
+  async function loadOverview() {
+    try {
+      const [listings, reservations] = await Promise.all([
+        apiFetch(`/api/listings?farmer_id=${currentUser.id}`),
+        apiFetch(`/api/reservations?farmer_id=${currentUser.id}`),
+      ]);
+      const active   = listings.filter(l => l.status === 'active').length;
+      const reserved = listings.filter(l => l.status === 'reserved').length;
+      const sold     = listings.filter(l => l.status === 'sold').length;
+      const pending  = reservations.filter(r => r.payment_status === 'pending').length;
+      document.getElementById('overviewStats').innerHTML = `
+        <div class="stat green"><div class="stat-label">Active Listings</div><div class="stat-value">${active}</div></div>
+        <div class="stat amber"><div class="stat-label">Reserved</div><div class="stat-value">${reserved}</div></div>
+        <div class="stat blue"><div class="stat-label">Total Sold</div><div class="stat-value">${sold}</div></div>
+        <div class="stat"><div class="stat-label">Pending Orders</div><div class="stat-value">${pending}</div></div>
+      `;
+      const recentEl = document.getElementById('recentOrders');
+      if (!reservations.length) {
+        recentEl.innerHTML = emptyState('No orders yet. Post a listing to start selling!');
+      } else {
+        recentEl.innerHTML = `<table>
+          <thead><tr><th>Product</th><th>Trader</th><th>Qty</th><th>Payment</th><th>Status</th></tr></thead>
+          <tbody>${reservations.slice(0,5).map(r => `
+          <tr>
+            <td>${r.product || '–'}</td>
+            <td>${r.trader_name || r.trader_phone || '–'}</td>
+            <td>${r.quantity_reserved || '–'}</td>
+            <td>${badge(r.payment_status, {paid:'green',pending:'amber',failed:'red'})}</td>
+            <td>${badge(r.status, {confirmed:'green',pending:'amber',cancelled:'red',completed:'blue'})}</td>
+          </tr>`).join('')}</tbody></table>`;
+      }
+    } catch { document.getElementById('overviewStats').innerHTML = '<p style="color:red;font-size:13px;">Failed to load data.</p>'; }
+  }
+
+  // ── My Listings ───────────────────────────────────────────────────
+  async function loadMyListings() {
+    const el = document.getElementById('myListings');
+    el.innerHTML = loadingHTML();
+    try {
+      const data = await apiFetch(`/api/listings?farmer_id=${currentUser.id}`);
+      if (!data.length) { el.innerHTML = emptyState('No listings yet. Click "New Listing" to get started.'); return; }
+      el.innerHTML = `<table>
+        <thead><tr><th>Product</th><th>Qty</th><th>Price/Unit</th><th>Location</th><th>Avail.</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>${data.map(l => {
+          const boostActive  = l.is_boosted && l.boosted_until && new Date(l.boosted_until) > new Date();
+          const boostExpires = boostActive ? new Date(l.boosted_until) : null;
+          return `<tr>
+            <td>
+              <strong>${l.product}</strong>
+              ${boostActive ? `<br/><span class="boost-live-badge">🚀 BOOSTED · expires ${fmtDate(boostExpires)}</span>` : ''}
+            </td>
+            <td>${l.quantity} ${l.unit}</td>
+            <td>${l.price_per_unit ? 'KES ' + Number(l.price_per_unit).toLocaleString() : '–'}</td>
+            <td>${l.location}</td>
+            <td>${l.availability.replace('_',' ')}</td>
+            <td>${badge(l.status, {active:'green',reserved:'amber',sold:'blue',expired:'gray'})}</td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${!boostActive && l.status === 'active'
+                ? `<button class="btn-boost" onclick="openBoostModal(${JSON.stringify(l).replace(/"/g,'&quot;')})">🚀 Boost</button>`
+                : ''}
+              <button class="btn btn-ghost btn-sm" onclick="deleteListing('${l.id}')">Delete</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    } catch { el.innerHTML = '<p style="color:red;padding:16px;">Failed to load listings.</p>'; }
+  }
+
+  async function submitListing() {
+    const product = document.getElementById('lProduct').value === 'Other'
+      ? document.getElementById('lProductCustom').value.trim()
+      : document.getElementById('lProduct').value;
+    const qty      = document.getElementById('lQty').value;
+    const unit     = document.getElementById('lUnit').value;
+    const price    = document.getElementById('lPrice').value;
+    const avail    = document.getElementById('lAvailability').value;
+    const location = document.getElementById('lLocation').value.trim();
+    const desc     = document.getElementById('lDescription').value.trim();
+
+    if (!product || !qty || !location)
+      return showMsg('listingMsg', 'Product, quantity and location are required.', 'error');
+
+    try {
+      const r = await fetch(`${BASE}/api/listings`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: currentUser.id, product, quantity: qty, unit, price_per_unit: price || null, availability: avail, location, description: desc })
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('listingMsg', d.error || 'Failed to post listing.', 'error');
+      showMsg('listingMsg', '✅ Listing posted successfully!', 'success');
+      setTimeout(() => showPage('listings'), 1500);
+    } catch { showMsg('listingMsg', 'Network error.', 'error'); }
+  }
+
+  async function deleteListing(id) {
+    if (!confirm('Delete this listing?')) return;
+    await fetch(`${BASE}/api/listings/${id}`, { method: 'DELETE' });
+    loadMyListings();
+  }
+
+  // ── Livestock ─────────────────────────────────────────────────────
+  function openLivestockModal() { document.getElementById('livestockModal').classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  async function loadMyLivestock() {
+    const el = document.getElementById('myLivestock');
+    el.innerHTML = loadingHTML();
+    try {
+      const data = await apiFetch(`/api/livestock?farmer_id=${currentUser.id}`);
+      if (!data.length) { el.innerHTML = emptyState('No livestock listed. Click "List Animal" to start.'); return; }
+      el.innerHTML = `<table>
+        <thead><tr><th>Animal</th><th>Breed</th><th>Qty</th><th>Price/Head</th><th>Location</th><th>Health</th><th>Status</th></tr></thead>
+        <tbody>${data.map(l => `<tr>
+          <td><strong>${l.animal_type}</strong></td>
+          <td>${l.breed || '–'}</td>
+          <td>${l.quantity}</td>
+          <td>KES ${Number(l.price_per_head).toLocaleString()}</td>
+          <td>${l.location}</td>
+          <td>${badge(l.health_status, {healthy:'green',treated:'amber',needs_vet:'red'})}</td>
+          <td>${badge(l.status, {active:'green',reserved:'amber',sold:'blue',expired:'gray'})}</td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch { el.innerHTML = '<p style="color:red;padding:16px;">Failed to load livestock.</p>'; }
+  }
+
+  async function submitLivestock() {
+    const body = {
+      farmer_id:     currentUser.id,
+      animal_type:   document.getElementById('lvAnimal').value,
+      breed:         document.getElementById('lvBreed').value.trim() || null,
+      quantity:      parseInt(document.getElementById('lvQty').value) || 1,
+      price_per_head: parseFloat(document.getElementById('lvPrice').value),
+      age_months:    parseInt(document.getElementById('lvAge').value) || null,
+      weight_kg:     parseFloat(document.getElementById('lvWeight').value) || null,
+      location:      document.getElementById('lvLocation').value.trim(),
+      health_status: document.getElementById('lvHealth').value,
+      vaccinated:    document.getElementById('lvVaccinated').value === 'true',
+      description:   document.getElementById('lvDesc').value.trim() || null,
+    };
+    if (!body.animal_type || !body.price_per_head || !body.location)
+      return showMsg('lvMsg', 'Animal type, price and location are required.', 'error');
+    try {
+      const r = await fetch(`${BASE}/api/livestock`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (!r.ok) return showMsg('lvMsg', d.error || 'Failed to list animal.', 'error');
+      showMsg('lvMsg', '✅ Animal listed!', 'success');
+      setTimeout(() => { closeModal('livestockModal'); loadMyLivestock(); }, 1200);
+    } catch { showMsg('lvMsg', 'Network error.', 'error'); }
+  }
+
+  // ── Reservations ──────────────────────────────────────────────────
+  async function loadMyReservations() {
+    const el = document.getElementById('myReservations');
+    el.innerHTML = loadingHTML();
+    try {
+      const data = await apiFetch(`/api/reservations?farmer_id=${currentUser.id}`);
+      if (!data.length) { el.innerHTML = `<div style="padding:20px;">${emptyState('No reservations yet.')}</div>`; return; }
+      el.innerHTML = `<table>
+        <thead><tr><th>Product</th><th>Trader</th><th>Qty Reserved</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>${data.map(r => `<tr>
+          <td>${r.product || '–'}</td>
+          <td>${r.trader_name || r.trader_phone || '–'}</td>
+          <td>${r.quantity_reserved || '–'}</td>
+          <td>${badge(r.payment_status, {paid:'green',pending:'amber',failed:'red'})}</td>
+          <td>${badge(r.status, {confirmed:'green',pending:'amber',cancelled:'red',completed:'blue'})}</td>
+          <td>${fmtDate(r.created_at)}</td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch { el.innerHTML = '<p style="color:red;padding:16px;">Failed to load orders.</p>'; }
+  }
+
+  // ── Earnings ──────────────────────────────────────────────────────
+  async function loadEarnings() {
+    const statsEl  = document.getElementById('earningsStats');
+    const listEl   = document.getElementById('earningsList');
+    statsEl.innerHTML = loadingHTML(); listEl.innerHTML = loadingHTML();
+    try {
+      const txns = await apiFetch(`/api/escrow/seller/${currentUser.id}`);
+      const confirmed = txns.filter(t => t.status === 'confirmed');
+      const totalEarned = confirmed.reduce((s, t) => s + parseFloat(t.seller_receives || 0), 0);
+      const pending = txns.filter(t => t.status === 'in_escrow').length;
+      statsEl.innerHTML = `
+        <div class="stat green"><div class="stat-label">Total Earned</div><div class="stat-value">KES ${totalEarned.toLocaleString()}</div></div>
+        <div class="stat amber"><div class="stat-label">In Escrow</div><div class="stat-value">${pending}</div></div>
+        <div class="stat blue"><div class="stat-label">Completed Deals</div><div class="stat-value">${confirmed.length}</div></div>
+      `;
+      if (!txns.length) { listEl.innerHTML = emptyState('No transactions yet.'); return; }
+      listEl.innerHTML = `<table>
+        <thead><tr><th>Item</th><th>Buyer</th><th>Amount</th><th>You Receive</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>${txns.map(t => `<tr>
+          <td>${t.item_description || t.category || '–'}</td>
+          <td>${t.buyer_name || '–'}</td>
+          <td>KES ${Number(t.listing_price).toLocaleString()}</td>
+          <td>KES ${Number(t.seller_receives).toLocaleString()}</td>
+          <td>${badge(t.status, {confirmed:'green',in_escrow:'amber',pending:'gray',disputed:'red'})}</td>
+          <td>${fmtDate(t.created_at)}</td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch {
+      statsEl.innerHTML = ''; listEl.innerHTML = emptyState('No earnings data yet.');
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  async function apiFetch(url) {
+    const r = await fetch(BASE + url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.innerHTML = text ? `<div class="msg ${type}">${text}</div>` : '';
+  }
+  function badge(val, map) {
+    const cls = map[val] || 'gray';
+    return `<span class="badge ${cls}">${val || '–'}</span>`;
+  }
+  function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '–'; }
+  function loadingHTML() { return `<div class="loading"><span class="spinner"></span> Loading...</div>`; }
+  function emptyState(msg) { return `<div class="empty"><div class="e-icon">🌱</div><p>${msg}</p></div>`; }
+
+  // ── Boost ─────────────────────────────────────────────────────────
+  let boostListing   = null;
+  let boostSelection = { amount: null, hours: null };
+
+  function openBoostModal(listing) {
+    boostListing   = listing;
+    boostSelection = { amount: null, hours: null };
+    document.getElementById('boostListingName').textContent = `📦 ${listing.product} — ${listing.quantity} ${listing.unit} @ ${listing.location}`;
+    document.getElementById('boostPayBox').style.display    = 'none';
+    document.getElementById('boostActivateBtn').style.display = 'none';
+    document.getElementById('boostMsg').innerHTML = '';
+    // Clear selection highlight
+    [50, 100, 200].forEach(a => document.getElementById('tier-' + a).classList.remove('selected'));
+    document.getElementById('boostModal').classList.add('open');
+  }
+
+  function selectBoostTier(amount, hours) {
+    boostSelection = { amount, hours };
+    [50, 100, 200].forEach(a => document.getElementById('tier-' + a).classList.remove('selected'));
+    document.getElementById('tier-' + amount).classList.add('selected');
+    document.getElementById('boostAccount').textContent = `BOOST-${boostListing.id.slice(0, 8).toUpperCase()}`;
+    document.getElementById('boostAmount').textContent  = `KES ${amount}`;
+    document.getElementById('boostPayBox').style.display      = 'block';
+    document.getElementById('boostActivateBtn').style.display = 'inline-flex';
+    document.getElementById('boostMsg').innerHTML = '';
+  }
+
+  async function activateBoost() {
+    if (!boostListing || !boostSelection.amount)
+      return showMsg('boostMsg', 'Please select a boost tier first.', 'error');
+
+    const btn = document.getElementById('boostActivateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Activating…';
+
+    try {
+      const r = await fetch('/api/boosts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id:   boostListing.id,
+          farmer_id:    currentUser.id,
+          amount_paid:  boostSelection.amount,
+          duration_hrs: boostSelection.hours
+        })
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        btn.disabled = false;
+        btn.textContent = 'I Have Paid — Activate Boost';
+        return showMsg('boostMsg', d.error || 'Failed to activate boost.', 'error');
+      }
+      const until = new Date(d.boosted_until).toLocaleDateString('en-KE', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      showMsg('boostMsg', `🚀 Boost activated! Your listing is now at the top until ${until}.`, 'success');
+      setTimeout(() => { closeModal('boostModal'); loadMyListings(); }, 2200);
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'I Have Paid — Activate Boost';
+      showMsg('boostMsg', 'Network error. Please try again.', 'error');
+    }
+  }
+
+  // ── Messaging ─────────────────────────────────────────────────────
+  let farmActiveConvId = null;
+  let farmPollTimer = null;
+
+  function stopFarmPoll() {
+    clearInterval(farmPollTimer);
+    farmPollTimer = null;
+  }
+
+  async function loadFarmInbox() {
+    const el = document.getElementById('farmInboxList');
+    try {
+      const convs = await apiFetch(`/api/messages/inbox/${currentUser.id}`);
+      const totalUnread = convs.reduce((s, c) => s + (c.unread_count || 0), 0);
+      const badge = document.getElementById('farmMsgBadge');
+      badge.textContent = totalUnread > 0 ? totalUnread : '';
+
+      if (!convs.length) {
+        el.innerHTML = `<div class="empty"><div class="e-icon">💬</div><p>No messages yet. Traders will contact you here when they're interested in your produce.</p></div>`;
+        return;
+      }
+      el.innerHTML = convs.map(c => {
+        const otherName = c.trader_name || 'Trader';
+        const initials  = otherName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        const preview   = c.last_message ? c.last_message.slice(0, 60) + (c.last_message.length > 60 ? '…' : '') : 'No messages yet';
+        const timeStr   = c.last_message_at ? fmtTime(c.last_message_at) : '';
+        return `<div class="inbox-item" onclick="farmOpenThread('${c.id}','${otherName}')">
+          <div class="inbox-avatar">${initials}</div>
+          <div class="inbox-body">
+            <div class="inbox-name">${otherName}</div>
+            <div class="inbox-preview">${preview}</div>
+          </div>
+          <div class="inbox-meta">
+            <span class="inbox-time">${timeStr}</span>
+            ${c.unread_count > 0 ? `<span class="inbox-unread">${c.unread_count}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } catch {
+      el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Could not load messages.</p></div>`;
+    }
+    // Poll for new messages every 5s while inbox is open
+    if (!farmPollTimer) {
+      farmPollTimer = setInterval(() => {
+        if (farmActiveConvId) farmLoadThread(farmActiveConvId);
+        else loadFarmInbox();
+      }, 5000);
+    }
+  }
+
+  async function farmOpenThread(convId, otherName) {
+    farmActiveConvId = convId;
+    document.getElementById('farmInboxView').style.display  = 'none';
+    document.getElementById('farmThreadView').style.display = 'block';
+    document.getElementById('farmThreadName').textContent   = otherName;
+    document.getElementById('farmThreadMessages').innerHTML = loadingHTML();
+    await farmLoadThread(convId);
+    // Mark as read
+    fetch(`/api/messages/read/${convId}/${currentUser.id}`, { method: 'PATCH' });
+  }
+
+  async function farmLoadThread(convId) {
+    try {
+      const msgs = await apiFetch(`/api/messages/thread/${convId}`);
+      const el   = document.getElementById('farmThreadMessages');
+      if (!msgs.length) {
+        el.innerHTML = `<div class="empty" style="padding:24px;"><p>No messages yet. Start the conversation!</p></div>`;
+        return;
+      }
+      el.innerHTML = msgs.map(m => {
+        const mine = m.sender_id === currentUser.id;
+        return `<div class="bubble-row ${mine ? 'mine' : 'theirs'}">
+          <div class="bubble ${mine ? 'mine' : 'theirs'}">
+            ${escHtml(m.body)}
+            <div class="bubble-time">${fmtTime(m.created_at)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      el.scrollTop = el.scrollHeight;
+    } catch { /* silent */ }
+  }
+
+  async function farmSendMessage() {
+    const input = document.getElementById('farmMsgInput');
+    const body  = input.value.trim();
+    if (!body || !farmActiveConvId) return;
+    input.value = '';
+    try {
+      await fetch('/api/messages/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: farmActiveConvId, sender_id: currentUser.id, body })
+      });
+      await farmLoadThread(farmActiveConvId);
+    } catch { input.value = body; }
+  }
+
+  function farmBackToInbox() {
+    farmActiveConvId = null;
+    document.getElementById('farmThreadView').style.display = 'none';
+    document.getElementById('farmInboxView').style.display  = 'block';
+    loadFarmInbox();
+  }
+
+  function fmtTime(d) {
+    if (!d) return '';
+    const dt  = new Date(d);
+    const now = new Date();
+    const diff = now - dt;
+    if (diff < 60000)    return 'Just now';
+    if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+    if (diff < 86400000) return dt.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+    return dt.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>
