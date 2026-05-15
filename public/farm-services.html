@@ -196,6 +196,14 @@
 </div>
 
 <script>
+// Auth guard: redirect to landing page if not logged in
+(function () {
+  const stored = localStorage.getItem('sokoleo_user');
+  if (!stored) {
+    window.location.replace('/index.html?notice=login_required');
+  }
+})();
+
 let activeCategory = '';
 
 const TYPE_META = {

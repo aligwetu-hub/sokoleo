@@ -463,7 +463,7 @@
   <div class="footer-links">
     <a href="/farmer.html">Farmer Portal</a>
     <a href="/trader.html">Trader Portal</a>
-    <a href="/trader.html#services">Farm Services</a>
+    <a href="/farm-services.html">Farm Services</a>
     <a href="/admin.html">Admin</a>
   </div>
   <div class="footer-copy">© 2026 SokoLeo · Soko Kila Siku</div>
@@ -475,6 +475,19 @@
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     });
   }
+
+  // Show notice if redirected here from a protected page
+  (function () {
+    const notice = new URLSearchParams(location.search).get('notice');
+    if (notice === 'login_required') {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#fbbf24;color:#1b1b2f;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.25);max-width:90vw;text-align:center;';
+      el.textContent = '🔒 Please log in as a Farmer or Trader to access Farm Services';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+      history.replaceState({}, '', '/');
+    }
+  })();
 </script>
 </body>
 </html>

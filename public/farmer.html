@@ -190,6 +190,20 @@
     .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
     .modal-close { float: right; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); line-height: 1; }
 
+    /* Service category chips */
+    .svc-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .svc-chip { padding:6px 13px; border-radius:999px; font-size:12px; font-weight:500; border:1px solid var(--border); background:white; cursor:pointer; transition:all 0.15s; white-space:nowrap; font-family:'Outfit',sans-serif; }
+    .svc-chip:hover { border-color:var(--green-light); color:var(--green); }
+    .svc-chip.active { background:var(--green); color:white; border-color:var(--green); }
+    .svc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; margin-top:8px; }
+    .svc-card { background:white; border-radius:12px; border:1px solid var(--border); padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .svc-card-top { display:flex; align-items:flex-start; gap:12px; }
+    .svc-icon { width:40px; height:40px; border-radius:10px; background:var(--green-pale); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .svc-info { flex:1; }
+    .svc-name { font-size:14px; font-weight:700; color:var(--dark); }
+    .svc-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+    .svc-meta { font-size:12px; color:var(--mid); display:flex; flex-direction:column; gap:4px; }
+
     /* Alert banner */
     .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; }
     .alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
@@ -275,6 +289,7 @@
       <div class="nav-item" onclick="showPage('reservations')"><span class="icon">📦</span> Orders</div>
       <div class="nav-item" onclick="showPage('earnings')"><span class="icon">💰</span> Earnings</div>
       <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
+      <div class="nav-item" onclick="showPage('services')"><span class="icon">🏪</span> Services</div>
       <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
     </nav>
     <div class="sidebar-user">
@@ -442,6 +457,39 @@
       <div id="reputationContent"><div class="loading"><span class="spinner"></span></div></div>
     </div>
 
+    <!-- FARM SERVICES -->
+    <div class="page" id="page-services">
+      <div class="page-header">
+        <h2>🏪 Farm Services</h2>
+        <p>Find vets, agronomists, equipment hire, transporters &amp; more</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Service Directory</h3>
+          <button class="btn btn-amber btn-sm" onclick="openFarmerSvcModal()">+ List Your Service</button>
+        </div>
+        <div style="padding:16px 20px 4px;">
+          <div style="display:flex;gap:10px;margin-bottom:12px;">
+            <input type="text" id="farmerSvcSearch" placeholder="Search services…" oninput="doFarmerSvcSearch()"
+              style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;flex:1;outline:none;" />
+          </div>
+          <div class="svc-chips">
+            <button class="svc-chip active" onclick="setFarmerSvcCat(this,'')">All</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'vet')">🩺 Veterinary</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'agronomy')">🌿 Agronomy</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'transport')">🚛 Transport</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'equipment')">🚜 Equipment</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'irrigation')">💧 Irrigation</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'storage')">🏭 Storage</button>
+            <button class="svc-chip" onclick="setFarmerSvcCat(this,'input')">🌱 Farm Inputs</button>
+          </div>
+        </div>
+        <div id="farmerSvcGrid" style="padding:0 20px 20px;">
+          <div class="loading"><span class="spinner"></span> Loading services…</div>
+        </div>
+      </div>
+    </div>
+
     <!-- MESSAGES -->
     <div class="page" id="page-messages">
       <div class="page-header">
@@ -586,6 +634,60 @@
   </div>
 </div>
 
+<!-- List Your Service Modal -->
+<div class="modal-overlay" id="farmerSvcModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('farmerSvcModal')">×</button>
+    <h3>🏪 List Your Farm Service</h3>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Service Name <span style="color:var(--red)">*</span></label>
+        <input type="text" id="fsName" placeholder="e.g. Chuka Mobile Vet Services" />
+      </div>
+      <div class="form-group">
+        <label>Service Type <span style="color:var(--red)">*</span></label>
+        <select id="fsType">
+          <option value="">Select type…</option>
+          <option value="vet">Veterinary</option>
+          <option value="agronomy">Agronomy / Extension</option>
+          <option value="transport">Transport &amp; Logistics</option>
+          <option value="equipment">Equipment Hire</option>
+          <option value="irrigation">Irrigation</option>
+          <option value="storage">Storage / Warehousing</option>
+          <option value="input">Farm Inputs Supply</option>
+          <option value="finance">Agricultural Finance</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contact Phone</label>
+        <input type="tel" id="fsPhone" placeholder="0712345678" />
+      </div>
+      <div class="form-group">
+        <label>Location <span style="color:var(--red)">*</span></label>
+        <input type="text" id="fsLocation" placeholder="e.g. Chuka Town" />
+      </div>
+      <div class="form-group">
+        <label>Coverage Radius (km)</label>
+        <input type="number" id="fsRadius" placeholder="20" min="1" max="200" />
+      </div>
+      <div class="form-group">
+        <label>Price Range (optional)</label>
+        <input type="text" id="fsPrice" placeholder="e.g. KES 500–2,000/visit" />
+      </div>
+      <div class="form-group full">
+        <label>Description (optional)</label>
+        <textarea id="fsDesc" rows="3" placeholder="Briefly describe your service…"></textarea>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('farmerSvcModal')">Cancel</button>
+      <button class="btn btn-green btn-sm" onclick="submitFarmerService()">Submit for Listing</button>
+    </div>
+    <div id="farmerSvcMsg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
 <script>
   // ── State ──────────────────────────────────────────────────────────
   let currentUser = null;
@@ -644,6 +746,15 @@
     ],
   };
 
+  const _FALLBACK_SERVICES = [
+    { id:'fs1', service_name:'Tharaka County Vet Services', service_type:'vet', location:'Chuka', coverage_radius_km:40, contact_phone:'0721234567', price_range:'KES 300–1,500', description:'Mobile veterinary services covering livestock vaccination, treatment and AI.', is_verified:true, rating:4.5, reviews_count:12 },
+    { id:'fs2', service_name:'Maara Agri Extension Officers', service_type:'agronomy', location:'Maara', coverage_radius_km:30, contact_phone:'0733456789', price_range:'Free (county subsidised)', description:'Crop advisory, soil testing and field visits for smallholder farmers.', is_verified:true, rating:4.2, reviews_count:8 },
+    { id:'fs3', service_name:'Nithi Transporters Sacco', service_type:'transport', location:'Chuka', coverage_radius_km:80, contact_phone:'0745678901', price_range:'KES 50–200/km', description:'Pickup trucks and lorries for farm produce collection and delivery.', is_verified:false, rating:3.9, reviews_count:5 },
+    { id:'fs4', service_name:'Tharaka Equipment Hub', service_type:'equipment', location:'Tharaka', coverage_radius_km:50, contact_phone:'0756789012', price_range:'KES 2,000–8,000/day', description:'Tractor hire, ploughing, harrowing and shelling services.', is_verified:true, rating:4.7, reviews_count:20 },
+    { id:'fs5', service_name:'Chuka Irrigation Supplies', service_type:'irrigation', location:'Chuka', coverage_radius_km:60, contact_phone:'0767890123', price_range:'Varies by project', description:'Drip irrigation installation, pipe supply and borehole connections.', is_verified:false, rating:4.0, reviews_count:3 },
+    { id:'fs6', service_name:'Igambang\'ombe Grain Store', service_type:'storage', location:'Igambang\'ombe', coverage_radius_km:20, contact_phone:'0778901234', price_range:'KES 50/bag/month', description:'Dry secure storage for maize, beans and other grains. Fumigation available.', is_verified:true, rating:4.3, reviews_count:15 },
+  ];
+
   function _getDemoData(url) {
     if (url.includes('/api/listings'))         return _DEMO_LISTINGS;
     if (url.includes('/api/reservations'))     return _DEMO_RESERVATIONS;
@@ -651,6 +762,7 @@
     if (url.includes('/api/escrow/seller'))    return _DEMO_EARNINGS;
     if (url.includes('/api/reviews/stats'))    return _DEMO_REVIEW_STATS;
     if (url.includes('/api/reviews/seller'))   return _DEMO_REVIEWS;
+    if (url.includes('/api/services'))         return _FALLBACK_SERVICES;
     if (url.includes('/api/messages/inbox'))   return _DEMO_INBOX;
     if (url.includes('/api/messages/thread')) {
       const convId = url.split('/').pop();
@@ -752,6 +864,7 @@
     if (id === 'reservations') loadMyReservations();
     if (id === 'earnings')     loadEarnings();
     if (id === 'reputation')   loadReputation();
+    if (id === 'services')     loadFarmerServices();
     if (id === 'messages')     loadFarmInbox();
     if (id !== 'messages')     stopFarmPoll();
   }
@@ -1051,6 +1164,91 @@
     } catch {
       el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Failed to load reputation data.</p></div>`;
     }
+  }
+
+  // ── Farm Services ─────────────────────────────────────────────────
+  let _farmerSvcCat = '';
+  const _SVC_ICONS  = { vet:'🩺', agronomy:'🌿', transport:'🚛', equipment:'🚜', irrigation:'💧', storage:'🏭', input:'🌱', finance:'💳', other:'🔧' };
+  const _SVC_LABELS = { vet:'Veterinary', agronomy:'Agronomy / Extension', transport:'Transport & Logistics', equipment:'Equipment Hire', irrigation:'Irrigation', storage:'Storage / Warehousing', input:'Farm Inputs', finance:'Agricultural Finance', other:'Other' };
+
+  async function loadFarmerServices() {
+    const el = document.getElementById('farmerSvcGrid');
+    el.innerHTML = loadingHTML();
+    const q = (document.getElementById('farmerSvcSearch').value || '').trim();
+    let url = '/api/services?status=active';
+    if (_farmerSvcCat) url += `&service_type=${_farmerSvcCat}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    try {
+      const data = await apiFetch(url);
+      renderFarmerServices(data.length ? data : _FALLBACK_SERVICES);
+    } catch {
+      renderFarmerServices(_FALLBACK_SERVICES);
+    }
+  }
+
+  function renderFarmerServices(data) {
+    const el = document.getElementById('farmerSvcGrid');
+    if (!data.length) { el.innerHTML = emptyState('No services found in this category.'); return; }
+    el.innerHTML = `<div class="svc-grid">${data.map(s => {
+      const icon  = _SVC_ICONS[s.service_type]  || '🔧';
+      const label = _SVC_LABELS[s.service_type] || 'Service';
+      return `<div class="svc-card">
+        <div class="svc-card-top">
+          <div class="svc-icon">${icon}</div>
+          <div class="svc-info">
+            <div class="svc-name">${s.service_name}</div>
+            <div class="svc-label">${label}</div>
+          </div>
+          ${s.is_verified ? '<span class="badge green" style="flex-shrink:0;">✓ Verified</span>' : ''}
+        </div>
+        <div class="svc-meta">
+          <span>📍 ${s.location}${s.coverage_radius_km ? ' · ' + s.coverage_radius_km + ' km' : ''}</span>
+          ${s.price_range  ? `<span>💰 ${s.price_range}</span>` : ''}
+          ${s.rating       ? `<span>⭐ ${s.rating}${s.reviews_count ? ' (' + s.reviews_count + ' reviews)' : ''}</span>` : ''}
+          ${s.description  ? `<span style="font-style:italic;color:var(--muted);">${s.description.slice(0,85)}${s.description.length>85?'…':''}</span>` : ''}
+        </div>
+        ${s.contact_phone ? `<a href="tel:${s.contact_phone}" class="btn btn-green btn-sm" style="text-decoration:none;text-align:center;">📞 Call ${s.contact_phone}</a>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function setFarmerSvcCat(btn, cat) {
+    _farmerSvcCat = cat;
+    document.querySelectorAll('.svc-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    loadFarmerServices();
+  }
+
+  function doFarmerSvcSearch() {
+    clearTimeout(window._fsvcTimer);
+    window._fsvcTimer = setTimeout(loadFarmerServices, 350);
+  }
+
+  function openFarmerSvcModal() {
+    document.getElementById('farmerSvcModal').classList.add('open');
+  }
+
+  async function submitFarmerService() {
+    const body = {
+      provider_id:        currentUser.id,
+      service_name:       document.getElementById('fsName').value.trim(),
+      service_type:       document.getElementById('fsType').value,
+      contact_phone:      document.getElementById('fsPhone').value.trim() || currentUser.phone,
+      location:           document.getElementById('fsLocation').value.trim(),
+      coverage_radius_km: parseInt(document.getElementById('fsRadius').value) || 20,
+      price_range:        document.getElementById('fsPrice').value.trim() || null,
+      description:        document.getElementById('fsDesc').value.trim() || null,
+    };
+    if (!body.service_name || !body.service_type || !body.location)
+      return showMsg('farmerSvcMsg', 'Service name, type and location are required.', 'error');
+    try {
+      const r = await fetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) return showMsg('farmerSvcMsg', d.error || 'Submission failed.', 'error');
+      showMsg('farmerSvcMsg', '✅ Submitted! Your service will appear after admin review.', 'success');
+      setTimeout(() => closeModal('farmerSvcModal'), 2000);
+      loadFarmerServices();
+    } catch { showMsg('farmerSvcMsg', 'Network error. Please try again.', 'error'); }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────

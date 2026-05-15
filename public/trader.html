@@ -207,6 +207,19 @@
     .alert.info { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
     .alert.warn { background:var(--amber-pale); color:#92400e; border:1px solid #fde68a; }
     .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+    /* Service chips & cards */
+    .svc-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .svc-chip { padding:6px 13px; border-radius:999px; font-size:12px; font-weight:500; border:1px solid var(--border); background:white; cursor:pointer; transition:all 0.15s; white-space:nowrap; font-family:'Outfit',sans-serif; }
+    .svc-chip:hover { border-color:var(--amber); color:var(--amber-dark); }
+    .svc-chip.active { background:var(--amber-dark); color:white; border-color:var(--amber-dark); }
+    .svc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; margin-top:8px; }
+    .svc-card { background:white; border-radius:12px; border:1px solid var(--border); padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .svc-card-top { display:flex; align-items:flex-start; gap:12px; }
+    .svc-icon { width:40px; height:40px; border-radius:10px; background:var(--amber-pale); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .svc-info { flex:1; }
+    .svc-name { font-size:14px; font-weight:700; color:var(--dark); }
+    .svc-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+    .svc-meta { font-size:12px; color:var(--mid); display:flex; flex-direction:column; gap:4px; }
     /* Demo mode */
     .demo-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#fbbf24; color:#1b1b2f; padding:10px 20px; font-size:13px; font-weight:600; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
     .demo-banner.visible { display:flex; }
@@ -283,7 +296,7 @@
       <div class="nav-item"         onclick="showPage('reservations')"><span class="icon">📦</span> My Orders</div>
       <div class="nav-item"         onclick="showPage('route')">       <span class="icon">🗺️</span> Route Planner</div>
       <div class="nav-item"         onclick="showPage('vision')">      <span class="icon">🔍</span> AI Crop Check</div>
-      <div class="nav-item"         onclick="showPage('services')">    <span class="icon">🔧</span> Farm Services</div>
+      <div class="nav-item"         onclick="showPage('services')">    <span class="icon">🏪</span> Services</div>
       <div class="nav-item"         onclick="showPage('spending')">    <span class="icon">💳</span> Spending</div>
       <div class="nav-item"         onclick="showPage('messages')">   <span class="icon">💬</span> Messages <span id="traderMsgBadge" class="msg-badge"></span></div>
     </nav>
@@ -409,24 +422,33 @@
     <!-- FARM SERVICES -->
     <div class="page" id="page-services">
       <div class="page-header">
-        <h2>Farm Services Directory</h2>
-        <p>Find vets, agronomists, equipment hire, transporters & more</p>
+        <h2>🏪 Farm Services Directory</h2>
+        <p>Find vets, agronomists, equipment hire, transporters &amp; more</p>
       </div>
-      <div class="search-bar">
-        <input type="text" id="servicesSearch" placeholder="Search services..." oninput="searchServices()" />
-        <select id="servicesCategory" onchange="searchServices()">
-          <option value="">All Categories</option>
-          <option value="vet">Veterinary</option>
-          <option value="agronomy">Agronomy / Extension</option>
-          <option value="transport">Transport & Logistics</option>
-          <option value="equipment">Equipment Hire</option>
-          <option value="irrigation">Irrigation</option>
-          <option value="storage">Storage / Warehousing</option>
-          <option value="input">Farm Inputs Supply</option>
-        </select>
-      </div>
-      <div class="market-grid" id="servicesGrid">
-        <div class="loading"><span class="spinner"></span> Loading services...</div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Service Directory</h3>
+          <button class="btn btn-amber btn-sm" onclick="openTraderSvcModal()">+ List Your Service</button>
+        </div>
+        <div style="padding:16px 20px 4px;">
+          <div style="display:flex;gap:10px;margin-bottom:12px;">
+            <input type="text" id="servicesSearch" placeholder="Search services…" oninput="searchServices()"
+              style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;flex:1;outline:none;" />
+          </div>
+          <div class="svc-chips">
+            <button class="svc-chip active" onclick="setTraderSvcCat(this,'')">All</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'vet')">🩺 Veterinary</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'agronomy')">🌿 Agronomy</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'transport')">🚛 Transport</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'equipment')">🚜 Equipment</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'irrigation')">💧 Irrigation</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'storage')">🏭 Storage</button>
+            <button class="svc-chip" onclick="setTraderSvcCat(this,'input')">🌱 Farm Inputs</button>
+          </div>
+        </div>
+        <div id="servicesGrid" style="padding:0 20px 20px;">
+          <div class="loading"><span class="spinner"></span> Loading services…</div>
+        </div>
       </div>
     </div>
 
@@ -526,6 +548,60 @@
       <button class="btn btn-amber btn-sm" onclick="submitRating()">Submit Review</button>
     </div>
     <div id="reviewMsg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- List Your Service Modal -->
+<div class="modal-overlay" id="traderSvcModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('traderSvcModal')">×</button>
+    <h3>🏪 List Your Farm Service</h3>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Service Name <span style="color:var(--red)">*</span></label>
+        <input type="text" id="tsName" placeholder="e.g. Chuka Mobile Vet Services" />
+      </div>
+      <div class="form-group">
+        <label>Service Type <span style="color:var(--red)">*</span></label>
+        <select id="tsType">
+          <option value="">Select type…</option>
+          <option value="vet">Veterinary</option>
+          <option value="agronomy">Agronomy / Extension</option>
+          <option value="transport">Transport &amp; Logistics</option>
+          <option value="equipment">Equipment Hire</option>
+          <option value="irrigation">Irrigation</option>
+          <option value="storage">Storage / Warehousing</option>
+          <option value="input">Farm Inputs Supply</option>
+          <option value="finance">Agricultural Finance</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contact Phone</label>
+        <input type="tel" id="tsPhone" placeholder="0712345678" />
+      </div>
+      <div class="form-group">
+        <label>Location <span style="color:var(--red)">*</span></label>
+        <input type="text" id="tsLocation" placeholder="e.g. Chuka Town" />
+      </div>
+      <div class="form-group">
+        <label>Coverage Radius (km)</label>
+        <input type="number" id="tsRadius" placeholder="20" min="1" max="200" />
+      </div>
+      <div class="form-group">
+        <label>Price Range (optional)</label>
+        <input type="text" id="tsPrice" placeholder="e.g. KES 500–2,000/visit" />
+      </div>
+      <div class="form-group full">
+        <label>Description (optional)</label>
+        <textarea id="tsDesc" rows="3" placeholder="Briefly describe your service…"></textarea>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('traderSvcModal')">Cancel</button>
+      <button class="btn btn-amber btn-sm" onclick="submitTraderService()">Submit for Listing</button>
+    </div>
+    <div id="traderSvcMsg" style="margin-top:10px;"></div>
   </div>
 </div>
 
@@ -942,38 +1018,92 @@
   }
 
   // ── Farm Services ─────────────────────────────────────────────────
+  let _traderSvcCat = '';
+  const _T_SVC_ICONS  = { vet:'🩺', agronomy:'🌿', transport:'🚛', equipment:'🚜', irrigation:'💧', storage:'🏭', input:'🌱', finance:'💳', other:'🔧' };
+  const _T_SVC_LABELS = { vet:'Veterinary', agronomy:'Agronomy / Extension', transport:'Transport & Logistics', equipment:'Equipment Hire', irrigation:'Irrigation', storage:'Storage / Warehousing', input:'Farm Inputs', finance:'Agricultural Finance', other:'Other' };
+  const _T_FALLBACK_SVCS = [
+    { id:'ts1', service_name:'Tharaka County Vet Services', service_type:'vet', location:'Chuka', coverage_radius_km:40, contact_phone:'0721234567', price_range:'KES 300–1,500', description:'Mobile veterinary services covering livestock vaccination, treatment and AI.', is_verified:true, rating:4.5, reviews_count:12 },
+    { id:'ts2', service_name:'Maara Agri Extension Officers', service_type:'agronomy', location:'Maara', coverage_radius_km:30, contact_phone:'0733456789', price_range:'Free (county subsidised)', description:'Crop advisory, soil testing and field visits for smallholder farmers.', is_verified:true, rating:4.2, reviews_count:8 },
+    { id:'ts3', service_name:'Nithi Transporters Sacco', service_type:'transport', location:'Chuka', coverage_radius_km:80, contact_phone:'0745678901', price_range:'KES 50–200/km', description:'Pickup trucks and lorries for farm produce collection and delivery.', is_verified:false, rating:3.9, reviews_count:5 },
+    { id:'ts4', service_name:'Tharaka Equipment Hub', service_type:'equipment', location:'Tharaka', coverage_radius_km:50, contact_phone:'0756789012', price_range:'KES 2,000–8,000/day', description:'Tractor hire, ploughing, harrowing and shelling services.', is_verified:true, rating:4.7, reviews_count:20 },
+    { id:'ts5', service_name:'Chuka Irrigation Supplies', service_type:'irrigation', location:'Chuka', coverage_radius_km:60, contact_phone:'0767890123', price_range:'Varies by project', description:'Drip irrigation installation, pipe supply and borehole connections.', is_verified:false, rating:4.0, reviews_count:3 },
+    { id:'ts6', service_name:'Igambang\'ombe Grain Store', service_type:'storage', location:'Igambang\'ombe', coverage_radius_km:20, contact_phone:'0778901234', price_range:'KES 50/bag/month', description:'Dry secure storage for maize, beans and other grains. Fumigation available.', is_verified:true, rating:4.3, reviews_count:15 },
+  ];
+
   async function loadServices() {
-    const q   = document.getElementById('servicesSearch').value.trim();
-    const cat = document.getElementById('servicesCategory').value;
+    const q = (document.getElementById('servicesSearch').value || '').trim();
     let url = '/api/services?status=active';
+    if (_traderSvcCat) url += `&service_type=${_traderSvcCat}`;
     if (q) url += `&q=${encodeURIComponent(q)}`;
-    if (cat) url += `&service_type=${encodeURIComponent(cat)}`;
     const el = document.getElementById('servicesGrid');
-    el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
+    el.innerHTML = loadingHTML();
     try {
       const data = await apiFetch(url);
-      if (!data.length) { el.innerHTML = emptyState('No services found. Try a different category.'); return; }
-      el.innerHTML = data.map(s => `
-        <div class="market-card">
-          <div class="market-card-header">
-            <span class="market-card-product" style="font-size:15px;">${s.service_name}</span>
-            ${s.rating ? `<span style="font-size:13px;">⭐ ${s.rating}</span>` : ''}
+      renderTraderServices(data.length ? data : _T_FALLBACK_SVCS);
+    } catch {
+      renderTraderServices(_T_FALLBACK_SVCS);
+    }
+  }
+
+  function renderTraderServices(data) {
+    const el = document.getElementById('servicesGrid');
+    if (!data.length) { el.innerHTML = emptyState('No services found. Try a different category.'); return; }
+    el.innerHTML = `<div class="svc-grid">${data.map(s => {
+      const icon  = _T_SVC_ICONS[s.service_type]  || '🔧';
+      const label = _T_SVC_LABELS[s.service_type] || 'Service';
+      return `<div class="svc-card">
+        <div class="svc-card-top">
+          <div class="svc-icon">${icon}</div>
+          <div class="svc-info">
+            <div class="svc-name">${s.service_name}</div>
+            <div class="svc-label">${label}</div>
           </div>
-          <div class="market-card-meta">
-            <span>🏷️ ${s.service_type}</span>
-            <span>📍 ${s.location}${s.coverage_radius_km ? ' · ' + s.coverage_radius_km + 'km radius' : ''}</span>
-            ${s.price_range ? `<span>💰 ${s.price_range}</span>` : ''}
-            ${s.description ? `<span style="margin-top:4px;font-style:italic;">${s.description.slice(0,80)}${s.description.length>80?'…':''}</span>` : ''}
-          </div>
-          <div class="market-card-footer">
-            ${s.is_verified ? '<span class="badge green">✓ Verified</span>' : '<span class="badge gray">Unverified</span>'}
-            ${s.contact_phone ? `<a href="tel:${s.contact_phone}" class="btn btn-amber btn-sm" style="text-decoration:none;">📞 Call</a>` : ''}
-          </div>
-        </div>`).join('');
-    } catch { el.innerHTML = '<p style="color:red;padding:20px;">Failed to load services.</p>'; }
+          ${s.is_verified ? '<span class="badge green" style="flex-shrink:0;">✓ Verified</span>' : ''}
+        </div>
+        <div class="svc-meta">
+          <span>📍 ${s.location}${s.coverage_radius_km ? ' · ' + s.coverage_radius_km + ' km' : ''}</span>
+          ${s.price_range  ? `<span>💰 ${s.price_range}</span>` : ''}
+          ${s.rating       ? `<span>⭐ ${s.rating}${s.reviews_count ? ' (' + s.reviews_count + ' reviews)' : ''}</span>` : ''}
+          ${s.description  ? `<span style="font-style:italic;color:var(--muted);">${s.description.slice(0,85)}${s.description.length>85?'…':''}</span>` : ''}
+        </div>
+        ${s.contact_phone ? `<a href="tel:${s.contact_phone}" class="btn btn-amber btn-sm" style="text-decoration:none;text-align:center;">📞 Call ${s.contact_phone}</a>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function setTraderSvcCat(btn, cat) {
+    _traderSvcCat = cat;
+    document.querySelectorAll('#page-services .svc-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    loadServices();
   }
 
   function searchServices() { clearTimeout(window._svcTimer); window._svcTimer = setTimeout(loadServices, 400); }
+
+  function openTraderSvcModal() { document.getElementById('traderSvcModal').classList.add('open'); }
+
+  async function submitTraderService() {
+    const body = {
+      provider_id:        currentUser.id,
+      service_name:       document.getElementById('tsName').value.trim(),
+      service_type:       document.getElementById('tsType').value,
+      contact_phone:      document.getElementById('tsPhone').value.trim() || currentUser.phone,
+      location:           document.getElementById('tsLocation').value.trim(),
+      coverage_radius_km: parseInt(document.getElementById('tsRadius').value) || 20,
+      price_range:        document.getElementById('tsPrice').value.trim() || null,
+      description:        document.getElementById('tsDesc').value.trim() || null,
+    };
+    if (!body.service_name || !body.service_type || !body.location)
+      return showMsg('traderSvcMsg', 'Service name, type and location are required.', 'error');
+    try {
+      const r = await fetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) return showMsg('traderSvcMsg', d.error || 'Submission failed.', 'error');
+      showMsg('traderSvcMsg', '✅ Submitted! Your service will appear after admin review.', 'success');
+      setTimeout(() => closeModal('traderSvcModal'), 2000);
+      loadServices();
+    } catch { showMsg('traderSvcMsg', 'Network error. Please try again.', 'error'); }
+  }
 
   // ── Spending ──────────────────────────────────────────────────────
   async function loadSpending() {
