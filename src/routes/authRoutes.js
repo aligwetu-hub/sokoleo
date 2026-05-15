@@ -117,7 +117,9 @@ router.get('/user/:phone', async (req, res) => {
     const result = await query(
       `SELECT u.id, u.name, u.phone, u.role, u.location, u.is_verified, u.created_at,
               f.farm_size, f.crops, f.livestock,
-              t.subscription_tier, t.products_interest
+              t.subscription_tier, t.products_interest,
+              (f.user_id IS NOT NULL) AS has_farmer_profile,
+              (t.user_id IS NOT NULL) AS has_trader_profile
        FROM users u
        LEFT JOIN farmers f ON f.user_id = u.id
        LEFT JOIN traders t ON t.user_id = u.id
@@ -128,6 +130,35 @@ router.get('/user/:phone', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user.' });
+  }
+});
+
+// POST /api/auth/add-role
+router.post('/add-role', async (req, res) => {
+  const { user_id, role } = req.body;
+  if (!user_id || !role) return res.status(400).json({ error: 'user_id and role are required.' });
+  if (!['farmer', 'trader'].includes(role)) return res.status(400).json({ error: 'Role must be farmer or trader.' });
+
+  try {
+    const userRes = await query(`SELECT id, role FROM users WHERE id=$1`, [user_id]);
+    if (!userRes.rows.length) return res.status(404).json({ error: 'User not found.' });
+    const user = userRes.rows[0];
+    if (user.role === role) return res.status(400).json({ error: `You are already a ${role}.` });
+
+    if (role === 'farmer') {
+      const exists = await query(`SELECT user_id FROM farmers WHERE user_id=$1`, [user_id]);
+      if (exists.rows.length) return res.status(400).json({ error: 'Already registered as a farmer.' });
+      await query(`INSERT INTO farmers (user_id) VALUES ($1)`, [user_id]);
+    } else {
+      const exists = await query(`SELECT user_id FROM traders WHERE user_id=$1`, [user_id]);
+      if (exists.rows.length) return res.status(400).json({ error: 'Already registered as a trader.' });
+      await query(`INSERT INTO traders (user_id) VALUES ($1)`, [user_id]);
+    }
+
+    res.json({ success: true, message: `Registered as ${role} successfully.` });
+  } catch (err) {
+    console.error('Add role error:', err.message);
+    res.status(500).json({ error: 'Failed to add role.' });
   }
 });
 

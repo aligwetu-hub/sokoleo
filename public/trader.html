@@ -232,6 +232,24 @@
     .btn-demo { background:#fbbf24; color:#1b1b2f; font-weight:700; border:none; }
     .btn-demo:hover { background:#f59e0b; }
     .demo-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:8px; }
+    /* Switch Role */
+    .btn-switch-role { display:flex; align-items:center; gap:8px; width:calc(100% - 20px); margin:8px 10px 4px;
+      padding:9px 12px; border-radius:8px; background:rgba(59,130,246,0.12); color:var(--blue);
+      font-size:13px; font-weight:600; cursor:pointer; border:1px solid rgba(59,130,246,0.2);
+      font-family:'Outfit',sans-serif; transition:all 0.15s; }
+    .btn-switch-role:hover { background:rgba(59,130,246,0.22); }
+    .dual-badge { display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px;
+      font-size:10px; font-weight:700; background:var(--green); color:white; margin-left:auto; letter-spacing:0.4px; }
+    .switch-role-logo { font-size:28px; margin-bottom:6px; }
+    .switch-role-title { font-size:19px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+    .switch-role-sub { font-size:12px; color:var(--muted); margin-bottom:14px; }
+    .role-badge-current { display:inline-block; padding:6px 16px; border-radius:8px;
+      font-size:13px; font-weight:600; margin-bottom:16px; }
+    .role-badge-trader { background:var(--amber-pale); color:#92400e; }
+    .role-badge-farmer { background:var(--green-pale); color:var(--green); }
+    .switch-role-benefits { list-style:none; margin:0 0 18px; text-align:left; }
+    .switch-role-benefits li { font-size:13px; padding:5px 0; color:var(--mid); }
+    .switch-role-benefits li::before { content:'✅ '; }
   </style>
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#166534"/>
@@ -299,6 +317,7 @@
       <div class="nav-item"         onclick="showPage('services')">    <span class="icon">🏪</span> Services</div>
       <div class="nav-item"         onclick="showPage('spending')">    <span class="icon">💳</span> Spending</div>
       <div class="nav-item"         onclick="showPage('messages')">   <span class="icon">💬</span> Messages <span id="traderMsgBadge" class="msg-badge"></span></div>
+      <button class="btn-switch-role" onclick="openSwitchRole()">🔄 Switch Role <span id="traderDualBadge" class="dual-badge" style="display:none">+FARMER</span></button>
     </nav>
     <div class="sidebar-user">
       <div class="avatar" id="sidebarAvatar">T</div>
@@ -605,6 +624,25 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="switchRoleModal">
+  <div class="modal" style="max-width:340px;text-align:center;">
+    <button class="modal-close" onclick="closeModal('switchRoleModal')">×</button>
+    <div class="switch-role-logo">🏪</div>
+    <div class="switch-role-title">Soko<span style="color:var(--amber)">Leo</span></div>
+    <div class="switch-role-sub">Dual Role Access</div>
+    <div class="role-badge-current role-badge-trader">🏪 TRADER — Current Role</div>
+    <p style="font-size:13px;font-weight:600;margin-bottom:8px;">Benefits of being a Dual User</p>
+    <ul class="switch-role-benefits">
+      <li>Same phone number and OTP</li>
+      <li>Switch roles instantly</li>
+      <li>Separate dashboards for each role</li>
+      <li>Your data stays separate and safe</li>
+    </ul>
+    <div id="switchRoleActions"></div>
+    <div id="switchRoleMsg" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
 <script>
   let currentUser = null;
   let currentPhone = '';
@@ -751,6 +789,7 @@
     const n = currentUser.name || 'Trader';
     document.getElementById('sidebarName').textContent = n;
     document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
+    checkDualRole();
     loadMarket();
   }
 
@@ -1344,6 +1383,59 @@
 
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  // ── Switch Role ────────────────────────────────────────────────────
+  function checkDualRole() {
+    const hasDualRole = isDemoMode
+      ? localStorage.getItem('demo_has_farmer') === '1'
+      : !!(currentUser && currentUser.has_farmer_profile);
+    const badge = document.getElementById('traderDualBadge');
+    if (badge) badge.style.display = hasDualRole ? 'inline-flex' : 'none';
+  }
+
+  function openSwitchRole() {
+    const hasDualRole = isDemoMode
+      ? localStorage.getItem('demo_has_farmer') === '1'
+      : !!(currentUser && currentUser.has_farmer_profile);
+    const actionsDiv = document.getElementById('switchRoleActions');
+    document.getElementById('switchRoleMsg').innerHTML = '';
+    if (hasDualRole) {
+      actionsDiv.innerHTML = `<button class="btn btn-green" onclick="window.location.href='/farmer.html'">🌱 Go to Farmer Portal</button>`;
+    } else {
+      actionsDiv.innerHTML = `<button class="btn btn-green" onclick="registerAsDualRole()">🌱 Register Me as a Farmer Too</button>`;
+    }
+    document.getElementById('switchRoleModal').classList.add('open');
+  }
+
+  async function registerAsDualRole() {
+    if (isDemoMode) {
+      localStorage.setItem('demo_has_farmer', '1');
+      document.getElementById('traderDualBadge').style.display = 'inline-flex';
+      document.getElementById('switchRoleMsg').innerHTML = '<span style="color:var(--green)">✅ Registered! Redirecting to Farmer Portal…</span>';
+      setTimeout(() => { window.location.href = '/farmer.html'; }, 1200);
+      return;
+    }
+    const btn = document.querySelector('#switchRoleActions button');
+    if (btn) { btn.disabled = true; btn.textContent = 'Registering…'; }
+    try {
+      const r = await fetch(`${BASE}/api/auth/add-role`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id, role: 'farmer' })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Registration failed.');
+      currentUser.has_farmer_profile = true;
+      const stored = JSON.parse(localStorage.getItem('sokoleo_user') || '{}');
+      stored.has_farmer_profile = true;
+      localStorage.setItem('sokoleo_user', JSON.stringify(stored));
+      checkDualRole();
+      document.getElementById('switchRoleMsg').innerHTML = '<span style="color:var(--green)">✅ Registered! Redirecting to Farmer Portal…</span>';
+      setTimeout(() => { window.location.href = '/farmer.html'; }, 1200);
+    } catch (e) {
+      document.getElementById('switchRoleMsg').innerHTML = `<span style="color:var(--red)">${e.message}</span>`;
+      if (btn) { btn.disabled = false; btn.textContent = '🌱 Register Me as a Farmer Too'; }
+    }
   }
 </script>
 <script src="/pwa.js"></script>
