@@ -31,12 +31,17 @@ app.use('/api/', limiter);
 const visionLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders: true });
 app.use('/api/vision', visionLimiter);
 
-// Static files — admin, farmer, trader portals
+// Static files — landing page, farmer, trader portals
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check
 app.get('/health', (req, res) =>
   res.json({ status: 'ok', service: 'SokoLeo API', version: '2.0', timestamp: new Date() })
+);
+
+// Admin dashboard (no .html extension needed)
+app.get('/admin', (req, res) =>
+  res.sendFile(path.join(__dirname, '../public/admin.html'))
 );
 
 // ── API Routes ────────────────────────────────────────────────────

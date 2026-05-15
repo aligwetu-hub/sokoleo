@@ -3,504 +3,478 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SokoLeo Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <title>SokoLeo — Kenya's Smartest Agricultural Marketplace</title>
+  <meta name="description" content="SokoLeo connects farmers and traders in Tharaka Nithi County, Kenya. Buy and sell produce, livestock, and farm services safely with M-PESA escrow." />
+  <meta name="theme-color" content="#0a1a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SokoLeo" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --green: #2d6a4f;
-      --green-light: #40916c;
-      --green-pale: #d8f3dc;
-      --amber: #f4a261;
-      --amber-dark: #e76f51;
-      --cream: #fefae0;
-      --dark: #1b1b2f;
-      --mid: #374151;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --white: #ffffff;
-      --red: #ef4444;
-      --blue: #3b82f6;
+      --bg:       #0a1a0f;
+      --bg2:      #0f2318;
+      --bg3:      #142d1e;
+      --green:    #4ade80;
+      --green2:   #22c55e;
+      --green3:   #16a34a;
+      --amber:    #fbbf24;
+      --amber2:   #f59e0b;
+      --text:     #dcfce7;
+      --text-mid: #86efac;
+      --text-dim: #4ade8088;
+      --white:    #ffffff;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
     body {
       font-family: 'Outfit', sans-serif;
-      background: #f3f4f6;
-      color: var(--dark);
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* Sidebar */
-    .sidebar {
-      position: fixed; top: 0; left: 0;
-      width: 240px; height: 100vh;
-      background: var(--dark);
-      display: flex; flex-direction: column;
-      padding: 0 0 24px 0;
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      position: sticky;
+      top: 0;
       z-index: 100;
+      background: rgba(10, 26, 15, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(74, 222, 128, 0.08);
     }
-    .logo {
-      padding: 28px 24px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
     }
-    .logo h1 { font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
-    .logo h1 span { color: var(--amber); }
-    .logo p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
-    .nav { flex: 1; padding: 16px 12px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px;
-      color: rgba(255,255,255,0.55); font-size: 14px; font-weight: 500;
-      cursor: pointer; transition: all 0.15s; margin-bottom: 2px;
+    .logo-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      object-fit: contain;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--white); }
-    .nav-item.active { background: var(--green); color: var(--white); }
-    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
-    .sidebar-footer {
-      padding: 0 12px;
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .logo-text .soko { color: var(--green); }
+    .logo-text .leo  { color: var(--white); }
+    .logo-motto {
+      font-size: 10px;
+      color: var(--text-mid);
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+    .header-admin {
       font-size: 12px;
-      color: rgba(255,255,255,0.25);
+      color: rgba(74,222,128,0.4);
+      text-decoration: none;
+      padding: 6px 12px;
+      border: 1px solid rgba(74,222,128,0.15);
+      border-radius: 20px;
+      transition: all 0.2s;
+    }
+    .header-admin:hover { color: var(--green); border-color: rgba(74,222,128,0.4); }
+
+    /* ── Hero ───────────────────────────────────────────────────────── */
+    .hero {
+      min-height: calc(100svh - 77px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* subtle radial glow behind hero content */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(74,222,128,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green);
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.2);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 28px;
+    }
+    .hero-eyebrow span { font-size: 14px; }
+
+    .hero-headline {
+      font-size: clamp(32px, 8vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--white);
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+    .hero-headline .hl-green { color: var(--green); }
+
+    .hero-sub {
+      font-size: clamp(15px, 3.5vw, 18px);
+      color: var(--text-mid);
+      font-weight: 400;
+      line-height: 1.6;
+      max-width: 480px;
+      margin-bottom: 44px;
+    }
+
+    /* ── CTA Buttons ────────────────────────────────────────────────── */
+    .cta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 56px;
+    }
+
+    @media (min-width: 480px) {
+      .cta-group { flex-direction: row; max-width: 560px; }
+    }
+
+    .cta-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1;
+      padding: 18px 24px;
+      border-radius: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cta-btn:active { transform: scale(0.97); }
+
+    .cta-farmer {
+      background: var(--green2);
+      color: #052e16;
+      box-shadow: 0 8px 32px rgba(34,197,94,0.35);
+    }
+    .cta-farmer:hover { background: var(--green); box-shadow: 0 12px 40px rgba(74,222,128,0.4); transform: translateY(-2px); }
+
+    .cta-trader {
+      background: var(--amber);
+      color: #451a03;
+      box-shadow: 0 8px 32px rgba(251,191,36,0.35);
+    }
+    .cta-trader:hover { background: #fcd34d; box-shadow: 0 12px 40px rgba(251,191,36,0.4); transform: translateY(-2px); }
+
+    .cta-btn-icon { font-size: 22px; }
+    .cta-btn-text { display: flex; flex-direction: column; text-align: left; }
+    .cta-btn-label { font-size: 17px; font-weight: 700; line-height: 1.2; }
+    .cta-btn-hint  { font-size: 11px; font-weight: 400; opacity: 0.7; margin-top: 1px; }
+
+    /* ── Features ───────────────────────────────────────────────────── */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 560px;
+    }
+    @media (min-width: 560px) {
+      .features { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(74,222,128,0.1);
+      border-radius: 14px;
+      padding: 20px 18px;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover { background: rgba(74,222,128,0.06); border-color: rgba(74,222,128,0.25); }
+
+    .feature-icon { font-size: 28px; margin-bottom: 10px; }
+    .feature-title { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 5px; }
+    .feature-desc  { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+
+    /* ── Stats Strip ────────────────────────────────────────────────── */
+    .stats-strip {
+      background: rgba(74,222,128,0.05);
+      border-top: 1px solid rgba(74,222,128,0.1);
+      border-bottom: 1px solid rgba(74,222,128,0.1);
+      padding: 18px 24px;
       text-align: center;
     }
-
-    /* Main */
-    .main { margin-left: 240px; padding: 32px; min-height: 100vh; }
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* Header */
-    .page-header { margin-bottom: 28px; }
-    .page-header h2 { font-size: 26px; font-weight: 700; color: var(--dark); }
-    .page-header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
-
-    /* Stats grid */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .stat-card {
-      background: var(--white); border-radius: 14px;
-      padding: 20px; border: 1px solid var(--border);
-      position: relative; overflow: hidden;
+    .stats-location {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
-    .stat-card::before {
-      content: ''; position: absolute;
-      top: 0; left: 0; right: 0; height: 3px;
+    .stats-categories {
+      font-size: 14px;
+      color: var(--text-mid);
+      letter-spacing: 0.5px;
     }
-    .stat-card.green::before { background: var(--green-light); }
-    .stat-card.amber::before { background: var(--amber); }
-    .stat-card.blue::before { background: var(--blue); }
-    .stat-card.red::before { background: var(--red); }
-    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
-    .stat-value { font-size: 32px; font-weight: 700; margin-top: 8px; color: var(--dark); font-family: 'DM Mono', monospace; }
-    .stat-icon { position: absolute; top: 18px; right: 18px; font-size: 28px; opacity: 0.15; }
 
-    /* Table */
-    .table-card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; }
-    .table-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .table-header h3 { font-size: 15px; font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; }
-    th { padding: 10px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; background: #fafafa; border-bottom: 1px solid var(--border); }
-    td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafafa; }
-
-    /* Badges */
-    .badge {
-      display: inline-flex; align-items: center;
-      padding: 2px 8px; border-radius: 999px;
-      font-size: 11px; font-weight: 600;
+    /* ── How It Works ───────────────────────────────────────────────── */
+    .how-section {
+      padding: 56px 24px;
+      max-width: 860px;
+      margin: 0 auto;
     }
-    .badge.green { background: var(--green-pale); color: var(--green); }
-    .badge.amber { background: #fef3c7; color: #92400e; }
-    .badge.red { background: #fee2e2; color: #991b1b; }
-    .badge.blue { background: #dbeafe; color: #1e40af; }
-    .badge.gray { background: #f3f4f6; color: #374151; }
-
-    /* Buttons */
-    .btn {
-      padding: 8px 16px; border-radius: 8px; font-size: 13px;
-      font-family: 'Outfit', sans-serif; font-weight: 500;
-      cursor: pointer; border: none; transition: all 0.15s;
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: 10px;
     }
-    .btn-primary { background: var(--green); color: white; }
-    .btn-primary:hover { background: var(--green-light); }
-    .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
-    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--mid); }
-    .btn-ghost:hover { background: #f3f4f6; }
-
-    /* Refresh bar */
-    .topbar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px;
+    .section-title {
+      font-size: clamp(22px, 5vw, 34px);
+      font-weight: 800;
+      color: var(--white);
+      text-align: center;
+      margin-bottom: 40px;
+      letter-spacing: -0.5px;
     }
-    .last-updated { font-size: 12px; color: var(--muted); }
-
-    /* Charts area */
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-    .chart-card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 20px; }
-    .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--mid); }
-    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-    .bar-row { display: flex; align-items: center; gap: 12px; }
-    .bar-label { font-size: 12px; color: var(--muted); width: 80px; flex-shrink: 0; }
-    .bar-track { flex: 1; height: 10px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 99px; background: var(--green-light); transition: width 0.6s ease; }
-    .bar-count { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--mid); width: 30px; text-align: right; }
-
-    /* Loading */
-    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Empty state */
-    .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
-    .empty .emoji { font-size: 40px; display: block; margin-bottom: 12px; }
-
-    /* USSD preview */
-    .ussd-phone {
-      background: var(--dark); border-radius: 24px; padding: 20px;
-      max-width: 300px; margin: 0 auto; font-family: 'DM Mono', monospace;
-      font-size: 13px; color: #a3e635; border: 6px solid #374151;
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
     }
-    .ussd-screen { background: #111827; border-radius: 12px; padding: 16px; min-height: 180px; white-space: pre-line; line-height: 1.7; }
-    .ussd-title { text-align: center; color: rgba(255,255,255,0.4); font-size: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
+    @media (min-width: 600px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+
+    .step {
+      background: var(--bg2);
+      border: 1px solid rgba(74,222,128,0.1);
+      border-radius: 16px;
+      padding: 24px 20px;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(74,222,128,0.1);
+      border: 1.5px solid rgba(74,222,128,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: var(--green);
+      margin-bottom: 14px;
+    }
+    .step-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 7px; }
+    .step-desc  { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+
+    /* ── USSD Banner ─────────────────────────────────────────────────── */
+    .ussd-banner {
+      background: linear-gradient(135deg, var(--bg3) 0%, rgba(15,35,24,0.8) 100%);
+      border: 1px solid rgba(74,222,128,0.15);
+      border-radius: 20px;
+      margin: 0 16px 56px;
+      padding: 32px 28px;
+      text-align: center;
+    }
+    .ussd-icon { font-size: 40px; margin-bottom: 12px; }
+    .ussd-title { font-size: 20px; font-weight: 800; color: var(--white); margin-bottom: 8px; }
+    .ussd-desc  { font-size: 14px; color: var(--text-mid); margin-bottom: 18px; line-height: 1.6; }
+    .ussd-code  {
+      display: inline-block;
+      font-size: 28px; font-weight: 900;
+      color: var(--green);
+      background: rgba(74,222,128,0.1);
+      border: 2px solid rgba(74,222,128,0.3);
+      border-radius: 12px;
+      padding: 10px 28px;
+      letter-spacing: 2px;
+      font-family: 'DM Mono', 'Courier New', monospace;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid rgba(74,222,128,0.08);
+      padding: 24px;
+      text-align: center;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 20px;
+      margin-bottom: 14px;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-mid);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--green); }
+    .footer-copy {
+      font-size: 12px;
+      color: rgba(134,239,172,0.4);
+    }
   </style>
-  <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#166534"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
-  <link rel="apple-touch-icon" href="/logo.png"/>
 </head>
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="logo">
-    <h1>Soko<span>Leo</span></h1>
-    <p>Admin Dashboard</p>
+<!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+<header class="header">
+  <a class="logo-wrap" href="/">
+    <img class="logo-img" src="/logo.png" alt="SokoLeo" onerror="this.style.display='none'" />
+    <div>
+      <div class="logo-text"><span class="soko">Soko</span><span class="leo">Leo</span></div>
+      <div class="logo-motto">Soko Kila Siku</div>
+    </div>
+  </a>
+  <a class="header-admin" href="/admin.html">Admin ↗</a>
+</header>
+
+<!-- ── HERO ───────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-eyebrow"><span>🌱</span> Tharaka Nithi County, Kenya</div>
+
+  <h1 class="hero-headline">
+    Kenya's <span class="hl-green">Smartest</span><br/>
+    Agricultural<br/>Marketplace
+  </h1>
+
+  <p class="hero-sub">
+    Connect farmers and traders in Tharaka Nithi County. Buy, sell, and grow — safely and transparently.
+  </p>
+
+  <!-- CTA Buttons -->
+  <div class="cta-group">
+    <a class="cta-btn cta-farmer" href="/farmer.html">
+      <span class="cta-btn-icon">🌱</span>
+      <div class="cta-btn-text">
+        <span class="cta-btn-label">I'm a Farmer</span>
+        <span class="cta-btn-hint">List produce &amp; livestock</span>
+      </div>
+    </a>
+    <a class="cta-btn cta-trader" href="/trader.html">
+      <span class="cta-btn-icon">🏪</span>
+      <div class="cta-btn-text">
+        <span class="cta-btn-label">I'm a Trader</span>
+        <span class="cta-btn-hint">Browse &amp; buy direct</span>
+      </div>
+    </a>
   </div>
-  <nav class="nav">
-    <div class="nav-item active" onclick="showPage('overview')">
-      <span class="icon">📊</span> Overview
+
+  <!-- Feature highlights -->
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">Works on Any Phone</div>
+      <div class="feature-desc">No app needed — open in any browser. No data, use USSD *789#</div>
     </div>
-    <div class="nav-item" onclick="showPage('listings')">
-      <span class="icon">🌽</span> Listings
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Safe M-PESA Payments</div>
+      <div class="feature-desc">Escrow holds your money until goods are delivered safely</div>
     </div>
-    <div class="nav-item" onclick="showPage('users')">
-      <span class="icon">👥</span> Users
+    <div class="feature-card">
+      <div class="feature-icon">⭐</div>
+      <div class="feature-title">Verified Community</div>
+      <div class="feature-desc">Rated farmers and trusted traders — see who you're dealing with</div>
     </div>
-    <div class="nav-item" onclick="showPage('reservations')">
-      <span class="icon">📦</span> Reservations
-    </div>
-    <div class="nav-item" onclick="showPage('ussd')">
-      <span class="icon">📱</span> USSD Flow
-    </div>
-  </nav>
-  <div class="sidebar-footer">SokoLeo v1.0 · Tharaka Nithi</div>
+  </div>
+</section>
+
+<!-- ── STATS STRIP ─────────────────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="stats-location">📍 Serving Tharaka Nithi County · Kenya</div>
+  <div class="stats-categories">🐄 Livestock &nbsp;·&nbsp; 🥬 Produce &nbsp;·&nbsp; 🌿 Farm Services</div>
 </div>
 
-<!-- Main Content -->
-<div class="main">
-
-  <!-- OVERVIEW PAGE -->
-  <div class="page active" id="page-overview">
-    <div class="page-header">
-      <h2>Dashboard Overview</h2>
-      <p>SokoLeo marketplace analytics · Tharaka Nithi County, Kenya</p>
+<!-- ── HOW IT WORKS ────────────────────────────────────────────────────── -->
+<section class="how-section">
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">From Farm to Market in 3 Steps</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Post Your Listing</div>
+      <div class="step-desc">Farmers list produce, livestock, or services in minutes using just a phone number. No internet? Use USSD *789#.</div>
     </div>
-    <div class="topbar">
-      <span class="last-updated" id="lastUpdated">Loading...</span>
-      <button class="btn btn-primary" onclick="loadStats()">↻ Refresh</button>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Traders Discover &amp; Reserve</div>
+      <div class="step-desc">Traders browse by product, location, and availability. Boost your listing to appear at the top instantly.</div>
     </div>
-
-    <div class="stats-grid" id="statsGrid">
-      <div class="loading"><span class="spinner"></span>Loading stats...</div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>🌽 Top Crops Listed</h3>
-        <div class="bar-chart" id="cropsChart"><div class="loading">Loading...</div></div>
-      </div>
-      <div class="chart-card">
-        <h3>📋 Recent Activity</h3>
-        <div id="recentActivity"><div class="loading">Loading...</div></div>
-      </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Pay Safely via M-PESA</div>
+      <div class="step-desc">Funds are held in escrow until the farmer delivers. Both sides are protected — no cash, no risk.</div>
     </div>
   </div>
+</section>
 
-  <!-- LISTINGS PAGE -->
-  <div class="page" id="page-listings">
-    <div class="page-header">
-      <h2>Produce Listings</h2>
-      <p>All active and recent produce listings</p>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <h3>All Listings</h3>
-        <button class="btn btn-ghost btn-sm" onclick="loadListings()">↻ Refresh</button>
-      </div>
-      <table>
-        <thead><tr>
-          <th>Product</th><th>Qty</th><th>Location</th><th>Availability</th>
-          <th>Farmer</th><th>Phone</th><th>Status</th><th>Date</th>
-        </tr></thead>
-        <tbody id="listingsTable"><tr><td colspan="8" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
-      </table>
-    </div>
+<!-- ── USSD BANNER ─────────────────────────────────────────────────────── -->
+<div class="ussd-banner">
+  <div class="ussd-icon">📲</div>
+  <div class="ussd-title">No Smartphone? No Problem.</div>
+  <div class="ussd-desc">
+    SokoLeo works on any basic phone via USSD.<br/>
+    Post listings, check prices, and manage orders —<br/>
+    without internet or data.
   </div>
-
-  <!-- USERS PAGE -->
-  <div class="page" id="page-users">
-    <div class="page-header">
-      <h2>Users</h2>
-      <p>Registered farmers, traders and visitors</p>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button class="btn btn-primary btn-sm" onclick="loadUsers()">All</button>
-      <button class="btn btn-ghost btn-sm" onclick="loadUsers('farmer')">🌾 Farmers</button>
-      <button class="btn btn-ghost btn-sm" onclick="loadUsers('trader')">🛒 Traders</button>
-      <button class="btn btn-ghost btn-sm" onclick="loadUsers('visitor')">👀 Visitors</button>
-    </div>
-    <div class="table-card">
-      <table>
-        <thead><tr>
-          <th>Name</th><th>Phone</th><th>Role</th><th>Location</th><th>Verified</th><th>Joined</th><th>Action</th>
-        </tr></thead>
-        <tbody id="usersTable"><tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- RESERVATIONS PAGE -->
-  <div class="page" id="page-reservations">
-    <div class="page-header">
-      <h2>Reservations</h2>
-      <p>Produce reservations and payment status</p>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <h3>All Reservations</h3>
-        <button class="btn btn-ghost btn-sm" onclick="loadReservations()">↻ Refresh</button>
-      </div>
-      <table>
-        <thead><tr>
-          <th>Reservation ID</th><th>Product</th><th>Qty</th><th>Location</th>
-          <th>Farmer</th><th>Status</th><th>Payment</th><th>Date</th>
-        </tr></thead>
-        <tbody id="reservationsTable"><tr><td colspan="8" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- USSD PAGE -->
-  <div class="page" id="page-ussd">
-    <div class="page-header">
-      <h2>USSD Flow Preview</h2>
-      <p>How farmers and traders use *789# on any phone</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;">
-      <div>
-        <p style="text-align:center;font-size:13px;color:#6b7280;margin-bottom:12px;font-weight:600;">MAIN MENU</p>
-        <div class="ussd-phone">
-          <div class="ussd-title">*789#</div>
-          <div class="ussd-screen">Welcome to SokoLeo 🌽
-
-1. Sell Produce
-2. Buy Produce
-3. Farm Tours
-4. My Listings
-5. Help</div>
-        </div>
-      </div>
-      <div>
-        <p style="text-align:center;font-size:13px;color:#6b7280;margin-bottom:12px;font-weight:600;">SELL PRODUCE</p>
-        <div class="ussd-phone">
-          <div class="ussd-title">*789*1#</div>
-          <div class="ussd-screen">Select product:
-
-1. Maize
-2. Beans
-3. Green Grams
-4. Millet
-5. Mangoes
-6. Goats
-7. Other</div>
-        </div>
-      </div>
-      <div>
-        <p style="text-align:center;font-size:13px;color:#6b7280;margin-bottom:12px;font-weight:600;">BUY PRODUCE</p>
-        <div class="ussd-phone">
-          <div class="ussd-title">*789*2*1#</div>
-          <div class="ussd-screen">Available Maize:
-
-1. John – 10 bags – Marimanti
-2. Rose – 15 bags – Kathwana
-3. Peter – 8 bags – Chuka
-
-Select to contact:</div>
-        </div>
-      </div>
-      <div>
-        <p style="text-align:center;font-size:13px;color:#6b7280;margin-bottom:12px;font-weight:600;">LISTING SAVED</p>
-        <div class="ussd-phone">
-          <div class="ussd-title">*789*1*1*10bags*Marimanti*1#</div>
-          <div class="ussd-screen">✅ Listing saved!
-
-Maize - 10 bags
-Location: Marimanti
-
-Buyers will contact
-you soon.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <div class="ussd-code">*789#</div>
 </div>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="/farmer.html">Farmer Portal</a>
+    <a href="/trader.html">Trader Portal</a>
+    <a href="/trader.html#services">Farm Services</a>
+    <a href="/admin.html">Admin</a>
+  </div>
+  <div class="footer-copy">© 2026 SokoLeo · Soko Kila Siku</div>
+</footer>
 
 <script>
-const API = '';  // Same origin — change to http://localhost:4000 for dev
-
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`page-${name}`).classList.add('active');
-  event.currentTarget.classList.add('active');
-
-  if (name === 'overview') loadStats();
-  if (name === 'listings') loadListings();
-  if (name === 'users') loadUsers();
-  if (name === 'reservations') loadReservations();
-}
-
-function statusBadge(status) {
-  const map = {
-    active: 'green', reserved: 'amber', sold: 'blue', expired: 'gray',
-    pending: 'amber', confirmed: 'green', cancelled: 'red', completed: 'blue',
-    paid: 'green', failed: 'red',
-    farmer: 'green', trader: 'amber', visitor: 'blue', admin: 'red',
-  };
-  return `<span class="badge ${map[status]||'gray'}">${status}</span>`;
-}
-
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' });
-}
-
-async function fetchAPI(path) {
-  try {
-    const res = await fetch(`${API}${path}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (e) {
-    return null;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
   }
-}
-
-async function loadStats() {
-  document.getElementById('lastUpdated').textContent = 'Refreshing...';
-  const data = await fetchAPI('/api/admin/stats');
-  document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-
-  if (!data) {
-    document.getElementById('statsGrid').innerHTML = `
-      <div style="grid-column:1/-1" class="empty">
-        <span class="emoji">⚠️</span>
-        Cannot connect to SokoLeo API.<br>
-        <small>Make sure the server is running on port 4000.</small>
-      </div>`;
-    return renderMockStats();
-  }
-
-  renderStats(data);
-}
-
-function renderMockStats() {
-  // Show demo data when API is not running
-  renderStats({ farmers: 142, traders: 67, active_listings: 89, total_reservations: 213, total_revenue_kes: 48750, top_crops: [
-    {product:'Maize',count:34},{product:'Beans',count:22},{product:'Mangoes',count:18},{product:'Green Grams',count:9},{product:'Goats',count:6}
-  ]});
-}
-
-function renderStats(data) {
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card green"><span class="stat-icon">🌾</span><div class="stat-label">Farmers</div><div class="stat-value">${data.farmers}</div></div>
-    <div class="stat-card amber"><span class="stat-icon">🛒</span><div class="stat-label">Traders</div><div class="stat-value">${data.traders}</div></div>
-    <div class="stat-card blue"><span class="stat-icon">📋</span><div class="stat-label">Active Listings</div><div class="stat-value">${data.active_listings}</div></div>
-    <div class="stat-card red"><span class="stat-icon">📦</span><div class="stat-label">Reservations</div><div class="stat-value">${data.total_reservations}</div></div>
-    <div class="stat-card green"><span class="stat-icon">💰</span><div class="stat-label">Revenue (KES)</div><div class="stat-value">${Number(data.total_revenue_kes||0).toLocaleString()}</div></div>
-  `;
-
-  const maxCount = Math.max(...(data.top_crops||[]).map(c=>c.count), 1);
-  document.getElementById('cropsChart').innerHTML = (data.top_crops||[]).map(c => `
-    <div class="bar-row">
-      <span class="bar-label">${c.product}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${(c.count/maxCount*100)}%"></div></div>
-      <span class="bar-count">${c.count}</span>
-    </div>`).join('') || '<div class="empty">No crop data yet.</div>';
-
-  document.getElementById('recentActivity').innerHTML = `
-    <div style="font-size:13px;color:#6b7280;line-height:2">
-      <div>✅ ${data.farmers} farmers registered</div>
-      <div>🛒 ${data.traders} traders active</div>
-      <div>📋 ${data.active_listings} produce listings live</div>
-      <div>📦 ${data.total_reservations} reservations placed</div>
-      <div>💰 KES ${Number(data.total_revenue_kes||0).toLocaleString()} revenue</div>
-    </div>`;
-}
-
-async function loadListings() {
-  document.getElementById('listingsTable').innerHTML = `<tr><td colspan="8" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
-  const data = await fetchAPI('/api/admin/listings');
-  if (!data || data.length === 0) {
-    document.getElementById('listingsTable').innerHTML = `<tr><td colspan="8"><div class="empty"><span class="emoji">🌽</span>No listings yet.</div></td></tr>`;
-    return;
-  }
-  document.getElementById('listingsTable').innerHTML = data.map(l => `
-    <tr>
-      <td><strong>${l.product}</strong></td>
-      <td>${l.quantity} ${l.unit||''}</td>
-      <td>${l.location}</td>
-      <td>${statusBadge(l.availability?.replace('_',' '))}</td>
-      <td>${l.farmer_name}</td>
-      <td style="font-family:monospace;font-size:12px">${l.farmer_phone}</td>
-      <td>${statusBadge(l.status)}</td>
-      <td style="color:#9ca3af;font-size:12px">${formatDate(l.created_at)}</td>
-    </tr>`).join('');
-}
-
-async function loadUsers(role) {
-  document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
-  const url = role ? `/api/admin/users?role=${role}` : '/api/admin/users';
-  const data = await fetchAPI(url);
-  if (!data || data.length === 0) {
-    document.getElementById('usersTable').innerHTML = `<tr><td colspan="7"><div class="empty"><span class="emoji">👥</span>No users yet.</div></td></tr>`;
-    return;
-  }
-  document.getElementById('usersTable').innerHTML = data.map(u => `
-    <tr>
-      <td><strong>${u.name}</strong></td>
-      <td style="font-family:monospace;font-size:12px">${u.phone}</td>
-      <td>${statusBadge(u.role)}</td>
-      <td>${u.location||'—'}</td>
-      <td>${u.is_verified ? '<span class="badge green">✓ Yes</span>' : '<span class="badge gray">No</span>'}</td>
-      <td style="color:#9ca3af;font-size:12px">${formatDate(u.created_at)}</td>
-      <td>${!u.is_verified ? `<button class="btn btn-ghost btn-sm" onclick="verifyUser('${u.id}')">Verify</button>` : ''}</td>
-    </tr>`).join('');
-}
-
-async function verifyUser(id) {
-  const res = await fetch(`${API}/api/admin/users/${id}/verify`, { method: 'PATCH' });
-  if (res.ok) loadUsers();
-}
-
-async function loadReservations() {
-  document.getElementById('reservationsTable').innerHTML = `<tr><td colspan="8" class="loading"><span class="spinner"></span>Loading...</td></tr>`;
-  // Fetch from admin listings which includes reservation data
-  document.getElementById('reservationsTable').innerHTML = `<tr><td colspan="8"><div class="empty"><span class="emoji">📦</span>Connect API to see live reservations.</div></td></tr>`;
-}
-
-// Init
-loadStats();
 </script>
-<script src="/pwa.js"></script>
 </body>
 </html>

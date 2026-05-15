@@ -10,9 +10,10 @@ const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
 const APP_SHELL = [
   '/',
+  '/index.html',
+  '/admin.html',
   '/farmer.html',
   '/trader.html',
-  '/index.html',
   '/market-prices.html',
   '/farm-services.html',
   '/route-planner.html',
@@ -95,7 +96,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback: serve index for navigation requests
         if (request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('/index.html') || caches.match('/');
         }
       });
     })
