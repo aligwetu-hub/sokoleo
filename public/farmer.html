@@ -193,6 +193,18 @@
     /* Alert banner */
     .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; }
     .alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    /* Demo mode */
+    .demo-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#fbbf24; color:#1b1b2f; padding:10px 20px; font-size:13px; font-weight:600; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+    .demo-banner.visible { display:flex; }
+    .demo-exit-btn { padding:5px 14px; border-radius:7px; border:none; background:rgba(0,0,0,0.15); color:#1b1b2f; font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+    .demo-exit-btn:hover { background:rgba(0,0,0,0.25); }
+    .demo-mode .main { padding-top: 68px; }
+    .demo-or { display:flex; align-items:center; gap:10px; margin:18px 0 10px; }
+    .demo-or-line { flex:1; height:1px; background:var(--border); }
+    .demo-or-text { font-size:12px; color:var(--muted); font-weight:500; }
+    .btn-demo { background:#fbbf24; color:#1b1b2f; font-weight:700; border:none; }
+    .btn-demo:hover { background:#f59e0b; }
+    .demo-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:8px; }
   </style>
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#166534"/>
@@ -222,6 +234,9 @@
         <input type="text" id="authName" placeholder="e.g. Jane Mwenda" />
       </div>
       <button class="btn btn-green" onclick="requestOTP()">Get OTP Code</button>
+      <div class="demo-or"><div class="demo-or-line"></div><span class="demo-or-text">OR</span><div class="demo-or-line"></div></div>
+      <button class="btn btn-demo" onclick="enterDemo()">🧪 Preview Demo (No OTP needed)</button>
+      <p class="demo-hint">Uses sample data — no real account required</p>
       <div id="phoneMsg"></div>
     </div>
 
@@ -237,6 +252,12 @@
       <div id="otpMsg"></div>
     </div>
   </div>
+</div>
+
+<!-- Demo Mode Banner -->
+<div class="demo-banner" id="demoBanner">
+  <span>🧪 Demo Mode — You are viewing sample data. No real data will be saved.</span>
+  <button class="demo-exit-btn" onclick="exitDemo()">Exit Demo</button>
 </div>
 
 <!-- ── MAIN APP ────────────────────────────────────────────────────── -->
@@ -569,7 +590,101 @@
   // ── State ──────────────────────────────────────────────────────────
   let currentUser = null;
   let currentPhone = '';
+  let isDemoMode = false;
   const BASE = '';  // same-origin
+
+  // ── Demo Data ─────────────────────────────────────────────────────
+  const _DEMO_USER = { id: 'demo-farmer-id', name: 'Demo Farmer (Kamau)', phone: '+254700000001', role: 'farmer' };
+  const _now = () => new Date().toISOString();
+  const _daysAgo = d => new Date(Date.now() - d * 86400000).toISOString();
+
+  const _DEMO_LISTINGS = [
+    { id: 'dl-1', farmer_id: 'demo-farmer-id', product: 'Tomatoes', quantity: 300, unit: 'kg', price_per_unit: 55, location: 'Chuka', availability: 'today', status: 'active', is_boosted: true, boosted_until: new Date(Date.now()+86400000).toISOString(), boost_count: 1, created_at: _daysAgo(1) },
+    { id: 'dl-2', farmer_id: 'demo-farmer-id', product: 'Green Beans', quantity: 150, unit: 'kg', price_per_unit: 80, location: 'Maara', availability: 'tomorrow', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, created_at: _daysAgo(3) },
+    { id: 'dl-3', farmer_id: 'demo-farmer-id', product: 'Kale (Sukuma)', quantity: 200, unit: 'kg', price_per_unit: 22, location: 'Chuka', availability: 'this_week', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, created_at: _daysAgo(5) },
+  ];
+  const _DEMO_RESERVATIONS = [
+    { id: 'dr-1', product: 'Tomatoes', trader_name: 'Wanjiku Traders', trader_phone: '+254711111111', quantity_reserved: '50 kg', payment_status: 'pending', status: 'pending', created_at: _daysAgo(1) },
+    { id: 'dr-2', product: 'Green Beans', trader_name: 'Mwenda & Sons', trader_phone: '+254722222222', quantity_reserved: '80 kg', payment_status: 'paid', status: 'confirmed', created_at: _daysAgo(2) },
+  ];
+  const _DEMO_LIVESTOCK = [
+    { id: 'dlv-1', animal_type: 'Cattle', breed: 'Friesian', quantity: 1, price_per_head: 45000, location: 'Chuka', health_status: 'healthy', status: 'active', vaccinated: true, age_months: 36, weight_kg: 420 },
+    { id: 'dlv-2', animal_type: 'Goat', breed: 'Boer', quantity: 3, price_per_head: 8500, location: 'Chuka', health_status: 'healthy', status: 'active', vaccinated: true, age_months: 12, weight_kg: 35 },
+    { id: 'dlv-3', animal_type: 'Sheep', breed: 'Dorper', quantity: 2, price_per_head: 7000, location: 'Maara', health_status: 'treated', status: 'active', vaccinated: false, age_months: 8, weight_kg: 28 },
+    { id: 'dlv-4', animal_type: 'Dog', breed: 'German Shepherd', quantity: 1, price_per_head: 25000, location: 'Chuka', health_status: 'healthy', status: 'active', vaccinated: true, age_months: 18, weight_kg: 32 },
+    { id: 'dlv-5', animal_type: 'Dog', breed: 'Japanese Spitz', quantity: 2, price_per_head: 18000, location: 'Chuka', health_status: 'healthy', status: 'active', vaccinated: true, age_months: 10, weight_kg: 8 },
+    { id: 'dlv-6', animal_type: 'Dog', breed: 'Boerboel', quantity: 1, price_per_head: 35000, location: 'Maara', health_status: 'healthy', status: 'active', vaccinated: true, age_months: 24, weight_kg: 55 },
+    { id: 'dlv-7', animal_type: 'Dog', breed: 'Kienyeji (Local)', quantity: 3, price_per_head: 3500, location: 'Chuka', health_status: 'healthy', status: 'active', vaccinated: false, age_months: 6, weight_kg: 10 },
+  ];
+  const _DEMO_EARNINGS = [
+    { id: 'de-1', item_description: 'Tomatoes 500kg', category: 'produce', buyer_name: 'Wanjiku Traders', listing_price: 27500, seller_receives: 26125, status: 'confirmed', created_at: _daysAgo(7) },
+    { id: 'de-2', item_description: 'Kale 200kg', category: 'produce', buyer_name: 'Mwenda & Sons', listing_price: 4400, seller_receives: 4180, status: 'in_escrow', created_at: _daysAgo(2) },
+  ];
+  const _DEMO_REVIEW_STATS = { seller_id: 'demo-farmer-id', avg_rating: 4.7, total_reviews: 8, five_star: 5, four_star: 2, three_star: 1, two_star: 0, one_star: 0 };
+  const _DEMO_REVIEWS = [
+    { id: 'drev-1', rating: 5, comment: 'Excellent tomatoes! Very fresh, great quality. Kamau is a reliable seller.', created_at: _daysAgo(5), reviewer_name: 'Wanjiku Mwangi' },
+    { id: 'drev-2', rating: 5, comment: 'On time delivery, exactly as described. Will buy again.', created_at: _daysAgo(12), reviewer_name: 'Peter Gitonga' },
+    { id: 'drev-3', rating: 4, comment: 'Good beans, well packed. Slight delay but communicated.', created_at: _daysAgo(20), reviewer_name: 'Mary Ntara' },
+    { id: 'drev-4', rating: 3, comment: 'Product was good but quantity was slightly off.', created_at: _daysAgo(30), reviewer_name: 'James Kibira' },
+  ];
+  const _DEMO_INBOX = [
+    { id: 'dconv-1', farmer_id: 'demo-farmer-id', trader_id: 'dt-1', last_message_at: new Date(Date.now()-3600000).toISOString(), unread_count: 2, trader_name: 'Wanjiku Traders', last_message: 'Can you hold 50 kg for me until Thursday?' },
+    { id: 'dconv-2', farmer_id: 'demo-farmer-id', trader_id: 'dt-2', last_message_at: new Date(Date.now()-10800000).toISOString(), unread_count: 0, trader_name: 'Peter Mwendwa', last_message: 'Will come to collect tomorrow morning.' },
+  ];
+  const _DEMO_THREADS = {
+    'dconv-1': [
+      { id: 'dm-1', sender_id: 'dt-1', body: 'Hello! I saw your tomatoes listing. Are they still available?', created_at: new Date(Date.now()-7200000).toISOString() },
+      { id: 'dm-2', sender_id: 'demo-farmer-id', body: 'Yes, 300kg available. Freshly harvested yesterday.', created_at: new Date(Date.now()-5400000).toISOString() },
+      { id: 'dm-3', sender_id: 'dt-1', body: 'Can you hold 50 kg for me until Thursday?', created_at: new Date(Date.now()-3600000).toISOString() },
+    ],
+    'dconv-2': [
+      { id: 'dm-4', sender_id: 'dt-2', body: 'Your kale listing — is it still on?', created_at: new Date(Date.now()-18000000).toISOString() },
+      { id: 'dm-5', sender_id: 'demo-farmer-id', body: 'Yes! 200kg. Price is KES 22/kg.', created_at: new Date(Date.now()-14400000).toISOString() },
+      { id: 'dm-6', sender_id: 'dt-2', body: 'Will come to collect tomorrow morning.', created_at: new Date(Date.now()-10800000).toISOString() },
+    ],
+  };
+
+  function _getDemoData(url) {
+    if (url.includes('/api/listings'))         return _DEMO_LISTINGS;
+    if (url.includes('/api/reservations'))     return _DEMO_RESERVATIONS;
+    if (url.includes('/api/livestock'))        return _DEMO_LIVESTOCK;
+    if (url.includes('/api/escrow/seller'))    return _DEMO_EARNINGS;
+    if (url.includes('/api/reviews/stats'))    return _DEMO_REVIEW_STATS;
+    if (url.includes('/api/reviews/seller'))   return _DEMO_REVIEWS;
+    if (url.includes('/api/messages/inbox'))   return _DEMO_INBOX;
+    if (url.includes('/api/messages/thread')) {
+      const convId = url.split('/').pop();
+      return _DEMO_THREADS[convId] || [];
+    }
+    return [];
+  }
+
+  function enterDemo() {
+    isDemoMode = true;
+    currentUser = _DEMO_USER;
+    document.getElementById('demoBanner').classList.add('visible');
+    document.body.classList.add('demo-mode');
+    // Intercept write requests so they silently succeed
+    if (!window._origFetch) window._origFetch = window.fetch.bind(window);
+    window.fetch = async (url, opts = {}) => {
+      const method = (opts.method || 'GET').toUpperCase();
+      if (isDemoMode && typeof url === 'string' && url.includes('/api/') && method !== 'GET') {
+        return new Response(JSON.stringify({ success: true, demo: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return window._origFetch(url, opts);
+    };
+    bootApp();
+  }
+
+  function exitDemo() {
+    isDemoMode = false;
+    currentUser = null;
+    document.getElementById('demoBanner').classList.remove('visible');
+    document.body.classList.remove('demo-mode');
+    if (window._origFetch) { window.fetch = window._origFetch; window._origFetch = null; }
+    document.getElementById('appScreen').classList.remove('visible');
+    document.getElementById('authScreen').style.display = '';
+  }
 
   // ── Auth ──────────────────────────────────────────────────────────
   function showStep(stepId) {
@@ -940,6 +1055,7 @@
 
   // ── Helpers ───────────────────────────────────────────────────────
   async function apiFetch(url) {
+    if (isDemoMode) return _getDemoData(url);
     const r = await fetch(BASE + url);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();

@@ -207,6 +207,18 @@
     .alert.info { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
     .alert.warn { background:var(--amber-pale); color:#92400e; border:1px solid #fde68a; }
     .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+    /* Demo mode */
+    .demo-banner { display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#fbbf24; color:#1b1b2f; padding:10px 20px; font-size:13px; font-weight:600; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+    .demo-banner.visible { display:flex; }
+    .demo-exit-btn { padding:5px 14px; border-radius:7px; border:none; background:rgba(0,0,0,0.15); color:#1b1b2f; font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+    .demo-exit-btn:hover { background:rgba(0,0,0,0.25); }
+    .demo-mode .main { padding-top: 68px; }
+    .demo-or { display:flex; align-items:center; gap:10px; margin:18px 0 10px; }
+    .demo-or-line { flex:1; height:1px; background:var(--border); }
+    .demo-or-text { font-size:12px; color:var(--muted); font-weight:500; }
+    .btn-demo { background:#fbbf24; color:#1b1b2f; font-weight:700; border:none; }
+    .btn-demo:hover { background:#f59e0b; }
+    .demo-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:8px; }
   </style>
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#166534"/>
@@ -234,6 +246,9 @@
         <input type="text" id="authName" placeholder="e.g. Peter Kamau" />
       </div>
       <button class="btn btn-amber" onclick="requestOTP()">Get OTP Code</button>
+      <div class="demo-or"><div class="demo-or-line"></div><span class="demo-or-text">OR</span><div class="demo-or-line"></div></div>
+      <button class="btn btn-demo" onclick="enterDemo()">🧪 Preview Demo (No OTP needed)</button>
+      <p class="demo-hint">Uses sample data — no real account required</p>
       <div id="phoneMsg"></div>
     </div>
     <div class="auth-step" id="stepOTP">
@@ -247,6 +262,12 @@
       <div id="otpMsg"></div>
     </div>
   </div>
+</div>
+
+<!-- Demo Mode Banner -->
+<div class="demo-banner" id="demoBanner">
+  <span>🧪 Demo Mode — You are viewing sample data. No real data will be saved.</span>
+  <button class="demo-exit-btn" onclick="exitDemo()">Exit Demo</button>
 </div>
 
 <!-- APP -->
@@ -513,7 +534,101 @@
   let currentPhone = '';
   let selectedListing = null;
   let selectedImageFile = null;
+  let isDemoMode = false;
   const BASE = '';
+
+  // ── Demo Data ─────────────────────────────────────────────────────
+  const _DEMO_USER = { id: 'demo-trader-id', name: 'Demo Trader (Wanjiku)', phone: '+254711111111', role: 'trader' };
+  const _daysAgo = d => new Date(Date.now() - d * 86400000).toISOString();
+
+  const _DEMO_LISTINGS = [
+    { id: 'tl-1', farmer_id: 'tf-1', product: 'Tomatoes', quantity: 500, unit: 'kg', price_per_unit: 55, location: 'Chuka', availability: 'today', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, farmer_name: 'Kamau Njiru', farmer_phone: '+254700000001', farmer_avg_rating: 4.7, farmer_total_reviews: 12, created_at: _daysAgo(1) },
+    { id: 'tl-2', farmer_id: 'tf-2', product: 'Maize', quantity: 20, unit: 'bags', price_per_unit: 3200, location: 'Maara', availability: 'this_week', status: 'active', is_boosted: true, boosted_until: new Date(Date.now()+86400000*2).toISOString(), boost_count: 1, farmer_name: 'Mutua Mwenda', farmer_phone: '+254700000002', farmer_avg_rating: 4.2, farmer_total_reviews: 5, created_at: _daysAgo(2) },
+    { id: 'tl-3', farmer_id: 'tf-3', product: 'Green Beans', quantity: 200, unit: 'kg', price_per_unit: 80, location: 'Maara', availability: 'tomorrow', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, farmer_name: 'Wambua Kitonga', farmer_phone: '+254700000003', farmer_avg_rating: 3.8, farmer_total_reviews: 3, created_at: _daysAgo(3) },
+    { id: 'tl-4', farmer_id: 'tf-4', product: 'Kale (Sukuma)', quantity: 300, unit: 'kg', price_per_unit: 22, location: 'Chuka', availability: 'today', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, farmer_name: 'Jane Ndeke', farmer_phone: '+254700000004', farmer_avg_rating: 0, farmer_total_reviews: 0, created_at: _daysAgo(4) },
+    { id: 'tl-5', farmer_id: 'tf-5', product: 'Avocado', quantity: 500, unit: 'pieces', price_per_unit: 25, location: 'Igambang\'ombe', availability: 'this_week', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, farmer_name: 'Samuel Muriungi', farmer_phone: '+254700000005', farmer_avg_rating: 4.9, farmer_total_reviews: 28, created_at: _daysAgo(5) },
+    { id: 'tl-6', farmer_id: 'tf-6', product: 'Potatoes', quantity: 15, unit: 'bags', price_per_unit: 2800, location: 'Chuka', availability: 'today', status: 'active', is_boosted: false, boosted_until: null, boost_count: 0, farmer_name: 'Faith Karimi', farmer_phone: '+254700000006', farmer_avg_rating: 4.1, farmer_total_reviews: 7, created_at: _daysAgo(6) },
+  ];
+  const _DEMO_LIVESTOCK = [
+    { id: 'tlv-1', animal_type: 'Cattle', breed: 'Friesian', quantity: 2, price_per_head: 55000, location: 'Chuka', health_status: 'healthy', vaccinated: true, age_months: 24, weight_kg: 380, farmer_phone: '+254700000001', farmer_name: 'Kamau Njiru' },
+    { id: 'tlv-2', animal_type: 'Goat', breed: 'Boer', quantity: 5, price_per_head: 9000, location: 'Maara', health_status: 'healthy', vaccinated: true, age_months: 18, weight_kg: 42, farmer_phone: '+254700000002', farmer_name: 'Mutua Mwenda' },
+    { id: 'tlv-3', animal_type: 'Sheep', breed: 'Dorper', quantity: 3, price_per_head: 7500, location: 'Chuka', health_status: 'treated', vaccinated: false, age_months: 10, weight_kg: 30, farmer_phone: '+254700000003', farmer_name: 'Wambua Kitonga' },
+    { id: 'tlv-4', animal_type: 'Dog', breed: 'German Shepherd', quantity: 1, price_per_head: 30000, location: 'Chuka', health_status: 'healthy', vaccinated: true, age_months: 12, weight_kg: 28, farmer_phone: '+254700000001', farmer_name: 'Kamau Njiru' },
+    { id: 'tlv-5', animal_type: 'Dog', breed: 'Boerboel', quantity: 2, price_per_head: 40000, location: 'Chuka', health_status: 'healthy', vaccinated: true, age_months: 36, weight_kg: 60, farmer_phone: '+254700000004', farmer_name: 'Jane Ndeke' },
+  ];
+  const _DEMO_ORDERS = [
+    { id: 'to-1', product: 'Tomatoes', farmer_name: 'Kamau Njiru', farmer_phone: '+254700000001', quantity_reserved: '50 kg', payment_status: 'paid', status: 'confirmed', created_at: _daysAgo(3) },
+    { id: 'to-2', product: 'Maize', farmer_name: 'Mutua Mwenda', farmer_phone: '+254700000002', quantity_reserved: '5 bags', payment_status: 'pending', status: 'pending', created_at: _daysAgo(1) },
+    { id: 'to-3', product: 'Green Beans', farmer_name: 'Wambua Kitonga', farmer_phone: '+254700000003', quantity_reserved: '80 kg', payment_status: 'pending', status: 'cancelled', created_at: _daysAgo(5) },
+    { id: 'to-4', product: 'Avocado', farmer_name: 'Samuel Muriungi', farmer_phone: '+254700000005', quantity_reserved: '200 pieces', payment_status: 'paid', status: 'completed', created_at: _daysAgo(8) },
+  ];
+  const _DEMO_SERVICES = [
+    { id: 'sv-1', service_name: 'Dr. Mwangi Veterinary Clinic', service_type: 'vet', location: 'Chuka', coverage_radius_km: 40, price_range: 'KES 500–2,000/visit', description: 'Livestock treatment, farm vaccinations, and emergency calls across Tharaka Nithi.', rating: 4.8, status: 'active' },
+    { id: 'sv-2', service_name: 'Tharaka Transport Co.', service_type: 'transport', location: 'Maara', coverage_radius_km: 80, price_range: 'KES 50/km', description: 'Farm produce pickup and delivery. Cold-chain available for perishables.', rating: 4.3, status: 'active' },
+    { id: 'sv-3', service_name: 'Meru Agro Inputs', service_type: 'input', location: 'Chuka', coverage_radius_km: null, price_range: 'Varies', description: 'Seeds, fertilizers, pesticides, and irrigation fittings for all crop types.', rating: 4.6, status: 'active' },
+    { id: 'sv-4', service_name: 'Nithi Extension Services', service_type: 'agronomy', location: 'Chuka', coverage_radius_km: 60, price_range: 'KES 800/visit', description: 'Certified agronomists for soil testing, crop planning, and pest management.', rating: 4.5, status: 'active' },
+  ];
+  const _DEMO_SPENDING = [
+    { id: 'ts-1', item_description: 'Avocado 200pcs', category: 'produce', seller_name: 'Samuel Muriungi', seller_id: 'tf-5', buyer_pays: 5000, status: 'confirmed', created_at: _daysAgo(8) },
+    { id: 'ts-2', item_description: 'Tomatoes 50kg', category: 'produce', seller_name: 'Kamau Njiru', seller_id: 'tf-1', buyer_pays: 2750, status: 'confirmed', created_at: _daysAgo(3) },
+    { id: 'ts-3', item_description: 'Maize 5 bags', category: 'produce', seller_name: 'Mutua Mwenda', seller_id: 'tf-2', buyer_pays: 16000, status: 'in_escrow', created_at: _daysAgo(1) },
+  ];
+  const _DEMO_INBOX = [
+    { id: 'tdc-1', farmer_id: 'tf-1', trader_id: 'demo-trader-id', last_message_at: new Date(Date.now()-1800000).toISOString(), unread_count: 1, farmer_name: 'Kamau Njiru', last_message: 'I can reserve 100 kg for you by Thursday.' },
+    { id: 'tdc-2', farmer_id: 'tf-5', trader_id: 'demo-trader-id', last_message_at: new Date(Date.now()-7200000).toISOString(), unread_count: 0, farmer_name: 'Samuel Muriungi', last_message: 'Avocados ready for collection!' },
+  ];
+  const _DEMO_THREADS = {
+    'tdc-1': [
+      { id: 'tdm-1', sender_id: 'demo-trader-id', body: 'Hi! I saw your tomatoes listing. Are you able to supply 100 kg weekly?', created_at: new Date(Date.now()-5400000).toISOString() },
+      { id: 'tdm-2', sender_id: 'tf-1', body: 'Yes, I can supply 100–150 kg every week. Quality is grade A.', created_at: new Date(Date.now()-3600000).toISOString() },
+      { id: 'tdm-3', sender_id: 'tf-1', body: 'I can reserve 100 kg for you by Thursday.', created_at: new Date(Date.now()-1800000).toISOString() },
+    ],
+    'tdc-2': [
+      { id: 'tdm-4', sender_id: 'demo-trader-id', body: 'Are the avocados Hass or Fuerte?', created_at: new Date(Date.now()-14400000).toISOString() },
+      { id: 'tdm-5', sender_id: 'tf-5', body: 'Hass variety, perfectly ripe. 500 pieces available.', created_at: new Date(Date.now()-10800000).toISOString() },
+      { id: 'tdm-6', sender_id: 'tf-5', body: 'Avocados ready for collection!', created_at: new Date(Date.now()-7200000).toISOString() },
+    ],
+  };
+
+  function _getDemoData(url) {
+    if (url.includes('/api/listings'))         return _DEMO_LISTINGS;
+    if (url.includes('/api/livestock'))        return _DEMO_LIVESTOCK;
+    if (url.includes('/api/reservations'))     return _DEMO_ORDERS;
+    if (url.includes('/api/services'))         return _DEMO_SERVICES;
+    if (url.includes('/api/escrow/buyer'))     return _DEMO_SPENDING;
+    if (url.includes('/api/messages/inbox'))   return _DEMO_INBOX;
+    if (url.includes('/api/messages/thread')) {
+      const convId = url.split('/').pop();
+      return _DEMO_THREADS[convId] || [];
+    }
+    return [];
+  }
+
+  function enterDemo() {
+    isDemoMode = true;
+    currentUser = _DEMO_USER;
+    document.getElementById('demoBanner').classList.add('visible');
+    document.body.classList.add('demo-mode');
+    if (!window._origFetch) window._origFetch = window.fetch.bind(window);
+    window.fetch = async (url, opts = {}) => {
+      const method = (opts.method || 'GET').toUpperCase();
+      if (isDemoMode && typeof url === 'string' && url.includes('/api/') && method !== 'GET') {
+        return new Response(JSON.stringify({ success: true, demo: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return window._origFetch(url, opts);
+    };
+    bootApp();
+  }
+
+  function exitDemo() {
+    isDemoMode = false;
+    currentUser = null;
+    document.getElementById('demoBanner').classList.remove('visible');
+    document.body.classList.remove('demo-mode');
+    if (window._origFetch) { window.fetch = window._origFetch; window._origFetch = null; }
+    document.getElementById('appScreen').classList.remove('visible');
+    document.getElementById('authScreen').style.display = '';
+  }
 
   // ── Auth ──────────────────────────────────────────────────────────
   function showStep(id) {
@@ -950,6 +1065,7 @@
 
   // ── Helpers ───────────────────────────────────────────────────────
   async function apiFetch(url) {
+    if (isDemoMode) return _getDemoData(url);
     const r = await fetch(BASE + url);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
