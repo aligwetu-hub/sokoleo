@@ -608,7 +608,14 @@
             <span>📍 ${l.location}</span>
             <span>🕐 Available: ${l.availability.replace('_',' ')}</span>
             ${l.description ? `<span style="margin-top:4px;font-style:italic;">${l.description}</span>` : ''}
-            <span>🌾 ${l.farmer_name || 'Farmer'}</span>
+            <span>🌾 ${l.farmer_name || 'Farmer'} &nbsp;${(() => {
+              if (l.farmer_avg_rating && parseFloat(l.farmer_avg_rating) > 0) {
+                const avg = parseFloat(l.farmer_avg_rating);
+                const col = avg >= 4.5 ? 'var(--green)' : avg >= 3.5 ? 'var(--amber)' : 'var(--red)';
+                return `<span style="color:${col};font-weight:600;">⭐ ${avg.toFixed(1)}</span> <span style="color:var(--muted);font-size:11px;">(${l.farmer_total_reviews})</span>`;
+              }
+              return '<span style="color:var(--muted);font-size:11px;">New Seller</span>';
+            })()}</span>
           </div>
           <div class="market-card-footer">
             <span class="badge ${boostActive ? 'amber' : 'green'}">${boostActive ? '🚀 Boosted' : 'Active'}</span>
@@ -876,7 +883,7 @@
           const rateCell = t.status === 'confirmed'
             ? (alreadyRated
                 ? `<td><span class="btn-rated">★ Rated</span></td>`
-                : `<td><button class="btn-rate" onclick="openRateModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">Rate Seller</button></td>`)
+                : `<td><button class="btn-rate" onclick="openRateModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">⭐ Leave Review</button></td>`)
             : `<td><span style="color:#d1d5db;font-size:12px;">—</span></td>`;
           return `<tr>
             <td>${t.item_description || t.category || '–'}</td>
@@ -927,7 +934,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewer_id: currentUser.id,
-          farmer_id: reviewTxn.seller_id,
+          seller_id: reviewTxn.seller_id,
           transaction_id: reviewTxn.id,
           rating: selectedRating,
           comment: comment || null

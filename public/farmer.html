@@ -253,6 +253,7 @@
       <div class="nav-item" onclick="showPage('livestock')"><span class="icon">🐄</span> My Livestock</div>
       <div class="nav-item" onclick="showPage('reservations')"><span class="icon">📦</span> Orders</div>
       <div class="nav-item" onclick="showPage('earnings')"><span class="icon">💰</span> Earnings</div>
+      <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
       <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
     </nav>
     <div class="sidebar-user">
@@ -409,6 +410,15 @@
         <div class="card-header"><h3>Transaction History</h3></div>
         <div id="earningsList"><div class="loading"><span class="spinner"></span></div></div>
       </div>
+    </div>
+
+    <!-- REPUTATION -->
+    <div class="page" id="page-reputation">
+      <div class="page-header">
+        <h2>⭐ My Reputation</h2>
+        <p>Your seller profile as buyers see it</p>
+      </div>
+      <div id="reputationContent"><div class="loading"><span class="spinner"></span></div></div>
     </div>
 
     <!-- MESSAGES -->
@@ -626,6 +636,7 @@
     if (id === 'livestock')    loadMyLivestock();
     if (id === 'reservations') loadMyReservations();
     if (id === 'earnings')     loadEarnings();
+    if (id === 'reputation')   loadReputation();
     if (id === 'messages')     loadFarmInbox();
     if (id !== 'messages')     stopFarmPoll();
   }
@@ -829,6 +840,101 @@
         </tr>`).join('')}</tbody></table>`;
     } catch {
       statsEl.innerHTML = ''; listEl.innerHTML = emptyState('No earnings data yet.');
+    }
+  }
+
+  // ── Reputation ────────────────────────────────────────────────────
+  async function loadReputation() {
+    const el = document.getElementById('reputationContent');
+    el.innerHTML = `<div class="loading"><span class="spinner"></span> Loading reputation…</div>`;
+    try {
+      const [stats, reviews] = await Promise.all([
+        apiFetch(`/api/reviews/stats/${currentUser.id}`),
+        apiFetch(`/api/reviews/seller/${currentUser.id}`)
+      ]);
+
+      const avg   = parseFloat(stats.avg_rating) || 0;
+      const total = parseInt(stats.total_reviews) || 0;
+
+      // Badge level
+      let badge, badgeColor, badgeDesc;
+      if (total >= 20) {
+        badge = '🟢 Pro Seller'; badgeColor = '#2d6a4f';
+        badgeDesc = 'Top-tier seller with a strong track record.';
+      } else if (total >= 5) {
+        badge = '🔵 Verified Seller'; badgeColor = '#3b82f6';
+        badgeDesc = 'Trusted by multiple buyers.';
+      } else {
+        badge = '🟡 Registered'; badgeColor = '#f4a261';
+        badgeDesc = 'Building your reputation — keep selling!';
+      }
+
+      // Star bar
+      function starBar(count, total) {
+        const pct = total ? Math.round((count / total) * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+          <span style="width:16px;text-align:right;">${count}</span>
+          <div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;">
+            <div style="width:${pct}%;background:var(--amber);height:8px;border-radius:4px;"></div>
+          </div>
+          <span style="width:28px;color:var(--muted);">${pct}%</span>
+        </div>`;
+      }
+
+      function renderStars(r) {
+        return [1,2,3,4,5].map(i => `<span style="color:${i<=r?'#f59e0b':'#d1d5db'};">★</span>`).join('');
+      }
+
+      el.innerHTML = `
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:8px 0;">
+            <div style="text-align:center;">
+              <div style="font-size:56px;font-weight:700;color:var(--amber);line-height:1;">${avg > 0 ? avg.toFixed(1) : '—'}</div>
+              <div style="font-size:22px;letter-spacing:2px;">${avg > 0 ? renderStars(Math.round(avg)) : '☆☆☆☆☆'}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px;">${total} review${total !== 1 ? 's' : ''}</div>
+            </div>
+            <div style="flex:1;min-width:180px;">
+              <div style="margin-bottom:4px;">${starBar(stats.five_star||0, total)} ★★★★★</div>
+              <div style="margin-bottom:4px;">${starBar(stats.four_star||0, total)} ★★★★</div>
+              <div style="margin-bottom:4px;">${starBar(stats.three_star||0, total)} ★★★</div>
+              <div style="margin-bottom:4px;">${starBar(stats.two_star||0, total)} ★★</div>
+              <div>${starBar(stats.one_star||0, total)} ★</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;border-left:4px solid ${badgeColor};">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">${badge.split(' ')[0]}</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:${badgeColor};">${badge}</div>
+              <div style="font-size:13px;color:var(--muted);">${badgeDesc}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Recent Reviews</h3></div>
+          ${reviews.length === 0
+            ? `<div class="empty"><div class="e-icon">💬</div><p>No reviews yet. Complete deals to earn your first review!</p></div>`
+            : reviews.map(rv => `
+              <div style="border-bottom:1px solid var(--border);padding:14px 0;last-child:border-none;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                  <div style="width:36px;height:36px;border-radius:50%;background:var(--green-pale);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;">
+                    ${(rv.reviewer_name||'?')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">${rv.reviewer_name || 'Buyer'}</div>
+                    <div style="font-size:18px;color:#f59e0b;">${renderStars(rv.rating)}</div>
+                  </div>
+                  <div style="margin-left:auto;font-size:12px;color:var(--muted);">${fmtDate(rv.created_at)}</div>
+                </div>
+                ${rv.comment ? `<p style="font-size:14px;color:var(--mid);margin-left:46px;">${rv.comment}</p>` : ''}
+              </div>`).join('')
+          }
+        </div>`;
+    } catch {
+      el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Failed to load reputation data.</p></div>`;
     }
   }
 

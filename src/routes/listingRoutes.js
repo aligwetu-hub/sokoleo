@@ -21,11 +21,13 @@ router.get('/', async (req, res) => {
 
     const sql = `
       SELECT l.id, l.product, l.quantity, l.unit, l.price_per_unit, l.location,
-             l.availability, l.status, l.created_at,
+             l.availability, l.status, l.created_at, l.farmer_id,
              l.is_boosted, l.boosted_until, l.boost_count,
-             u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location
+             u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location,
+             ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews
       FROM listings l
       JOIN users u ON l.farmer_id = u.id
+      LEFT JOIN seller_stats ss ON ss.seller_id = l.farmer_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY
         (l.is_boosted AND l.boosted_until > NOW()) DESC,
