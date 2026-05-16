@@ -25,5 +25,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "_deploy": "2026-05-16-switch-role-fix"
 }

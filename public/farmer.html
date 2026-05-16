@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <title>SokoLeo – Farmer Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
@@ -317,11 +320,13 @@
         <div class="user-role">Farmer</div>
       </div>
     </div>
-    <div style="padding:0 12px 14px;">
+    <div style="padding:1rem;border-top:1px solid rgba(255,255,255,0.1);margin-top:auto">
       <button onclick="openRoleModal()"
-        style="background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);
-        color:#60a5fa;padding:6px 12px;border-radius:8px;cursor:pointer;
-        font-size:.78rem;font-family:'Outfit',sans-serif;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;">
+        style="width:100%;background:rgba(96,165,250,.12);
+        border:1px solid rgba(96,165,250,.3);color:#60a5fa;
+        padding:10px;border-radius:8px;cursor:pointer;
+        font-size:.85rem;font-family:'Outfit',sans-serif;
+        display:flex;align-items:center;justify-content:center;gap:.5rem">
         🔄 Switch Role
         <span id="farmerDualBadge" style="display:none;background:#3b82f6;color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.4px;">+TRADER</span>
       </button>
