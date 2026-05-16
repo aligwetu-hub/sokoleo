@@ -336,6 +336,10 @@
       <div class="nav-item"         onclick="showPage('services')">    <span class="icon">🏪</span> Services</div>
       <div class="nav-item"         onclick="showPage('spending')">    <span class="icon">💳</span> Spending</div>
       <div class="nav-item"         onclick="showPage('messages')">   <span class="icon">💬</span> Messages <span id="traderMsgBadge" class="msg-badge"></span></div>
+      <div class="nav-item" onclick="openRoleModal()" style="border-top:1px solid rgba(255,255,255,0.1);margin-top:.5rem;padding-top:.5rem">
+        <span class="icon">🔄</span> Switch Role
+        <span id="traderDualBadge" style="display:none;background:var(--green);color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;margin-left:auto;">+FARMER</span>
+      </div>
     </nav>
     <div class="sidebar-user">
       <div class="avatar" id="sidebarAvatar">T</div>
@@ -353,15 +357,6 @@
       <span class="topbar-name" id="topbarName">Trader</span>
       <span class="topbar-role-tag">· Trader</span>
     </div>
-    <div style="flex:1"></div>
-    <button onclick="openRoleModal()" id="switchRoleBtn"
-      style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);
-      color:#4ade80;padding:6px 14px;border-radius:8px;cursor:pointer;
-      font-size:.78rem;font-family:'Outfit',sans-serif;white-space:nowrap;
-      display:flex;align-items:center;gap:6px;">
-      🔄 Switch Role
-      <span id="traderDualBadge" style="display:none;background:var(--green);color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;">+FARMER</span>
-    </button>
   </div>
 
   <div class="main">

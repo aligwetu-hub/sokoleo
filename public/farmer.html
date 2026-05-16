@@ -328,6 +328,10 @@
       <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
       <div class="nav-item" onclick="showPage('services')"><span class="icon">🏪</span> Services</div>
       <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
+      <div class="nav-item" onclick="openRoleModal()" style="border-top:1px solid rgba(255,255,255,0.1);margin-top:.5rem;padding-top:.5rem">
+        <span class="icon">🔄</span> Switch Role
+        <span id="farmerDualBadge" style="display:none;background:#3b82f6;color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;margin-left:auto;">+TRADER</span>
+      </div>
     </nav>
     <div class="sidebar-user">
       <div class="avatar" id="sidebarAvatar">F</div>
@@ -345,15 +349,6 @@
       <span class="topbar-name" id="topbarName">Farmer</span>
       <span class="topbar-role-tag">· Farmer</span>
     </div>
-    <div style="flex:1"></div>
-    <button onclick="openRoleModal()" id="switchRoleBtn"
-      style="background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);
-      color:#60a5fa;padding:6px 14px;border-radius:8px;cursor:pointer;
-      font-size:.78rem;font-family:'Outfit',sans-serif;white-space:nowrap;
-      display:flex;align-items:center;gap:6px;">
-      🔄 Switch Role
-      <span id="farmerDualBadge" style="display:none;background:#3b82f6;color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;">+TRADER</span>
-    </button>
   </div>
 
   <div class="main">
