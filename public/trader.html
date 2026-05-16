@@ -72,7 +72,23 @@
     .user-info { overflow:hidden; }
     .user-name { font-size:13px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .user-role { font-size:11px; color:rgba(255,255,255,0.35); }
-    .main { margin-left:220px; padding:28px; min-height:100vh; flex:1; }
+    .topbar {
+      position:fixed; top:0; left:220px; right:0; height:52px; z-index:89;
+      background:white; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 24px; gap:12px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.05);
+    }
+    .topbar-user { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .topbar-avatar { width:28px; height:28px; border-radius:50%; background:var(--amber-dark); display:flex; align-items:center; justify-content:center; font-size:12px; color:white; font-weight:700; flex-shrink:0; }
+    .topbar-name { font-size:13px; font-weight:600; color:var(--dark); }
+    .topbar-role-tag { font-size:11px; color:var(--muted); }
+    @media (max-width:640px) {
+      .sidebar { width:0; overflow:hidden; }
+      .topbar { left:0; }
+      .main { margin-left:0 !important; }
+    }
+    .demo-mode .topbar { top:42px; }
+    .main { margin-left:220px; padding:28px; padding-top:80px; min-height:100vh; flex:1; }
     .page { display:none; }
     .page.active { display:block; }
     .page-header { margin-bottom:24px; }
@@ -228,7 +244,7 @@
     .demo-banner.visible { display:flex; }
     .demo-exit-btn { padding:5px 14px; border-radius:7px; border:none; background:rgba(0,0,0,0.15); color:#1b1b2f; font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
     .demo-exit-btn:hover { background:rgba(0,0,0,0.25); }
-    .demo-mode .main { padding-top: 68px; }
+    .demo-mode .main { padding-top: 122px; }
     .demo-or { display:flex; align-items:center; gap:10px; margin:18px 0 10px; }
     .demo-or-line { flex:1; height:1px; background:var(--border); }
     .demo-or-text { font-size:12px; color:var(--muted); font-weight:500; }
@@ -328,17 +344,24 @@
         <div class="user-role">Trader</div>
       </div>
     </div>
-    <div style="padding:1rem;border-top:1px solid rgba(255,255,255,0.1);margin-top:auto">
-      <button onclick="openRoleModal()"
-        style="width:100%;background:rgba(74,222,128,.1);
-        border:1px solid rgba(74,222,128,.3);color:var(--green);
-        padding:10px;border-radius:8px;cursor:pointer;
-        font-size:.85rem;font-family:'Outfit',sans-serif;
-        display:flex;align-items:center;justify-content:center;gap:.5rem">
-        🔄 Switch Role
-        <span id="traderDualBadge" style="display:none;background:var(--green);color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.4px;">+FARMER</span>
-      </button>
+  </div>
+
+  <!-- ── TOP BAR ─────────────────────────────────────────────────────── -->
+  <div class="topbar" id="appTopbar">
+    <div class="topbar-user">
+      <div class="topbar-avatar" id="topbarAvatar">T</div>
+      <span class="topbar-name" id="topbarName">Trader</span>
+      <span class="topbar-role-tag">· Trader</span>
     </div>
+    <div style="flex:1"></div>
+    <button onclick="openRoleModal()" id="switchRoleBtn"
+      style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);
+      color:#4ade80;padding:6px 14px;border-radius:8px;cursor:pointer;
+      font-size:.78rem;font-family:'Outfit',sans-serif;white-space:nowrap;
+      display:flex;align-items:center;gap:6px;">
+      🔄 Switch Role
+      <span id="traderDualBadge" style="display:none;background:var(--green);color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;">+FARMER</span>
+    </button>
   </div>
 
   <div class="main">
@@ -802,6 +825,8 @@
     const n = currentUser.name || 'Trader';
     document.getElementById('sidebarName').textContent = n;
     document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
+    document.getElementById('topbarName').textContent = n;
+    document.getElementById('topbarAvatar').textContent = n[0].toUpperCase();
     checkDualRole();
     loadMarket();
   }
