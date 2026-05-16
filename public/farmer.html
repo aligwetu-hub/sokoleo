@@ -309,7 +309,6 @@
       <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
       <div class="nav-item" onclick="showPage('services')"><span class="icon">🏪</span> Services</div>
       <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
-      <button class="btn-switch-role" onclick="openSwitchRole()">🔄 Switch Role <span id="farmerDualBadge" class="dual-badge" style="display:none">+TRADER</span></button>
     </nav>
     <div class="sidebar-user">
       <div class="avatar" id="sidebarAvatar">F</div>
@@ -317,6 +316,15 @@
         <div class="user-name" id="sidebarName">Farmer</div>
         <div class="user-role">Farmer</div>
       </div>
+    </div>
+    <div style="padding:0 12px 14px;">
+      <button onclick="openRoleModal()"
+        style="background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);
+        color:#60a5fa;padding:6px 12px;border-radius:8px;cursor:pointer;
+        font-size:.78rem;font-family:'Outfit',sans-serif;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;">
+        🔄 Switch Role
+        <span id="farmerDualBadge" style="display:none;background:#3b82f6;color:white;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.4px;">+TRADER</span>
+      </button>
     </div>
   </div>
 
@@ -1498,7 +1506,7 @@
     if (badge) badge.style.display = hasDualRole ? 'inline-flex' : 'none';
   }
 
-  function openSwitchRole() {
+  function openRoleModal() {
     const hasDualRole = isDemoMode
       ? localStorage.getItem('demo_has_trader') === '1'
       : !!(currentUser && currentUser.has_trader_profile);
