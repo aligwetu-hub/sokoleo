@@ -2,6 +2,7 @@ const express    = require('express');
 const router     = express.Router();
 const { query }  = require('../db/pool');
 const COMMISSION = require('../config/commission');
+const { sendSMS, SMS_TEMPLATES } = require('../services/smsService');
 
 function genCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
@@ -84,6 +85,21 @@ router.patch('/:txId/mark-paid', async (req, res) => {
     );
     if (!r.rows.length)
       return res.status(404).json({ error: 'Transaction not found or already processed' });
+
+    // Notify seller that payment is in escrow
+    try {
+      const parties = await query(
+        `SELECT s.name AS seller_name, s.phone AS seller_phone, b.name AS buyer_name
+         FROM transactions t JOIN users s ON t.seller_id=s.id JOIN users b ON t.buyer_id=b.id
+         WHERE t.id=$1`, [req.params.txId]);
+      if (parties.rows.length) {
+        const p = parties.rows[0];
+        await sendSMS(p.seller_phone, SMS_TEMPLATES.escrowPaid(
+          p.seller_name, r.rows[0].item_description || 'item',
+          Number(r.rows[0].buyer_pays).toLocaleString(), p.buyer_name));
+      }
+    } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
+
     res.json({ success: true, transaction: r.rows[0], message: 'Payment confirmed. Funds held in escrow.' });
   } catch (err) {
     console.error('Mark-paid error:', err.message);
@@ -133,6 +149,16 @@ router.patch('/:txId/confirm-handover', async (req, res) => {
       `INSERT INTO payouts (transaction_id, seller_id, amount, status) VALUES ($1,$2,$3,'pending')`,
       [t.id, t.seller_id, t.seller_receives]
     );
+
+    // Notify seller that escrow is released
+    try {
+      const sellerInfo = await query(`SELECT name, phone FROM users WHERE id=$1`, [t.seller_id]);
+      if (sellerInfo.rows.length) {
+        const s = sellerInfo.rows[0];
+        await sendSMS(s.phone, SMS_TEMPLATES.escrowReleased(
+          s.name, Number(t.seller_receives).toLocaleString()));
+      }
+    } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
     res.json({
       success: true,

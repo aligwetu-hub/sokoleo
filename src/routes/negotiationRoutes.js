@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/client');
-const { sendSMS } = require('../services/smsService');
+const { sendSMS, SMS_TEMPLATES } = require('../services/smsService');
 
 // POST /api/v1/negotiations - trader makes offer
 router.post('/', async (req, res) => {
@@ -45,10 +45,11 @@ router.post('/', async (req, res) => {
       [neg.rows[0].id, offer_price, message || null]
     );
 
-    // SMS farmer
-    await sendSMS(listing.farmer_phone,
-      `SokoLeo: Price offer!\n${trader.name} offers KES ${offer_price} for your ${listing.product}.\nDial *789# or visit sokoleo to respond.`
-    );
+    // SMS farmer — non-blocking
+    try {
+      await sendSMS(listing.farmer_phone,
+        SMS_TEMPLATES.newOffer(listing.farmer_name, listing.product, offer_price, trader.name));
+    } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
     res.status(201).json({ message: 'Offer sent to farmer!', negotiation: neg.rows[0] });
   } catch(e) {
@@ -131,9 +132,10 @@ router.post('/:id/respond', async (req, res) => {
       );
       await db.query(`UPDATE listings SET status='reserved' WHERE id=$1`, [n.listing_id]);
 
-      await sendSMS(n.trader_phone,
-        `SokoLeo: Deal confirmed! ✅\nFarmer accepted KES ${n.current_offer} for ${n.product}.\nReservation created. Proceed to payment.`
-      );
+      try {
+        await sendSMS(n.trader_phone,
+          SMS_TEMPLATES.offerAccepted(n.trader_name, n.product, n.current_offer, n.farmer_name || 'Farmer'));
+      } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
       res.json({ message: 'Offer accepted! Reservation created.', agreed_price: n.current_offer });
 
@@ -147,16 +149,18 @@ router.post('/:id/respond', async (req, res) => {
         `INSERT INTO negotiation_messages (negotiation_id, sender_role, amount, message) VALUES ($1,'farmer',$2,$3)`,
         [req.params.id, counter_price, message || null]
       );
-      await sendSMS(n.trader_phone,
-        `SokoLeo: Counter offer!\nFarmer counters KES ${counter_price} for ${n.product}.\nDial *789# or visit sokoleo to respond.`
-      );
+      try {
+        await sendSMS(n.trader_phone,
+          SMS_TEMPLATES.offerCountered(n.trader_name, n.product, counter_price, 'the Farmer'));
+      } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
       res.json({ message: 'Counter offer sent to trader.' });
 
     } else if (action === 'reject') {
       await db.query(`UPDATE negotiations SET status='rejected', updated_at=NOW() WHERE id=$1`, [req.params.id]);
-      await sendSMS(n.trader_phone,
-        `SokoLeo: Offer declined.\nFarmer declined your offer for ${n.product}. You may try a higher offer.`
-      );
+      try {
+        await sendSMS(n.trader_phone,
+          SMS_TEMPLATES.offerRejected(n.trader_name, n.product, 'the Farmer'));
+      } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
       res.json({ message: 'Offer rejected.' });
     }
   } catch(e) {
@@ -189,14 +193,20 @@ router.post('/:id/trader-respond', async (req, res) => {
         [n.listing_id, n.trader_id, 'as listed', `Price agreed: KES ${n.current_offer}`]
       );
       await db.query(`UPDATE listings SET status='reserved' WHERE id=$1`, [n.listing_id]);
-      await sendSMS(n.farmer_phone, `SokoLeo: Deal confirmed! Trader accepted KES ${n.current_offer} for ${n.product}.`);
+      try {
+        await sendSMS(n.farmer_phone,
+          SMS_TEMPLATES.offerAccepted(n.farmer_name, n.product, n.current_offer, n.trader_name));
+      } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
       res.json({ message: 'Deal accepted!', agreed_price: n.current_offer });
 
     } else if (action === 'counter') {
       if (!counter_price) return res.status(400).json({ error: 'counter_price required.' });
       await db.query(`UPDATE negotiations SET current_offer=$1, offered_by='trader', updated_at=NOW() WHERE id=$2`, [counter_price, req.params.id]);
       await db.query(`INSERT INTO negotiation_messages (negotiation_id, sender_role, amount, message) VALUES ($1,'trader',$2,$3)`, [req.params.id, counter_price, message || null]);
-      await sendSMS(n.farmer_phone, `SokoLeo: New offer!\nTrader offers KES ${counter_price} for ${n.product}. Respond via *789# or sokoleo.`);
+      try {
+        await sendSMS(n.farmer_phone,
+          SMS_TEMPLATES.newOffer(n.farmer_name, n.product, counter_price, n.trader_name));
+      } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
       res.json({ message: 'Counter sent to farmer.' });
     }
   } catch(e) { res.status(500).json({ error: e.message }); }

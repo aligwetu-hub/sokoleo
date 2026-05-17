@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const { query } = require('../db/pool');
+const { sendSMS, SMS_TEMPLATES } = require('../services/smsService');
 
 // POST /api/messages/conversation  — find or create conversation between farmer + trader
 router.post('/conversation', async (req, res) => {
@@ -96,6 +97,25 @@ router.post('/send', async (req, res) => {
       `UPDATE conversations SET last_message_at=NOW() WHERE id=$1`,
       [conversation_id]
     );
+
+    // Notify the receiver — non-blocking
+    try {
+      const conv = await query(
+        `SELECT c.farmer_id, c.trader_id, f.name AS farmer_name, f.phone AS farmer_phone,
+                t.name AS trader_name, t.phone AS trader_phone
+         FROM conversations c
+         JOIN users f ON c.farmer_id = f.id
+         JOIN users t ON c.trader_id = t.id
+         WHERE c.id = $1`, [conversation_id]);
+      if (conv.rows.length) {
+        const c = conv.rows[0];
+        const isFromFarmer  = c.farmer_id === sender_id;
+        const receiverName  = isFromFarmer ? c.trader_name  : c.farmer_name;
+        const receiverPhone = isFromFarmer ? c.trader_phone : c.farmer_phone;
+        const senderName    = isFromFarmer ? c.farmer_name  : c.trader_name;
+        await sendSMS(receiverPhone, SMS_TEMPLATES.newMessage(receiverName, senderName));
+      }
+    } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
     res.status(201).json({ success: true, message: msg.rows[0] });
   } catch (err) {

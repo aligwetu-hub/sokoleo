@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db/pool');
-const { sendSMS } = require('../services/smsService');
+const { sendSMS, SMS_TEMPLATES } = require('../services/smsService');
 
 // Generate 6-digit OTP
 function generateOTP() {
@@ -48,9 +48,12 @@ router.post('/register', async (req, res) => {
     }
 
     // Send welcome SMS
-    await sendSMS(phone,
-      `Welcome to SokoLeo, ${name}! 🌽\nYour account is ready.\nDial *789# to start selling or buying produce.`
-    );
+    try {
+      const welcomeMsg = role === 'farmer'
+        ? SMS_TEMPLATES.welcomeFarmer(name)
+        : SMS_TEMPLATES.welcomeTrader(name);
+      await sendSMS(phone, welcomeMsg);
+    } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
     res.status(201).json({ message: 'Registration successful.', user });
   } catch (err) {

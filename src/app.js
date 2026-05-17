@@ -16,6 +16,8 @@ const visionRoutes      = require('./routes/visionRoutes');
 const reviewRoutes      = require('./routes/reviewRoutes');
 const messageRoutes     = require('./routes/messageRoutes');
 const boostRoutes       = require('./routes/boostRoutes');
+const negotiationRoutes = require('./routes/negotiationRoutes');
+const smsRoutes         = require('./routes/smsRoutes');
 
 const app = express();
 
@@ -56,8 +58,10 @@ app.use('/api/services',     servicesRoutes);
 app.use('/api/vision',       visionRoutes);
 app.use('/api/reviews',      reviewRoutes);
 app.use('/api/messages',     messageRoutes);
-app.use('/api/boosts',       boostRoutes);
-app.use('/api',              callbackRoutes); // USSD + M-Pesa callbacks
+app.use('/api/boosts',        boostRoutes);
+app.use('/api/negotiations',  negotiationRoutes);
+app.use('/api/sms',           smsRoutes);
+app.use('/api',               callbackRoutes); // USSD + M-Pesa callbacks
 
 // 404
 app.use((req, res) => res.status(404).json({ error: 'Route not found.' }));
