@@ -67,7 +67,11 @@
     .nav-item:hover { background:rgba(255,255,255,0.06); color:white; }
     .nav-item.active { background:var(--amber-dark); color:white; }
     .nav-item .icon { font-size:18px; width:22px; text-align:center; }
-    .sidebar-user { padding:16px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; }
+    .sidebar-user { padding:12px 16px; border-top:1px solid rgba(255,255,255,0.08); }
+    .sidebar-user-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .sidebar-user-actions { display:flex; gap:8px; }
+    .sidebar-user-actions button { flex:1; padding:7px 6px; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:opacity 0.15s; }
+    .sidebar-user-actions button:hover { opacity:0.85; }
     .avatar { width:36px; height:36px; border-radius:50%; background:var(--amber-dark); display:flex; align-items:center; justify-content:center; font-size:16px; color:white; font-weight:700; flex-shrink:0; }
     .user-info { overflow:hidden; }
     .user-name { font-size:13px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -321,11 +325,23 @@
       <div class="nav-item" onclick="openRoleModal()"><span class="icon">🔄</span> Switch Role</div>
     </nav>
     <div class="sidebar-user">
-      <div class="avatar" id="sidebarAvatar">T</div>
-      <div class="user-info">
-        <div class="user-name" id="sidebarName">Trader</div>
-        <div class="user-role">Trader</div>
+      <div class="sidebar-user-row">
+        <div class="avatar" id="sidebarAvatar">T</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarName">Trader</div>
+          <div class="user-role">Trader</div>
+        </div>
       </div>
+    </div>
+    <div style="padding:.5rem 1rem 1rem 1rem">
+      <button onclick="logout()"
+        style="width:100%;background:rgba(248,113,113,.08);
+        border:1px solid rgba(248,113,113,.2);color:#f87171;
+        padding:9px;border-radius:8px;cursor:pointer;
+        font-size:.83rem;font-family:'DM Sans',sans-serif;
+        display:flex;align-items:center;justify-content:center;gap:.5rem">
+        🚪 Logout
+      </button>
     </div>
   </div>
 
@@ -1393,6 +1409,13 @@
 
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  function logout() {
+    localStorage.removeItem('sokoleo_user');
+    localStorage.removeItem('sokoleo_token');
+    localStorage.removeItem('sokoleo_secondary_role');
+    window.location.href = 'index.html';
   }
 
   // ── Switch Role ────────────────────────────────────────────────────
