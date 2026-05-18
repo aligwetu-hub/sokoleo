@@ -152,7 +152,7 @@ router.get('/analytics', async (req, res) => {
     });
   } catch (err) {
     console.error('Analytics error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch analytics.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
