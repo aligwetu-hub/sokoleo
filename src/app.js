@@ -1,9 +1,10 @@
 require('dotenv').config();
-const express  = require('express');
+const express   = require('express');
 const rateLimit = require('express-rate-limit');
-const helmet   = require('helmet');
-const morgan   = require('morgan');
-const path     = require('path');
+const helmet    = require('helmet');
+const morgan    = require('morgan');
+const path      = require('path');
+const fs        = require('fs');
 
 const authRoutes        = require('./routes/authRoutes');
 const listingRoutes     = require('./routes/listingRoutes');
@@ -43,7 +44,9 @@ const visionLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders:
 app.use('/api/vision', visionLimiter);
 
 // ── 1. Static files (FIRST — serves .html, .js, .css, images) ────────────────
-app.use(express.static(path.join(__dirname, '../public')));
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
+console.log('Serving static files from:', publicPath);
 
 // ── 2. API Routes (before catch-all) ─────────────────────────────────────────
 app.use('/api/auth',         authRoutes);
@@ -62,20 +65,42 @@ app.use('/api/services',     servicesRoutes);
 app.use('/api/vision',       visionRoutes);
 app.use('/api',              callbackRoutes); // USSD + M-Pesa callbacks
 
-// ── 3. Named HTML page routes ─────────────────────────────────────────────────
+// ── 3. Health + debug routes ──────────────────────────────────────────────────
 app.get('/health', (req, res) =>
   res.json({ status: 'ok', service: 'SokoLeo API', version: '2.0', timestamp: new Date() })
 );
-app.get('/',          (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
-app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
-app.get('/analytics', (req, res) => res.sendFile(path.join(__dirname, '../public/analytics.html')));
 
-// ── 4. 404 catch-all (LAST) ───────────────────────────────────────────────────
+app.get('/debug-path', (req, res) => {
+  const publicDir = path.join(__dirname, '..', 'public');
+  res.json({
+    publicPath: publicDir,
+    exists: fs.existsSync(publicDir),
+    files: fs.existsSync(publicDir) ? fs.readdirSync(publicDir) : [],
+  });
+});
+
+// ── 4. Explicit HTML page routes ──────────────────────────────────────────────
+const pages = [
+  'index', 'farmer', 'trader', 'admin', 'analytics',
+  'market-prices', 'farm-services', 'route-planner', 'farmer-profile',
+];
+
+pages.forEach(page => {
+  app.get(`/${page}.html`, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', `${page}.html`));
+  });
+});
+
+app.get('/',          (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
+app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
+app.get('/analytics', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'analytics.html')));
+
+// ── 5. 404 catch-all (LAST) ───────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' });
 });
 
-// ── 5. Error handler ──────────────────────────────────────────────────────────
+// ── 6. Error handler ──────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Image too large (max 10 MB)' });
   console.error(err);
