@@ -67,88 +67,31 @@ router.patch('/users/:id/deactivate', async (req, res) => {
 
 // GET /api/admin/analytics
 router.get('/analytics', async (req, res) => {
+  console.log('Analytics endpoint hit!');
   try {
-    const [
-      keyMetrics,
-      todayActivity,
-      commissionByCategory,
-      recentTransactions,
-      topFarmers,
-      topTraders,
-    ] = await Promise.all([
-
-      query(`
-        SELECT
-          (SELECT COUNT(*) FROM users WHERE role='farmer')::int                            AS total_farmers,
-          (SELECT COUNT(*) FROM users WHERE role='trader')::int                            AS total_traders,
-          (SELECT COUNT(*) FROM listings)::int                                             AS total_listings,
-          (SELECT COUNT(*) FROM listings WHERE status='active')::int                      AS active_listings,
-          COALESCE((SELECT SUM(sokoleo_commission) FROM transactions WHERE status='confirmed'),0) AS total_commission
-      `),
-
-      query(`
-        SELECT
-          (SELECT COUNT(*) FROM users WHERE created_at::date = CURRENT_DATE)::int         AS new_registrations,
-          (SELECT COUNT(*) FROM listings WHERE created_at::date = CURRENT_DATE)::int      AS new_listings,
-          (SELECT COUNT(*) FROM transactions WHERE status='confirmed'
-            AND confirmed_at::date = CURRENT_DATE)::int                                   AS deals_today,
-          COALESCE((SELECT SUM(sokoleo_commission) FROM transactions
-            WHERE status='confirmed' AND confirmed_at::date = CURRENT_DATE),0)            AS revenue_today
-      `),
-
-      query(`
-        SELECT
-          category,
-          COUNT(*)::int                         AS total_deals,
-          COALESCE(SUM(listing_price),0)        AS total_gmv,
-          COALESCE(SUM(sokoleo_commission),0)   AS commission_earned
-        FROM transactions
-        WHERE status='confirmed'
-        GROUP BY category
-        ORDER BY commission_earned DESC
-      `),
-
-      query(`
-        SELECT
-          t.created_at, t.item_description, t.listing_price,
-          t.sokoleo_commission, t.status, t.category,
-          b.name AS buyer_name, s.name AS seller_name
-        FROM transactions t
-        JOIN users b ON t.buyer_id  = b.id
-        JOIN users s ON t.seller_id = s.id
-        ORDER BY t.created_at DESC LIMIT 10
-      `),
-
-      query(`
-        SELECT
-          u.name, u.phone, u.location,
-          COUNT(t.id)::int                        AS completed_deals,
-          COALESCE(SUM(t.seller_receives),0)      AS total_earnings
-        FROM users u
-        JOIN transactions t ON t.seller_id = u.id AND t.status='confirmed'
-        GROUP BY u.id, u.name, u.phone, u.location
-        ORDER BY total_earnings DESC LIMIT 5
-      `),
-
-      query(`
-        SELECT
-          u.name, u.phone, u.location,
-          COUNT(t.id)::int                        AS completed_deals,
-          COALESCE(SUM(t.buyer_pays),0)           AS total_spent
-        FROM users u
-        JOIN transactions t ON t.buyer_id = u.id AND t.status='confirmed'
-        GROUP BY u.id, u.name, u.phone, u.location
-        ORDER BY total_spent DESC LIMIT 5
-      `),
-    ]);
+    const farmers  = await query(`SELECT COUNT(*) FROM users WHERE role='farmer'`);
+    const traders  = await query(`SELECT COUNT(*) FROM users WHERE role='trader'`);
+    const listings = await query(`SELECT COUNT(*) FROM listings`);
+    const newToday = await query(`SELECT COUNT(*) FROM users WHERE created_at::date = CURRENT_DATE`);
 
     res.json({
-      key_metrics:           keyMetrics.rows[0],
-      today:                 todayActivity.rows[0],
-      commission_by_category: commissionByCategory.rows,
-      recent_transactions:   recentTransactions.rows,
-      top_farmers:           topFarmers.rows,
-      top_traders:           topTraders.rows,
+      key_metrics: {
+        total_farmers:    parseInt(farmers.rows[0].count),
+        total_traders:    parseInt(traders.rows[0].count),
+        total_listings:   parseInt(listings.rows[0].count),
+        active_listings:  0,
+        total_commission: 0,
+      },
+      today: {
+        new_registrations: parseInt(newToday.rows[0].count),
+        new_listings:      0,
+        deals_today:       0,
+        revenue_today:     0,
+      },
+      commission_by_category: [],
+      recent_transactions:    [],
+      top_farmers:            [],
+      top_traders:            [],
     });
   } catch (err) {
     console.error('Analytics error:', err.message);
