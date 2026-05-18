@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const helmet   = require('helmet');
+const morgan   = require('morgan');
 const path = require('path');
 
 const authRoutes        = require('./routes/authRoutes');
@@ -23,6 +25,10 @@ const app = express();
 
 // Trust Render's proxy — required for express-rate-limit behind a load balancer
 app.set('trust proxy', 1);
+
+// Security + logging
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(morgan('dev'));
 
 // Body parsing
 app.use(express.json());
