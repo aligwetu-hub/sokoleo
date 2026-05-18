@@ -21,6 +21,9 @@ const smsRoutes         = require('./routes/smsRoutes');
 
 const app = express();
 
+// Trust Render's proxy — required for express-rate-limit behind a load balancer
+app.set('trust proxy', 1);
+
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
