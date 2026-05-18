@@ -69,24 +69,23 @@ router.patch('/users/:id/deactivate', async (req, res) => {
 router.get('/analytics', async (req, res) => {
   console.log('Analytics endpoint hit!');
   try {
-    const farmers  = await query(`SELECT COUNT(*) FROM users WHERE role='farmer'`);
-    const traders  = await query(`SELECT COUNT(*) FROM users WHERE role='trader'`);
-    const listings = await query(`SELECT COUNT(*) FROM listings`);
-    const newToday = await query(`SELECT COUNT(*) FROM users WHERE created_at::date = CURRENT_DATE`);
+    const farmers  = await query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'farmer'`);
+    const traders  = await query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'trader'`);
+    const listings = await query(`SELECT COUNT(*)::int AS count FROM listings`);
 
     res.json({
       key_metrics: {
-        total_farmers:    parseInt(farmers.rows[0].count),
-        total_traders:    parseInt(traders.rows[0].count),
-        total_listings:   parseInt(listings.rows[0].count),
-        active_listings:  0,
+        total_farmers:    farmers.rows[0].count,
+        total_traders:    traders.rows[0].count,
+        total_listings:   listings.rows[0].count,
+        total_revenue:    0,
         total_commission: 0,
       },
       today: {
-        new_registrations: parseInt(newToday.rows[0].count),
-        new_listings:      0,
-        deals_today:       0,
-        revenue_today:     0,
+        new_users:       0,
+        new_listings:    0,
+        deals_completed: 0,
+        revenue_today:   0,
       },
       commission_by_category: [],
       recent_transactions:    [],
