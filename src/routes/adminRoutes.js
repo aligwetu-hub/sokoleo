@@ -15,13 +15,17 @@ router.get('/counties/:county/towns', (req, res) => {
 // GET /api/admin/stats - dashboard overview
 router.get('/stats', async (req, res) => {
   try {
-    const [farmers, traders, listings, reservations, payments, topCrops] = await Promise.all([
+    const [farmers, traders, listings, reservations, payments, topCrops, topCounties] = await Promise.all([
       query(`SELECT COUNT(*) FROM users WHERE role='farmer'`),
       query(`SELECT COUNT(*) FROM users WHERE role='trader'`),
       query(`SELECT COUNT(*) FROM listings WHERE status='active'`),
       query(`SELECT COUNT(*) FROM reservations`),
       query(`SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE status='completed'`),
       query(`SELECT product, COUNT(*) as count FROM listings GROUP BY product ORDER BY count DESC LIMIT 5`),
+      query(`SELECT COALESCE(county, location, 'Unknown') AS county, COUNT(*)::int AS listings
+             FROM listings WHERE status='active'
+             GROUP BY COALESCE(county, location, 'Unknown')
+             ORDER BY listings DESC LIMIT 10`),
     ]);
 
     res.json({
@@ -31,6 +35,7 @@ router.get('/stats', async (req, res) => {
       total_reservations: parseInt(reservations.rows[0].count),
       total_revenue_kes: parseFloat(payments.rows[0].total),
       top_crops: topCrops.rows,
+      top_counties: topCounties.rows,
     });
   } catch (err) {
     console.error('Stats error:', err.message);

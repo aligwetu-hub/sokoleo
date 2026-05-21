@@ -153,9 +153,10 @@
   <!-- ── Input Panel ────────────────────────────────────────── -->
   <div class="input-panel">
 
+    <datalist id="kenyaTowns"></datalist>
     <div class="form-group">
       <label>Your Base / Starting Point</label>
-      <input type="text" id="baseLocation" placeholder="e.g. Chuka Town, Maara Market" value="Chuka Town" />
+      <input type="text" id="baseLocation" list="kenyaTowns" placeholder="e.g. Chuka Town, Nairobi CBD" value="Chuka Town" autocomplete="off" />
     </div>
 
     <hr class="divider" />
@@ -168,12 +169,12 @@
       <div class="stops-list" id="stopsList">
         <div class="stop-row">
           <div class="stop-number">1</div>
-          <input type="text" class="stop-input" placeholder="Farm location (e.g. Maara)" />
+          <input type="text" class="stop-input" list="kenyaTowns" placeholder="Farm location (e.g. Maara)" autocomplete="off" />
           <button class="stop-remove" onclick="removeStop(this)" title="Remove">×</button>
         </div>
         <div class="stop-row">
           <div class="stop-number">2</div>
-          <input type="text" class="stop-input" placeholder="Farm location (e.g. Tharaka)" />
+          <input type="text" class="stop-input" list="kenyaTowns" placeholder="Farm location (e.g. Tharaka)" autocomplete="off" />
           <button class="stop-remove" onclick="removeStop(this)" title="Remove">×</button>
         </div>
       </div>
@@ -270,7 +271,7 @@ function addStop() {
   row.className = 'stop-row';
   row.innerHTML = `
     <div class="stop-number">${n}</div>
-    <input type="text" class="stop-input" placeholder="Farm location (e.g. Igambang'ombe)" />
+    <input type="text" class="stop-input" list="kenyaTowns" placeholder="Farm location (e.g. Igambang'ombe)" autocomplete="off" />
     <button class="stop-remove" onclick="removeStop(this)" title="Remove">×</button>`;
   list.appendChild(row);
   renumberStops();
@@ -470,6 +471,30 @@ if (!navigator.onLine) document.getElementById('offlinePill').style.display = 'b
 
 renderSavedRoutes();
 window.addEventListener('resize', () => { if (lastRoute) drawRouteCanvas(lastRoute.stops, lastRoute.base); });
+
+// Populate kenyaTowns datalist from API
+(async function loadTownsList() {
+  try {
+    const r = await fetch('/api/admin/counties');
+    const data = await r.json();
+    const dl = document.getElementById('kenyaTowns');
+    data.regions.forEach(region => {
+      region.counties.forEach(county => {
+        // Add county name itself as an option
+        const cOpt = document.createElement('option');
+        cOpt.value = county.name;
+        dl.appendChild(cOpt);
+        // Add each town
+        county.towns.forEach(town => {
+          const opt = document.createElement('option');
+          opt.value = town;
+          opt.label = `${county.name} · ${region.name}`;
+          dl.appendChild(opt);
+        });
+      });
+    });
+  } catch(e) { console.error('Could not load towns:', e); }
+})();
 </script>
 <script src="/pwa.js"></script>
 </body>

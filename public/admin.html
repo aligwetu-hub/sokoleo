@@ -229,6 +229,12 @@
         <div id="recentActivity"><div class="loading">Loading...</div></div>
       </div>
     </div>
+    <div class="charts-grid" style="margin-top:0">
+      <div class="chart-card" style="grid-column:1/-1">
+        <h3>📍 Listings by County (Top 10)</h3>
+        <div class="bar-chart" id="countiesChart"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- LISTINGS PAGE -->
@@ -441,6 +447,14 @@ function renderStats(data) {
       <div class="bar-track"><div class="bar-fill" style="width:${(c.count/maxCount*100)}%"></div></div>
       <span class="bar-count">${c.count}</span>
     </div>`).join('') || '<div class="empty">No crop data yet.</div>';
+
+  const maxCounty = Math.max(...(data.top_counties||[]).map(c=>c.listings), 1);
+  document.getElementById('countiesChart').innerHTML = (data.top_counties||[]).map(c => `
+    <div class="bar-row">
+      <span class="bar-label">📍 ${c.county}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c.listings/maxCounty*100)}%;background:#f59e0b"></div></div>
+      <span class="bar-count">${c.listings}</span>
+    </div>`).join('') || '<div class="empty">No county data yet — listings need county field populated.</div>';
 
   document.getElementById('recentActivity').innerHTML = `
     <div style="font-size:13px;color:#6b7280;line-height:2">

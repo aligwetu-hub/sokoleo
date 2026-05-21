@@ -119,9 +119,7 @@
 <div class="filter-bar">
   <input type="text" id="searchQ" placeholder="Search services..." oninput="doSearch()" />
   <select id="filterLoc" onchange="doSearch()">
-    <option value="">All Locations</option>
-    <option>Chuka</option><option>Maara</option><option>Tharaka</option>
-    <option>Nithi</option><option>Igambang'ombe</option>
+    <option value="">All Counties</option>
   </select>
 </div>
 
@@ -325,6 +323,25 @@ function showMsg(id, text, type) {
 }
 
 loadServices();
+
+// Populate county filter from API
+(async function loadCountyFilter() {
+  try {
+    const r = await fetch('/api/admin/counties');
+    const data = await r.json();
+    const sel = document.getElementById('filterLoc');
+    data.regions.forEach(region => {
+      const group = document.createElement('optgroup');
+      group.label = region.name;
+      region.counties.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name; opt.textContent = c.name;
+        group.appendChild(opt);
+      });
+      sel.appendChild(group);
+    });
+  } catch(e) { console.error('Could not load counties:', e); }
+})();
 </script>
 <script src="/pwa.js"></script>
 </body>
