@@ -22,6 +22,7 @@ const messageRoutes     = require('./routes/messageRoutes');
 const boostRoutes       = require('./routes/boostRoutes');
 const negotiationRoutes = require('./routes/negotiationRoutes');
 const smsRoutes         = require('./routes/smsRoutes');
+const whatsappRoutes    = require('./routes/whatsappRoutes');
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/api/reviews',      reviewRoutes);
 app.use('/api/messages',     messageRoutes);
 app.use('/api/boosts',       boostRoutes);
 app.use('/api/sms',          smsRoutes);
+app.use('/api/whatsapp',    whatsappRoutes);
 app.use('/api/tours',        farmTourRoutes);
 app.use('/api/services',     servicesRoutes);
 app.use('/api/vision',       visionRoutes);
