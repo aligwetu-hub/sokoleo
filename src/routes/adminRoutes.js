@@ -1,6 +1,16 @@
-const express = require('express');
-const router = express.Router();
+const express  = require('express');
+const router   = express.Router();
 const { query } = require('../db/pool');
+const COUNTIES = require('../config/kenya-counties');
+
+// GET /api/admin/counties
+router.get('/counties', (req, res) => res.json(COUNTIES));
+
+// GET /api/admin/counties/:county/towns
+router.get('/counties/:county/towns', (req, res) => {
+  const towns = COUNTIES.getTowns(req.params.county);
+  res.json({ county: req.params.county, towns });
+});
 
 // GET /api/admin/stats - dashboard overview
 router.get('/stats', async (req, res) => {

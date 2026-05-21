@@ -370,10 +370,14 @@
           <option value="tomorrow">Tomorrow</option>
           <option value="this_week">This Week</option>
         </select>
-        <select id="filterLoc" onchange="searchListings()">
-          <option value="">All Locations</option>
-          <option>Chuka</option><option>Maara</option><option>Tharaka</option>
-          <option>Meru Town Road</option><option>Nithi</option>
+        <select id="filterRegion" onchange="onRegionChange(this.value)">
+          <option value="">🌍 All Kenya</option>
+        </select>
+        <select id="filterCounty" onchange="onCountyChange(this.value)" disabled>
+          <option value="">All Counties</option>
+        </select>
+        <select id="filterTown" onchange="searchListings()" disabled>
+          <option value="">All Towns</option>
         </select>
       </div>
       <div class="market-grid" id="marketGrid">
@@ -816,7 +820,59 @@
     document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
     document.getElementById('topbarName').textContent = n;
     document.getElementById('topbarAvatar').textContent = n[0].toUpperCase();
+    loadCountiesData();
     loadMarket();
+  }
+
+  // ── Kenya Counties ────────────────────────────────────────────────────────
+  let KENYA_DATA = null;
+
+  async function loadCountiesData() {
+    try {
+      const r = await fetch('/api/admin/counties');
+      KENYA_DATA = await r.json();
+      const sel = document.getElementById('filterRegion');
+      KENYA_DATA.regions.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.name; opt.textContent = r.name;
+        sel.appendChild(opt);
+      });
+    } catch(e) { console.error('Could not load counties:', e); }
+  }
+
+  function onRegionChange(regionName) {
+    const countySel = document.getElementById('filterCounty');
+    const townSel   = document.getElementById('filterTown');
+    countySel.innerHTML = '<option value="">All Counties</option>';
+    townSel.innerHTML   = '<option value="">All Towns</option>';
+    townSel.disabled    = true;
+    if (!regionName) { countySel.disabled = true; searchListings(); return; }
+    const region = KENYA_DATA.regions.find(r => r.name === regionName);
+    if (region) {
+      region.counties.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name; opt.textContent = c.name;
+        countySel.appendChild(opt);
+      });
+      countySel.disabled = false;
+    }
+    searchListings();
+  }
+
+  function onCountyChange(countyName) {
+    const townSel = document.getElementById('filterTown');
+    townSel.innerHTML = '<option value="">All Towns</option>';
+    if (!countyName) { townSel.disabled = true; searchListings(); return; }
+    const county = KENYA_DATA.regions.flatMap(r => r.counties).find(c => c.name === countyName);
+    if (county) {
+      county.towns.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        townSel.appendChild(opt);
+      });
+      townSel.disabled = false;
+    }
+    searchListings();
   }
 
   // ── Navigation ─────────────────────────────────────────────────────
@@ -838,13 +894,15 @@
 
   // ── Marketplace ───────────────────────────────────────────────────
   async function loadMarket() {
-    const q = document.getElementById('searchQuery').value.trim();
-    const avail = document.getElementById('filterAvail').value;
-    const loc = document.getElementById('filterLoc').value;
+    const q      = document.getElementById('searchQuery').value.trim();
+    const avail  = document.getElementById('filterAvail').value;
+    const county = document.getElementById('filterCounty').value;
+    const town   = document.getElementById('filterTown').value;
     let url = `/api/listings?status=active`;
-    if (q) url += `&product=${encodeURIComponent(q)}`;
-    if (avail) url += `&availability=${avail}`;
-    if (loc) url += `&location=${encodeURIComponent(loc)}`;
+    if (q)      url += `&product=${encodeURIComponent(q)}`;
+    if (avail)  url += `&availability=${avail}`;
+    if (county) url += `&county=${encodeURIComponent(county)}`;
+    if (town)   url += `&town=${encodeURIComponent(town)}`;
     const el = document.getElementById('marketGrid');
     el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
     try {

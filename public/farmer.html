@@ -436,9 +436,17 @@
                 <option value="this_week">This Week</option>
               </select>
             </div>
-            <div class="form-group full">
-              <label>Location (Sub-County / Village)</label>
-              <input type="text" id="lLocation" placeholder="e.g. Maara, Meru Town Road" />
+            <div class="form-group">
+              <label>County</label>
+              <select id="lCounty" onchange="onFarmerCountyChange(this.value)">
+                <option value="">Select County</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Town / Sub-county</label>
+              <select id="lLocation" disabled>
+                <option value="">Select Town</option>
+              </select>
             </div>
             <div class="form-group full">
               <label>Description (optional)</label>
@@ -914,7 +922,44 @@
     document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
     document.getElementById('topbarName').textContent = n;
     document.getElementById('topbarAvatar').textContent = n[0].toUpperCase();
+    loadFarmerCounties();
     loadOverview();
+  }
+
+  // ── Kenya Counties ────────────────────────────────────────────────────────
+  let FARMER_KENYA_DATA = null;
+
+  async function loadFarmerCounties() {
+    try {
+      const r = await fetch('/api/admin/counties');
+      FARMER_KENYA_DATA = await r.json();
+      const sel = document.getElementById('lCounty');
+      FARMER_KENYA_DATA.regions.forEach(region => {
+        const group = document.createElement('optgroup');
+        group.label = region.name;
+        region.counties.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.name; opt.textContent = c.name;
+          group.appendChild(opt);
+        });
+        sel.appendChild(group);
+      });
+    } catch(e) { console.error('Could not load counties:', e); }
+  }
+
+  function onFarmerCountyChange(countyName) {
+    const townSel = document.getElementById('lLocation');
+    townSel.innerHTML = '<option value="">Select Town</option>';
+    if (!countyName) { townSel.disabled = true; return; }
+    const county = FARMER_KENYA_DATA.regions.flatMap(r => r.counties).find(c => c.name === countyName);
+    if (county) {
+      county.towns.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        townSel.appendChild(opt);
+      });
+      townSel.disabled = false;
+    }
   }
 
   // ── Navigation ─────────────────────────────────────────────────────
@@ -1012,16 +1057,20 @@
     const unit     = document.getElementById('lUnit').value;
     const price    = document.getElementById('lPrice').value;
     const avail    = document.getElementById('lAvailability').value;
-    const location = document.getElementById('lLocation').value.trim();
+    const county   = document.getElementById('lCounty').value;
+    const location = document.getElementById('lLocation').value;
+    const region   = FARMER_KENYA_DATA
+      ? (FARMER_KENYA_DATA.regions.find(r => r.counties.find(c => c.name === county)) || {}).name || ''
+      : '';
     const desc     = document.getElementById('lDescription').value.trim();
 
-    if (!product || !qty || !location)
-      return showMsg('listingMsg', 'Product, quantity and location are required.', 'error');
+    if (!product || !qty || !county || !location)
+      return showMsg('listingMsg', 'Product, quantity, county and town are required.', 'error');
 
     try {
       const r = await fetch(`${BASE}/api/listings`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ farmer_id: currentUser.id, product, quantity: qty, unit, price_per_unit: price || null, availability: avail, location, description: desc })
+        body: JSON.stringify({ farmer_id: currentUser.id, product, quantity: qty, unit, price_per_unit: price || null, availability: avail, location, county, region, description: desc })
       });
       const d = await r.json();
       if (!r.ok) return showMsg('listingMsg', d.error || 'Failed to post listing.', 'error');

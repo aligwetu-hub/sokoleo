@@ -5,7 +5,7 @@ const { notifyListingCreated, notifyNewProduce } = require('../services/smsServi
 
 // GET /api/listings - search listings
 router.get('/', async (req, res) => {
-  const { product, location, availability, page = 1, limit = 20 } = req.query;
+  const { product, location, availability, county, town, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   try {
@@ -13,15 +13,20 @@ router.get('/', async (req, res) => {
     const params = [];
     let i = 1;
 
-    if (product) { conditions.push(`LOWER(l.product) LIKE LOWER($${i++})`); params.push(`%${product}%`); }
-    if (location) { conditions.push(`LOWER(l.location) LIKE LOWER($${i++})`); params.push(`%${location}%`); }
+    if (product)      { conditions.push(`LOWER(l.product) LIKE LOWER($${i++})`);  params.push(`%${product}%`); }
+    if (county)       { conditions.push(`LOWER(l.county) = LOWER($${i++})`);       params.push(county); }
+    if (town || location) {
+      const loc = town || location;
+      conditions.push(`LOWER(l.location) LIKE LOWER($${i++})`);
+      params.push(`%${loc}%`);
+    }
     if (availability) { conditions.push(`l.availability = $${i++}`); params.push(availability); }
 
     params.push(parseInt(limit), offset);
 
     const sql = `
       SELECT l.id, l.product, l.quantity, l.unit, l.price_per_unit, l.location,
-             l.availability, l.status, l.created_at, l.farmer_id,
+             l.county, l.region, l.availability, l.status, l.created_at, l.farmer_id,
              l.is_boosted, l.boosted_until, l.boost_count,
              u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location,
              ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews
@@ -62,7 +67,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/listings - create listing
 router.post('/', async (req, res) => {
-  const { farmer_phone, product, quantity, unit, price_per_unit, location, availability, description } = req.body;
+  const { farmer_phone, product, quantity, unit, price_per_unit, location, county, region, availability, description } = req.body;
 
   if (!farmer_phone || !product || !quantity || !location || !availability) {
     return res.status(400).json({ error: 'farmer_phone, product, quantity, location, availability are required.' });
@@ -75,9 +80,9 @@ router.post('/', async (req, res) => {
     const farmerId = userRes.rows[0].id;
 
     const listing = await query(
-      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, availability, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, availability, description || null]
+      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, county, region, availability, description)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, county || null, region || null, availability, description || null]
     );
 
     // Notify farmer
