@@ -336,7 +336,7 @@
       <div class="today-card">
         <div class="today-icon">🆕</div>
         <div class="today-label">New Registrations</div>
-        <div class="today-value">${fmt(d.new_registrations)}</div>
+        <div class="today-value">${fmt(d.new_users)}</div>
       </div>
       <div class="today-card">
         <div class="today-icon">🌽</div>
@@ -346,7 +346,7 @@
       <div class="today-card">
         <div class="today-icon">🤝</div>
         <div class="today-label">Deals Completed</div>
-        <div class="today-value">${fmt(d.deals_today)}</div>
+        <div class="today-value">${fmt(d.deals_completed)}</div>
       </div>
       <div class="today-card">
         <div class="today-icon">💸</div>
@@ -423,6 +423,15 @@
       </div>`).join('');
   }
 
+  // ── Error helper — stamps every loading spinner with the real message ────────
+  function showError(err) {
+    console.error('Analytics fetch error:', err);
+    document.querySelectorAll('.loading').forEach(el => {
+      el.innerHTML = '<span style="color:red">⚠️ Error: ' + err.message + '</span>';
+    });
+    document.getElementById('lastUpdatedText').textContent = 'Failed to load';
+  }
+
   // ── Main fetch ────────────────────────────────────────────────────────────
   async function loadAll() {
     const btn = document.getElementById('refreshBtn');
@@ -430,9 +439,17 @@
     btn.classList.add('spinning');
 
     try {
-      const res  = await fetch(`${BASE}/api/admin/analytics`);
+      const res = await fetch(`${BASE}/api/admin/analytics`);
+
+      // Guard against non-JSON responses (e.g. HTML error pages)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON (${res.status}): ${text.slice(0, 120)}`);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
       renderKeyMetrics(data.key_metrics);
       renderToday(data.today);
@@ -443,9 +460,8 @@
 
       lastFetch = Date.now();
       startTimer();
-    } catch (e) {
-      console.error(e);
-      document.getElementById('lastUpdatedText').textContent = 'Error loading data';
+    } catch (err) {
+      showError(err);
     } finally {
       btn.textContent = '↻ Refresh';
       btn.classList.remove('spinning');
