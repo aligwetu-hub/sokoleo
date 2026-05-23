@@ -423,9 +423,29 @@
       </div>`).join('');
   }
 
+  // ── Debug banner (visible on page, auto-hides on success) ───────────────────
+  function showDebug(msg) {
+    let el = document.getElementById('debugBanner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'debugBanner';
+      el.style.cssText = 'position:fixed;bottom:16px;right:16px;max-width:420px;padding:10px 16px;' +
+        'background:#1b1b2f;color:#d8f3dc;font-size:12px;font-family:monospace;border-radius:8px;' +
+        'z-index:9999;white-space:pre-wrap;word-break:break-all;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideDebug() {
+    const el = document.getElementById('debugBanner');
+    if (el) el.style.display = 'none';
+  }
+
   // ── Error helper — stamps every loading spinner with the real message ────────
   function showError(err) {
     console.error('Analytics fetch error:', err);
+    showDebug('❌ ' + err.message);
     document.querySelectorAll('.loading').forEach(el => {
       el.innerHTML = '<span style="color:red">⚠️ Error: ' + err.message + '</span>';
     });
@@ -451,6 +471,12 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
+      // Debug: log raw response so we can verify shape in DevTools
+      console.log('Analytics data received:', JSON.stringify(data));
+      showDebug('✅ Data received — farmers:' + data.key_metrics.total_farmers +
+                ' traders:' + data.key_metrics.total_traders +
+                ' listings:' + data.key_metrics.total_listings);
+
       renderKeyMetrics(data.key_metrics);
       renderToday(data.today);
       renderCommission(data.commission_by_category);
@@ -460,6 +486,7 @@
 
       lastFetch = Date.now();
       startTimer();
+      hideDebug();
     } catch (err) {
       showError(err);
     } finally {
