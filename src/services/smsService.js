@@ -19,9 +19,12 @@ async function sendSMS(phone, message) {
     if (formatted.startsWith('0'))       formatted = '+254' + formatted.slice(1);
     else if (!formatted.startsWith('+')) formatted = '+254' + formatted;
 
-    if (!sms || process.env.NODE_ENV !== 'production') {
+    const apiKey = process.env.AT_API_KEY;
+    const isMockKey = !apiKey || apiKey === 'your_key' || apiKey === 'test';
+
+    if (!sms || process.env.NODE_ENV !== 'production' || isMockKey) {
       console.log(`[SMS MOCK] To: ${formatted}\n${message}\n`);
-      return { success: true, mock: true };
+      return { success: true, mock: true, simulated: true };
     }
 
     const result = await sms.send({

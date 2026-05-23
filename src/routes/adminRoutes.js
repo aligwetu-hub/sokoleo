@@ -82,17 +82,20 @@ router.patch('/users/:id/deactivate', async (req, res) => {
 
 // GET /api/admin/analytics
 router.get('/analytics', async (req, res) => {
-  console.log('Analytics endpoint hit!');
   try {
-    const farmers  = await query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'farmer'`);
-    const traders  = await query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'trader'`);
-    const listings = await query(`SELECT COUNT(*)::int AS count FROM listings`);
+    const [farmers, traders, listings, active] = await Promise.all([
+      query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'farmer'`),
+      query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'trader'`),
+      query(`SELECT COUNT(*)::int AS count FROM listings`),
+      query(`SELECT COUNT(*)::int AS count FROM listings WHERE status = 'active'`),
+    ]);
 
     res.json({
       key_metrics: {
         total_farmers:    farmers.rows[0].count,
         total_traders:    traders.rows[0].count,
         total_listings:   listings.rows[0].count,
+        active_listings:  active.rows[0].count,
         total_revenue:    0,
         total_commission: 0,
       },
