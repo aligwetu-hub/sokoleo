@@ -27,11 +27,17 @@ async function sendSMS(phone, message) {
       return { success: true, mock: true, simulated: true };
     }
 
-    const result = await sms.send({
+    const smsConfig = {
       to:      [formatted],
       message,
-      from:    process.env.AT_SENDER_ID || 'SokoLeo',
-    });
+    };
+
+    // Sandbox mode does not support custom sender IDs — only set in production
+    if (process.env.AT_USERNAME !== 'sandbox') {
+      smsConfig.from = process.env.AT_SENDER_ID || 'SokoLeo';
+    }
+
+    const result = await sms.send(smsConfig);
     console.log('SMS sent:', JSON.stringify(result));
     return { success: true, result };
   } catch (err) {
