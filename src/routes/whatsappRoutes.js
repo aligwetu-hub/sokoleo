@@ -97,7 +97,7 @@ async function handleMessage(phone, s, body) {
 
   if (['stop', 'quit', 'unsubscribe'].includes(input)) {
     clearSession(phone);
-    return 'Umefutwa. Karibu tena ukitaka!\nYou have been unsubscribed. Text us anytime to return!';
+    return 'Umetolewa kwenye orodha yetu. Karibu tena!\nYou have been unsubscribed. Text us anytime to return!';
   }
 
   switch (s.state) {
@@ -189,7 +189,7 @@ async function handleRoleSelect(phone, s, input) {
     s.data.role = 'trader';
     s.state     = 'trader_menu';
     await ensureUser(phone, s, 'trader');
-    return `Umechaguliwa kama *Trader* ✅\nYou are registered as a *Trader*.\n\n` + traderMenu();
+    return `Umechaguliwa kama *Mfanyabiashara* ✅\nYou are registered as a *Trader*.\n\n` + traderMenu();
   }
   if (input === '3' || input.includes('help') || input.includes('msaada')) {
     return helpText();
@@ -306,7 +306,7 @@ async function handleFarmerAdd(phone, s, input, body) {
       s.state = 'farmer_menu';
       s.data.listing = {};
       if (result.success) {
-        return `✅ Orodha imehifadhiwa!\nYour listing is live on SokoLeo! 🎉\n\nWabiashara watakuona hivi karibuni.\nTraders can now find your produce.\n\n` + farmerMenu();
+        return `✅ Orodha imehifadhiwa!\nYour listing is live on SokoLeo! 🎉\n\nWafanyabiashara watakuona hivi karibuni.\nTraders can now find your produce.\n\n` + farmerMenu();
       }
       return `❌ Hitilafu ya hifadhi. Jaribu tena.\nFailed to save listing. Please try again.\n\n` + farmerMenu();
     }
@@ -377,7 +377,7 @@ async function showFarmerOrders(s) {
 // ── TRADER ────────────────────────────────────────────────────────────────────
 function traderMenu() {
   return (
-    '🛒 *Menyu ya Trader*\n\n' +
+    '🛒 *Menyu ya Mfanyabiashara*\n\n' +
     '1️⃣  Tafuta kwa Kaunti (Search by County)\n' +
     '2️⃣  Tafuta Zao (Search by Produce)\n' +
     '3️⃣  Maombi Yangu (My Offers)\n\n' +
