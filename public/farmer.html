@@ -1257,6 +1257,21 @@
           </div>
         </div>
 
+        <div class="verification-section" style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:1.25rem;margin-bottom:16px;">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.5rem;">🪪 Identity Verification</div>
+          ${currentUser.id_verification_status === 'verified'
+            ? `<div style="display:flex;align-items:center;gap:8px;color:var(--green);font-weight:600;"><span style="font-size:20px;">✅</span> Your identity has been verified by SokoLeo admin.</div>`
+            : currentUser.id_verification_status === 'pending'
+            ? `<div style="color:#92400e;font-weight:600;">⏳ National ID submitted — under review (within 24 hrs).</div>`
+            : `<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Verify your identity to earn the ✅ Verified badge visible to all traders.</div>
+               <div style="display:flex;flex-direction:column;gap:8px;">
+                 <input class="form-input" id="idFullName" placeholder="Your full name (as on National ID)" style="max-width:320px;" />
+                 <input class="form-input" id="idNumber" placeholder="National ID number (e.g. 12345678)" style="max-width:320px;" />
+                 <button class="btn btn-green btn-sm" style="max-width:200px;" onclick="submitNationalID()">Submit for Verification</button>
+               </div>`
+          }
+        </div>
+
         <div class="card">
           <div class="card-header"><h3>Recent Reviews</h3></div>
           ${reviews.length === 0
@@ -1279,6 +1294,25 @@
         </div>`;
     } catch {
       el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Failed to load reputation data.</p></div>`;
+    }
+  }
+
+  async function submitNationalID() {
+    const fullName = (document.getElementById('idFullName')?.value || '').trim();
+    const idNumber = (document.getElementById('idNumber')?.value || '').trim();
+    if (!idNumber) { alert('Please enter your National ID number.'); return; }
+    if (idNumber.length < 7) { alert('National ID must be at least 7 digits.'); return; }
+    try {
+      await apiFetch('/api/auth/verify-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id, national_id: idNumber, full_name: fullName || undefined }),
+      });
+      currentUser.id_verification_status = 'pending';
+      alert('Submitted! Admin will review within 24 hours.');
+      loadReputation();
+    } catch (e) {
+      alert('Failed to submit. Please try again.');
     }
   }
 

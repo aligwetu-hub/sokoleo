@@ -1,11 +1,12 @@
 require('dotenv').config();
-const express   = require('express');
-const rateLimit = require('express-rate-limit');
-const helmet    = require('helmet');
-const morgan    = require('morgan');
-const cors      = require('cors');
-const path      = require('path');
-const fs        = require('fs');
+const express      = require('express');
+const rateLimit    = require('express-rate-limit');
+const helmet       = require('helmet');
+const morgan       = require('morgan');
+const cors         = require('cors');
+const compression  = require('compression');
+const path         = require('path');
+const fs           = require('fs');
 
 const authRoutes        = require('./routes/authRoutes');
 const listingRoutes     = require('./routes/listingRoutes');
@@ -23,22 +24,50 @@ const boostRoutes       = require('./routes/boostRoutes');
 const negotiationRoutes = require('./routes/negotiationRoutes');
 const smsRoutes         = require('./routes/smsRoutes');
 const whatsappRoutes    = require('./routes/whatsappRoutes');
+const sanitizeInput     = require('./middleware/sanitize');
+const adminAuth         = require('./middleware/adminAuth');
 
 const app = express();
 
 // Trust Render's proxy — required for express-rate-limit behind a load balancer
 app.set('trust proxy', 1);
 
-// CORS — allow same-origin and Render domain
-app.use(cors({ origin: true, credentials: true }));
+// Gzip compression for all responses
+app.use(compression());
 
-// Security + logging
-app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+// CORS — restricted to known origins
+const allowedOrigins = [
+  'https://sokoleo.onrender.com',
+  'http://localhost:4000',
+  'http://localhost:3000',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
+// Security headers
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false, crossOriginResourcePolicy: false }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 app.use(morgan('dev'));
 
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Input sanitization (XSS / JS injection scrubbing)
+app.use(sanitizeInput);
 
 // Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true });
@@ -50,7 +79,11 @@ app.use('/api/vision', visionLimiter);
 
 // ── 1. Static files (FIRST — serves .html, .js, .css, images) ────────────────
 const publicPath = path.join(__dirname, '..', 'public');
-app.use(express.static(publicPath));
+app.use(express.static(publicPath, {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+}));
 console.log('Serving static files from:', publicPath);
 
 // ── 2. API Routes (before catch-all) ─────────────────────────────────────────
@@ -58,7 +91,7 @@ app.use('/api/auth',         authRoutes);
 app.use('/api/listings',     listingRoutes);
 app.use('/api/negotiations', negotiationRoutes);
 app.use('/api/reservations', reservationRoutes);
-app.use('/api/admin',        adminRoutes);
+app.use('/api/admin',        adminAuth, adminRoutes);
 app.use('/api/livestock',    livestockRoutes);
 app.use('/api/escrow',       escrowRoutes);
 app.use('/api/reviews',      reviewRoutes);
@@ -72,9 +105,13 @@ app.use('/api/vision',       visionRoutes);
 app.use('/api',              callbackRoutes); // USSD + M-Pesa callbacks
 
 // ── 3. Health + debug routes ──────────────────────────────────────────────────
-app.get('/health', (req, res) =>
-  res.json({ status: 'ok', service: 'SokoLeo API', version: '2.0', timestamp: new Date() })
-);
+app.get('/health', async (req, res) => {
+  const BackupService = require('./services/backupService');
+  const status = await BackupService.healthCheck();
+  status.service = 'SokoLeo API';
+  status.version = '2.0';
+  res.status(status.database === 'ok' ? 200 : 503).json(status);
+});
 
 app.get('/debug-path', (req, res) => {
   const publicDir = path.join(__dirname, '..', 'public');
@@ -107,10 +144,29 @@ app.use((req, res) => {
 });
 
 // ── 6. Error handler ──────────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
+const monitoring = require('./services/monitoringService');
+
+app.use(async (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Image too large (max 10 MB)' });
-  console.error(err);
-  res.status(500).json({ error: 'internal_server_error' });
+  await monitoring.trackError(err, `${req.method} ${req.path}`);
+  console.error('Unhandled error:', err.stack);
+  res.status(500).json({
+    error: 'internal_server_error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', async (reason) => {
+  await monitoring.trackError(new Error(String(reason)), 'unhandledRejection');
+  console.error('Unhandled Rejection:', reason);
+});
+
+// Handle uncaught exceptions — alert then exit cleanly
+process.on('uncaughtException', async (error) => {
+  await monitoring.trackError(error, 'uncaughtException');
+  console.error('Uncaught Exception:', error);
+  setTimeout(() => process.exit(1), 2000);
 });
 
 module.exports = app;

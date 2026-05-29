@@ -130,4 +130,48 @@ router.get('/listings', async (req, res) => {
   }
 });
 
+// POST /api/admin/blacklist — add phone to blacklist
+router.post('/blacklist', async (req, res) => {
+  const { phone, reason, reported_by } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone required' });
+  try {
+    await query(
+      `INSERT INTO blacklist (phone, reason, reported_by)
+       VALUES ($1, $2, $3)
+       ON CONFLICT DO NOTHING`,
+      [phone, reason || 'Reported by admin', reported_by || null]
+    );
+    res.json({ success: true, message: `${phone} has been blacklisted` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/admin/fraud-reports — view all reports
+router.get('/fraud-reports', async (req, res) => {
+  try {
+    const r = await query(`
+      SELECT fr.*,
+        reporter.name AS reporter_name,
+        reported.name AS reported_name
+      FROM fraud_reports fr
+      LEFT JOIN users reporter ON fr.reporter_id = reporter.id
+      LEFT JOIN users reported ON fr.reported_user_id = reported.id
+      ORDER BY fr.created_at DESC
+    `);
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/admin/listings/:id/report — report a listing (public, no adminAuth)
+router.post('/listings/:id/report', async (req, res) => {
+  const { reporter_id, reason } = req.body;
+  if (!reason) return res.status(400).json({ error: 'Reason required' });
+  try {
+    await query(
+      `INSERT INTO fraud_reports (reporter_id, listing_id, reason) VALUES ($1, $2, $3)`,
+      [reporter_id || null, req.params.id, reason]
+    );
+    res.json({ success: true, message: 'Report submitted. Admin will review within 24 hours.' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

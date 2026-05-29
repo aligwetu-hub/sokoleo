@@ -2,6 +2,28 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/client');
 const { sendSMS, SMS_TEMPLATES } = require('../services/smsService');
+const monitoring = require('../services/monitoringService');
+
+async function updateSellerStats(sellerId) {
+  try {
+    await db.query(`
+      INSERT INTO seller_stats (seller_id, total_sales, completion_rate, last_updated)
+      VALUES ($1, 1, 100, NOW())
+      ON CONFLICT (seller_id) DO UPDATE SET
+        total_sales = seller_stats.total_sales + 1,
+        completion_rate = (
+          SELECT ROUND(
+            COUNT(*) FILTER (WHERE n2.status = 'accepted')::numeric /
+            NULLIF(COUNT(*), 0) * 100, 2
+          )
+          FROM negotiations n2
+          JOIN listings l2 ON n2.listing_id = l2.id
+          WHERE l2.farmer_id = $1
+        ),
+        last_updated = NOW()
+    `, [sellerId]);
+  } catch (e) { console.error('Seller stats update error:', e.message); }
+}
 
 // POST /api/v1/negotiations - trader makes offer
 router.post('/', async (req, res) => {
@@ -134,9 +156,11 @@ router.post('/:id/respond', async (req, res) => {
 
       try {
         await sendSMS(n.trader_phone,
-          SMS_TEMPLATES.offerAccepted(n.trader_name, n.product, n.current_offer, n.farmer_name || 'Farmer'));
+          SMS_TEMPLATES.offerAccepted(n.trader_name, n.product, n.current_offer, n.farmer_name || 'Mkulima'));
       } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
 
+      await updateSellerStats(n.farmer_id);
+      monitoring.trackDeal(n.current_offer, n.product);
       res.json({ message: 'Offer accepted! Reservation created.', agreed_price: n.current_offer });
 
     } else if (action === 'counter') {
@@ -197,6 +221,8 @@ router.post('/:id/trader-respond', async (req, res) => {
         await sendSMS(n.farmer_phone,
           SMS_TEMPLATES.offerAccepted(n.farmer_name, n.product, n.current_offer, n.trader_name));
       } catch (smsErr) { console.error('SMS failed but continuing:', smsErr.message); }
+      await updateSellerStats(n.farmer_id);
+      monitoring.trackDeal(n.current_offer, n.product);
       res.json({ message: 'Deal accepted!', agreed_price: n.current_offer });
 
     } else if (action === 'counter') {

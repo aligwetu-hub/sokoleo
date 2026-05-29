@@ -29,7 +29,9 @@ router.get('/', async (req, res) => {
              l.county, l.region, l.availability, l.status, l.created_at, l.farmer_id,
              l.is_boosted, l.boosted_until, l.boost_count,
              u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location,
-             ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews
+             u.is_verified as farmer_verified,
+             ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews,
+             ss.completion_rate as farmer_completion_rate
       FROM listings l
       JOIN users u ON l.farmer_id = u.id
       LEFT JOIN seller_stats ss ON ss.seller_id = l.farmer_id
@@ -122,6 +124,38 @@ router.patch('/:id/status', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update listing.' });
+  }
+});
+
+// GET /api/listings/market-prices — aggregated price summary, cached 5 min
+let _marketPriceCache = null;
+let _marketPriceCacheTime = 0;
+
+router.get('/market-prices', async (req, res) => {
+  const now = Date.now();
+  if (_marketPriceCache && now - _marketPriceCacheTime < 300_000) {
+    return res.json(_marketPriceCache);
+  }
+  try {
+    const result = await query(`
+      SELECT product,
+             ROUND(AVG(price_per_unit)::numeric, 2) AS avg_price,
+             MIN(price_per_unit) AS min_price,
+             MAX(price_per_unit) AS max_price,
+             COUNT(*) AS listing_count,
+             SUM(quantity) AS total_quantity
+      FROM listings
+      WHERE status = 'active' AND price_per_unit IS NOT NULL
+      GROUP BY product
+      ORDER BY listing_count DESC
+      LIMIT 50
+    `);
+    _marketPriceCache = result.rows;
+    _marketPriceCacheTime = now;
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Market prices error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch market prices.' });
   }
 });
 
