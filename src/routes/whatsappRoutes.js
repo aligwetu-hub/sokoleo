@@ -100,6 +100,90 @@ async function handleMessage(phone, s, body) {
     return 'Umetolewa kwenye orodha yetu. Karibu tena!\nYou have been unsubscribed. Text us anytime to return!';
   }
 
+  // ── PICKUP BOT COMMANDS (global — work in any state) ─────────────────────────
+  // Shop owner confirms drop: "DROP 847293"
+  if (input.startsWith('drop ') || input.startsWith('toa ')) {
+    const pin = body.trim().split(/\s+/)[1];
+    if (!pin) return '❓ Tuma: DROP [PIN yako]\nMfano: DROP 847293';
+    try {
+      const r = await query(
+        `SELECT pt.*, u1.name as farmer_name, u2.name as trader_name, u2.phone as trader_phone
+         FROM pickup_transactions pt
+         JOIN users u1 ON pt.farmer_id = u1.id
+         JOIN users u2 ON pt.trader_id = u2.id
+         WHERE pt.drop_pin=$1 AND pt.status='pending_drop'`,
+        [pin]
+      );
+      if (!r.rows.length) return '❌ PIN batili au tayari imetumika.';
+      const pt = r.rows[0];
+      if (new Date() > new Date(pt.drop_pin_expires_at)) return '❌ PIN imeisha muda. Wasiliana na SokoLeo admin.';
+      await query(
+        `UPDATE pickup_transactions SET drop_confirmed_at=NOW(), drop_confirmed_by='shop_owner_whatsapp', status='pending_collection' WHERE id=$1`,
+        [pt.id]
+      );
+      const { sendSMS } = require('../services/smsService');
+      sendSMS(pt.trader_phone, `SokoLeo: ${pt.produce_name} iko tayari kukusanywa!\nDeal: ${pt.deal_code}\nKumbuka collection PIN yako.`).catch(() => {});
+      return `✅ Imethibitishwa! ${pt.produce_name} ${pt.quantity}kg imepokelewa kutoka ${pt.farmer_name}.\nTrader ${pt.trader_name} amearifiwa kuchukua.`;
+    } catch (e) {
+      return '❌ Kuna tatizo la muda. Jaribu tena.';
+    }
+  }
+
+  // Trader confirms collection: "COLLECT 293847"
+  if (input.startsWith('collect ') || input.startsWith('chukua ')) {
+    const pin = body.trim().split(/\s+/)[1];
+    if (!pin) return '❓ Tuma: COLLECT [PIN yako]\nMfano: COLLECT 293847';
+    try {
+      const r = await query(
+        `SELECT pt.*, u1.name as farmer_name, u1.phone as farmer_phone, u2.name as trader_name
+         FROM pickup_transactions pt
+         JOIN users u1 ON pt.farmer_id = u1.id
+         JOIN users u2 ON pt.trader_id = u2.id
+         WHERE pt.collection_pin=$1 AND pt.status='pending_collection'`,
+        [pin]
+      );
+      if (!r.rows.length) return '❌ PIN batili au bidhaa bado hazijawasilishwa.';
+      const pt = r.rows[0];
+      await query(
+        `UPDATE pickup_transactions SET collection_confirmed_at=NOW(), collection_confirmed_by='trader_whatsapp', status='dispute_window', auto_release_at=$1 WHERE id=$2`,
+        [new Date(Date.now() + 24 * 60 * 60 * 1000), pt.id]
+      );
+      const { sendSMS } = require('../services/smsService');
+      sendSMS(pt.farmer_phone, `SokoLeo: Bidhaa zimechukuliwa!\nDeal: ${pt.deal_code}\nMalipo yatatumwa baada ya masaa 24. Asante!`).catch(() => {});
+      return `✅ Ukusanyaji imethibitishwa!\nMalipo yatatumwa kwa ${pt.farmer_name} ndani ya masaa 24 kama hakuna tatizo.`;
+    } catch (e) {
+      return '❌ Kuna tatizo la muda. Jaribu tena.';
+    }
+  }
+
+  // Check deal status: "STATUS SK-ABC123"
+  if (input.startsWith('status ')) {
+    const deal_code = body.trim().split(/\s+/)[1];
+    if (!deal_code) return '❓ Tuma: STATUS [deal code]\nMfano: STATUS SK-ABC123';
+    try {
+      const r = await query(
+        `SELECT pt.status, pt.produce_name, pt.quantity, pt.drop_confirmed_at, pt.collection_confirmed_at, pp.name as point_name
+         FROM pickup_transactions pt
+         JOIN pickup_points pp ON pt.pickup_point_id = pp.id
+         WHERE pt.deal_code=$1`,
+        [deal_code.toUpperCase()]
+      );
+      if (!r.rows.length) return `❌ Deal ${deal_code} haipatikani.`;
+      const pt = r.rows[0];
+      const statusMap = {
+        pending_drop:        '⏳ Inasubiri bidhaa kuwasilishwa',
+        pending_collection:  '📦 Bidhaa zipo. Subiri kuchukuliwa',
+        dispute_window:      '✅ Zimechukuliwa. Malipo ndani ya masaa 24',
+        disputed:            '⚠️ Tatizo limewasilishwa. Admin anashughulikia',
+        completed:           '✅ Imekamilika. Malipo yametumwa',
+        refunded:            '↩️ Pesa imerudishwa kwa trader',
+      };
+      return `📋 Deal ${deal_code}\nBidhaa: ${pt.produce_name} ${pt.quantity}kg\nHali: ${statusMap[pt.status] || pt.status}\nMahali: ${pt.point_name}`;
+    } catch (e) {
+      return '❌ Kuna tatizo. Jaribu tena.';
+    }
+  }
+
   switch (s.state) {
 
     // ── MAIN MENU ────────────────────────────────────────────────────────────

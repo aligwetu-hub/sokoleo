@@ -192,6 +192,9 @@
     <div class="nav-item" onclick="showPage('ussd')">
       <span class="icon">📱</span> USSD Flow
     </div>
+    <div class="nav-item" onclick="showPage('pickup')">
+      <span class="icon">📍</span> Pickup Points
+    </div>
     <a href="/analytics.html" style="text-decoration:none;">
       <div class="nav-item">
         <span class="icon">📈</span> Analytics
@@ -365,6 +368,69 @@ you soon.</div>
     </div>
   </div>
 
+  <!-- PICKUP POINTS PAGE -->
+  <div class="page" id="page-pickup">
+    <div class="page-header">
+      <h2>📍 Pickup Point Verification</h2>
+      <p>Manage pickup points, active deals, and disputes</p>
+    </div>
+
+    <!-- Register new pickup point -->
+    <div class="table-card" style="margin-bottom:24px;">
+      <div class="table-header">
+        <h3>Register New Pickup Point</h3>
+        <button class="btn btn-primary btn-sm" onclick="toggleRegisterForm()">+ Add Point</button>
+      </div>
+      <div id="registerForm" style="display:none;padding:20px;border-top:1px solid var(--border);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+          <input id="pp_name" placeholder="Shop name *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_owner" placeholder="Owner name *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_phone" placeholder="Owner phone *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_id" placeholder="Owner ID number" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_county" placeholder="County *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_town" placeholder="Town *" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" />
+          <input id="pp_address" placeholder="Physical address" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;grid-column:span 2;" />
+        </div>
+        <button onclick="registerPickupPoint()" class="btn btn-primary" style="margin-top:12px;">Register Point</button>
+        <span id="registerMsg" style="margin-left:12px;font-size:13px;"></span>
+      </div>
+    </div>
+
+    <!-- Active pickup points -->
+    <div class="table-card" style="margin-bottom:24px;">
+      <div class="table-header">
+        <h3>Active Pickup Points</h3>
+        <button class="btn btn-ghost btn-sm" onclick="loadPickupPoints()">↻ Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Owner</th><th>Phone</th><th>Location</th><th>Rating</th><th>Deals</th><th>Verified</th></tr></thead>
+        <tbody id="pickupPointsTable"><tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- All transactions -->
+    <div class="table-card" style="margin-bottom:24px;">
+      <div class="table-header">
+        <h3>Pickup Transactions</h3>
+        <div style="display:flex;gap:8px;">
+          <select id="pickupStatusFilter" onchange="loadPickupTransactions()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;">
+            <option value="">All</option>
+            <option value="pending_drop">Pending Drop</option>
+            <option value="pending_collection">Pending Collection</option>
+            <option value="dispute_window">Dispute Window</option>
+            <option value="disputed">⚠️ Disputed</option>
+            <option value="completed">Completed</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadPickupTransactions()">↻</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Deal Code</th><th>Produce</th><th>Farmer</th><th>Trader</th><th>Point</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="pickupTxTable"><tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -380,6 +446,7 @@ function showPage(name) {
   if (name === 'listings') loadListings();
   if (name === 'users') loadUsers();
   if (name === 'reservations') loadReservations();
+  if (name === 'pickup') { loadPickupPoints(); loadPickupTransactions(); }
 }
 
 function statusBadge(status) {
@@ -519,6 +586,108 @@ async function loadReservations() {
 
 // Init
 loadStats();
+
+// ── Pickup Points ──────────────────────────────────────────────────────────────
+function toggleRegisterForm() {
+  const f = document.getElementById('registerForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function registerPickupPoint() {
+  const body = {
+    name:             document.getElementById('pp_name').value.trim(),
+    owner_name:       document.getElementById('pp_owner').value.trim(),
+    owner_phone:      document.getElementById('pp_phone').value.trim(),
+    owner_id_number:  document.getElementById('pp_id').value.trim() || undefined,
+    county:           document.getElementById('pp_county').value.trim(),
+    town:             document.getElementById('pp_town').value.trim(),
+    physical_address: document.getElementById('pp_address').value.trim() || undefined,
+  };
+  const msg = document.getElementById('registerMsg');
+  if (!body.name || !body.owner_name || !body.owner_phone || !body.county || !body.town) {
+    msg.textContent = '❌ Fill all required fields.'; msg.style.color = 'red'; return;
+  }
+  try {
+    const r = await fetch(`${API}/api/pickup/points/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (data.success) {
+      msg.textContent = `✅ Registered: ${data.pickup_point.name}`; msg.style.color = 'green';
+      loadPickupPoints();
+    } else {
+      msg.textContent = '❌ ' + (data.error || 'Failed'); msg.style.color = 'red';
+    }
+  } catch (e) {
+    msg.textContent = '❌ Network error'; msg.style.color = 'red';
+  }
+}
+
+async function loadPickupPoints() {
+  const tbody = document.getElementById('pickupPointsTable');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr>';
+  const data = await fetchAPI('/api/pickup/points');
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:20px;">No pickup points registered yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(p => `<tr>
+    <td><strong>${p.name}</strong></td>
+    <td>${p.owner_name}</td>
+    <td>${p.owner_phone}</td>
+    <td>${p.town}, ${p.county}</td>
+    <td>⭐ ${p.rating}</td>
+    <td>${p.total_transactions}</td>
+    <td>${p.is_verified ? '<span class="badge green">✅ Verified</span>' : '<span class="badge gray">Unverified</span>'}</td>
+  </tr>`).join('');
+}
+
+async function loadPickupTransactions() {
+  const tbody = document.getElementById('pickupTxTable');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading"><span class="spinner"></span>Loading...</td></tr>';
+  const status = document.getElementById('pickupStatusFilter').value;
+  const url = `/api/pickup/admin/all${status ? '?status=' + status : ''}`;
+  const data = await fetchAPI(url);
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:20px;">No transactions found.</td></tr>';
+    return;
+  }
+  const statusColors = {
+    pending_drop: 'amber', pending_collection: 'blue', dispute_window: 'green',
+    disputed: 'red', completed: 'green', refunded: 'gray',
+  };
+  tbody.innerHTML = data.map(t => `<tr>
+    <td><strong>${t.deal_code}</strong></td>
+    <td>${t.produce_name || '–'} ${t.quantity ? t.quantity + (t.unit || 'kg') : ''}</td>
+    <td>${t.farmer_name}<br><small>${t.farmer_phone}</small></td>
+    <td>${t.trader_name}<br><small>${t.trader_phone}</small></td>
+    <td>${t.point_name}, ${t.town}</td>
+    <td>${statusBadge(t.status)}</td>
+    <td>${t.status === 'disputed' ? `
+      <button onclick="openResolveDispute('${t.deal_code}')"
+        style="padding:4px 10px;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:6px;cursor:pointer;font-size:12px;">
+        Resolve
+      </button>` : '–'}
+    </td>
+  </tr>`).join('');
+}
+
+function openResolveDispute(dealCode) {
+  const resolution = prompt(`Resolve dispute for ${dealCode}:\nEnter resolution notes:`);
+  if (!resolution) return;
+  const releaseTo = confirm('Release payment to FARMER?\n(Cancel = refund to TRADER)') ? 'farmer' : 'trader';
+  fetch(`${API}/api/pickup/resolve-dispute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': localStorage.getItem('adminToken') || '' },
+    body: JSON.stringify({ deal_code: dealCode, resolution, release_to: releaseTo, admin_id: 'admin' }),
+  })
+    .then(r => r.json())
+    .then(d => {
+      alert(d.success ? `✅ Resolved. Payment released to ${releaseTo}.` : '❌ ' + (d.error || 'Failed'));
+      loadPickupTransactions();
+    })
+    .catch(() => alert('❌ Network error'));
+}
 </script>
 <script src="/pwa.js"></script>
 </body>

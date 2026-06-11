@@ -576,6 +576,12 @@
 </div>
 
 <!-- Livestock Modal -->
+<!-- Pickup Point Selection Modal -->
+<div id="pickupPointModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:16px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+  </div>
+</div>
+
 <div class="modal-overlay" id="livestockModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('livestockModal')">×</button>
@@ -1294,6 +1300,56 @@
         </div>`;
     } catch {
       el.innerHTML = `<div class="empty"><div class="e-icon">⚠️</div><p>Failed to load reputation data.</p></div>`;
+    }
+  }
+
+  // ── Pickup Points ─────────────────────────────────────────────────
+  async function selectPickupPoint(negotiationId, county, town) {
+    try {
+      const params = new URLSearchParams();
+      if (county) params.set('county', county);
+      if (town)   params.set('town', town);
+      const points = await apiFetch(`/api/pickup/points?${params}`);
+
+      if (!points.length) {
+        alert('Hakuna pickup point karibu nawe sasa hivi.\nWasiliana na admin: WhatsApp SokoLeo.');
+        return;
+      }
+
+      const pointsList = points.map(p => `
+        <div onclick="confirmPickupPoint('${p.id}','${p.name.replace(/'/g,"\\'")}',${negotiationId})"
+          style="padding:1rem;border:1px solid var(--border);border-radius:8px;margin:.5rem 0;cursor:pointer;transition:border-color .2s"
+          onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-weight:600;color:var(--green)">📍 ${p.name}</div>
+          <div style="font-size:.85rem;color:var(--muted)">${p.physical_address || p.town}</div>
+          <div style="font-size:.85rem">👤 ${p.owner_name} · 📞 ${p.owner_phone}</div>
+          <div style="font-size:.8rem;color:var(--muted)">⭐ ${p.rating} · ${p.total_transactions} deals${p.is_verified ? ' · ✅ Verified' : ''}</div>
+        </div>`).join('');
+
+      document.getElementById('pickupPointModal').innerHTML = `
+        <div style="padding:1.5rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <h3 style="color:var(--green);margin:0">📍 Chagua Pickup Point</h3>
+            <button onclick="document.getElementById('pickupPointModal').style.display='none'"
+              style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted)">×</button>
+          </div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Chagua mahali ambapo utawasilisha bidhaa zako:</p>
+          ${pointsList}
+        </div>`;
+      document.getElementById('pickupPointModal').style.display = 'flex';
+    } catch (e) {
+      alert('Imeshindwa kupata pickup points. Jaribu tena.');
+    }
+  }
+
+  async function confirmPickupPoint(pointId, pointName, negotiationId) {
+    document.getElementById('pickupPointModal').style.display = 'none';
+    if (!confirm(`Unathibitisha kutumia: ${pointName}?`)) return;
+    try {
+      const negRes = await apiFetch(`/api/v1/negotiations/${negotiationId}`).catch(() => null);
+      alert(`✅ Umechagua: ${pointName}\nAdmin ataanzisha pickup transaction na kutuma PIN yako kwa SMS.`);
+    } catch (e) {
+      alert('Imeshindwa. Jaribu tena.');
     }
   }
 

@@ -415,6 +415,15 @@
       <div class="card">
         <div id="myOrders"><div class="loading"><span class="spinner"></span></div></div>
       </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">
+          <h3>📍 Pickup Orders</h3>
+          <button class="btn btn-ghost btn-sm" onclick="loadPickupOrders()">↻ Refresh</button>
+        </div>
+        <div style="padding:0 20px 20px;" id="pickupOrdersList">
+          <div class="loading"><span class="spinner"></span></div>
+        </div>
+      </div>
     </div>
 
     <!-- ROUTE PLANNER -->
@@ -547,6 +556,21 @@
 </div>
 
 <!-- Reserve Modal -->
+<!-- Collection PIN Modal -->
+<div id="collectionPinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:16px;max-width:360px;width:90%;padding:2rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-size:3rem;">📱</div>
+    <h3 style="color:var(--green);margin:.5rem 0 1rem;">Collection PIN Yako</h3>
+    <div id="collectionPinCode" style="font-size:2.5rem;font-weight:900;letter-spacing:.4rem;color:var(--green);padding:1rem;background:rgba(74,222,128,.1);border-radius:12px;margin-bottom:1rem;"></div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem;">Mwonyeshe shop owner PIN hii ukifika kuchukua bidhaa zako.</p>
+    <p style="font-size:.8rem;color:var(--muted);">Deal: <strong id="collectionPinDeal"></strong></p>
+    <button onclick="document.getElementById('collectionPinModal').style.display='none'"
+      style="margin-top:1.25rem;width:100%;padding:.75rem;background:var(--green);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:1rem;">
+      Nimeelewa ✓
+    </button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="reserveModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('reserveModal')">×</button>
@@ -915,7 +939,7 @@
     });
     if (id === 'market')       loadMarket();
     if (id === 'livestock')    loadLivestock();
-    if (id === 'reservations') loadMyOrders();
+    if (id === 'reservations') { loadMyOrders(); loadPickupOrders(); }
     if (id === 'services')     loadServices();
     if (id === 'spending')     loadSpending();
     if (id === 'messages')     loadTraderInbox();
@@ -1397,6 +1421,87 @@
     const el = document.getElementById(id);
     el.innerHTML = text ? `<div class="msg ${type}">${text}</div>` : '';
   }
+  // ── Pickup Orders ──────────────────────────────────────────────────
+  async function loadPickupOrders() {
+    if (!currentUser) return;
+    try {
+      const orders = await apiFetch(`/api/pickup/trader/${currentUser.id}`);
+      renderPickupOrders(orders);
+    } catch (e) { /* no-op — pickup orders are supplementary */ }
+  }
+
+  function renderPickupOrders(orders) {
+    const container = document.getElementById('pickupOrdersList');
+    if (!container) return;
+    if (!orders || !orders.length) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0;">Hakuna pickup orders kwa sasa.</p>';
+      return;
+    }
+    const statusColors = {
+      pending_drop:       '#fbbf24',
+      pending_collection: '#60a5fa',
+      dispute_window:     '#4ade80',
+      disputed:           '#f87171',
+      completed:          '#4ade80',
+      refunded:           '#a78bfa',
+    };
+    container.innerHTML = orders.map(order => `
+      <div style="border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div>
+            <div style="font-weight:600;">${order.produce_name} — ${order.quantity || ''}${order.unit || 'kg'}</div>
+            <div style="font-size:.83rem;color:var(--muted);">Deal: ${order.deal_code} · ${order.point_name}, ${order.town}</div>
+            <div style="font-size:.83rem;color:var(--muted);">Mkulima: ${order.farmer_name}</div>
+          </div>
+          <span style="background:${statusColors[order.status] || '#888'}22;color:${statusColors[order.status] || '#888'};padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;white-space:nowrap;">${order.status.replace(/_/g,' ').toUpperCase()}</span>
+        </div>
+        ${order.status === 'pending_collection' ? `
+          <div style="margin-top:1rem;padding:1rem;background:rgba(96,165,250,.08);border-radius:8px;">
+            <div style="font-size:.85rem;color:#60a5fa;margin-bottom:.5rem;">📦 Bidhaa ziko tayari kukusanywa!</div>
+            <div style="font-size:.8rem;color:var(--muted);">Nenda: ${order.physical_address || order.town}<br>Mwambie shop owner collection PIN yako</div>
+            <button onclick="showCollectionPIN('${order.deal_code}','${order.collection_pin}')"
+              style="margin-top:.75rem;width:100%;padding:.6rem;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+              📱 Onyesha Collection PIN
+            </button>
+          </div>` : ''}
+        ${order.status === 'dispute_window' ? `
+          <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;">
+            <button onclick="raiseDispute('${order.deal_code}')"
+              style="padding:.6rem 1rem;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#f87171;border-radius:8px;cursor:pointer;font-size:.83rem;">
+              ⚠️ Report Problem
+            </button>
+            <div style="font-size:.75rem;color:var(--muted);flex:1;">Malipo yanatolewa kwa mkulima baada ya masaa 24 kama hakuna tatizo.</div>
+          </div>` : ''}
+      </div>`).join('');
+  }
+
+  function showCollectionPIN(dealCode, pin) {
+    const overlay = document.getElementById('collectionPinModal');
+    document.getElementById('collectionPinCode').textContent = pin || '——';
+    document.getElementById('collectionPinDeal').textContent = dealCode;
+    overlay.style.display = 'flex';
+  }
+
+  async function raiseDispute(dealCode) {
+    const reason = prompt('Eleza tatizo lako kwa ufupi:\n(Describe the problem briefly):');
+    if (!reason || !reason.trim()) return;
+    try {
+      const data = await apiFetch('/api/pickup/raise-dispute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_code: dealCode, trader_id: currentUser?.id, reason: reason.trim() }),
+      });
+      if (data.success) {
+        alert('✅ Tatizo limewasilishwa.\nAdmin atawasiliana nawe ndani ya masaa 48.');
+        loadPickupOrders();
+      } else {
+        alert('❌ ' + (data.error || 'Kuna tatizo. Jaribu tena.'));
+      }
+    } catch (e) {
+      alert('❌ Imeshindwa kuwasilisha tatizo. Jaribu tena.');
+    }
+  }
+
   function badge(val, map) {
     const cls = map[val] || 'gray';
     return `<span class="badge ${cls}">${val || '–'}</span>`;
