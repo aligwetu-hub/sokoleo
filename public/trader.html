@@ -143,6 +143,8 @@
     .market-card-meta { font-size:12px; color:var(--muted); margin-bottom:10px; display:flex; flex-direction:column; gap:4px; }
     .market-card-meta span { display:flex; align-items:center; gap:5px; }
     .market-card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+    .market-card-thumb { width:100%; height:140px; object-fit:cover; border-radius:8px; margin-bottom:10px; display:block; }
+    .photo-badge { display:inline-flex; align-items:center; gap:3px; background:rgba(74,222,128,.12); color:var(--green); border-radius:999px; padding:2px 7px; font-size:10px; font-weight:600; }
 
     /* Route planner */
     .route-list { display:flex; flex-direction:column; gap:12px; }
@@ -967,8 +969,9 @@
         return `
         <div class="market-card${boostActive ? ' boosted' : ''}">
           ${boostActive ? '<span class="boost-featured-badge">🚀 Featured</span>' : ''}
+          ${l.photo_url ? `<img class="market-card-thumb" src="${l.photo_url}" alt="${l.product}" loading="lazy" />` : ''}
           <div class="market-card-header">
-            <span class="market-card-product">${l.product}</span>
+            <span class="market-card-product">${l.product} ${l.photo_url ? '<span class="photo-badge">📸 Photo</span>' : ''}</span>
             <span class="market-card-price">${l.price_per_unit ? 'KES ' + Number(l.price_per_unit).toLocaleString() + '/' + (l.unit||'unit') : 'Negotiate'}</span>
           </div>
           <div class="market-card-meta">

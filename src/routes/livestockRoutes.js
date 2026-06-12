@@ -43,18 +43,20 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const {
     farmer_id, animal_type, breed, quantity, age_months, weight_kg,
-    price_per_head, location, health_status, vaccinated, description, images
+    price_per_head, location, health_status, vaccinated, description, images, photo_url
   } = req.body;
 
   if (!farmer_id || !animal_type || !quantity || !price_per_head || !location)
     return res.status(400).json({ error: 'farmer_id, animal_type, quantity, price_per_head and location are required' });
+  if (!photo_url)
+    return res.status(400).json({ error: 'A photo is required for livestock listings.' });
 
   try {
     const r = await query(`
       INSERT INTO livestock_listings
         (farmer_id, animal_type, breed, quantity, age_months, weight_kg,
-         price_per_head, location, health_status, vaccinated, description, images)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         price_per_head, location, health_status, vaccinated, description, images, photo_url)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *`,
       [
         farmer_id, animal_type, breed || null, parseInt(quantity),
@@ -62,7 +64,7 @@ router.post('/', async (req, res) => {
         weight_kg ? parseFloat(weight_kg) : null,
         parseFloat(price_per_head), location,
         health_status || 'healthy', vaccinated === true || vaccinated === 'true',
-        description || null, images || null
+        description || null, images || null, photo_url
       ]
     );
     const listing = r.rows[0];

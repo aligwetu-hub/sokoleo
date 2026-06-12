@@ -27,7 +27,8 @@ router.get('/', async (req, res) => {
     const sql = `
       SELECT l.id, l.product, l.quantity, l.unit, l.price_per_unit, l.location,
              l.county, l.region, l.availability, l.status, l.created_at, l.farmer_id,
-             l.is_boosted, l.boosted_until, l.boost_count,
+             l.is_boosted, l.boosted_until, l.boost_count, l.description,
+             l.photo_url,
              u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location,
              u.is_verified as farmer_verified,
              ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews,
@@ -39,6 +40,7 @@ router.get('/', async (req, res) => {
       ORDER BY
         (l.is_boosted AND l.boosted_until > NOW()) DESC,
         l.boosted_until DESC NULLS LAST,
+        (l.photo_url IS NOT NULL) DESC,
         l.created_at DESC
       LIMIT $${i++} OFFSET $${i}
     `;
@@ -69,22 +71,27 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/listings - create listing
 router.post('/', async (req, res) => {
-  const { farmer_phone, product, quantity, unit, price_per_unit, location, county, region, availability, description } = req.body;
+  const { farmer_id, farmer_phone, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url } = req.body;
 
-  if (!farmer_phone || !product || !quantity || !location || !availability) {
-    return res.status(400).json({ error: 'farmer_phone, product, quantity, location, availability are required.' });
+  if (!product || !quantity || !location || !availability) {
+    return res.status(400).json({ error: 'product, quantity, location, availability are required.' });
+  }
+  if (!farmer_id && !farmer_phone) {
+    return res.status(400).json({ error: 'farmer_id or farmer_phone is required.' });
   }
 
   try {
-    const userRes = await query(`SELECT id FROM users WHERE phone=$1 AND role='farmer'`, [farmer_phone]);
-    if (userRes.rows.length === 0) return res.status(404).json({ error: 'Farmer not found.' });
-
-    const farmerId = userRes.rows[0].id;
+    let farmerId = farmer_id;
+    if (!farmerId) {
+      const userRes = await query(`SELECT id FROM users WHERE phone=$1 AND role='farmer'`, [farmer_phone]);
+      if (userRes.rows.length === 0) return res.status(404).json({ error: 'Farmer not found.' });
+      farmerId = userRes.rows[0].id;
+    }
 
     const listing = await query(
-      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, county, region, availability, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, county || null, region || null, availability, description || null]
+      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, county || null, region || null, availability, description || null, photo_url || null]
     );
 
     // Notify farmer

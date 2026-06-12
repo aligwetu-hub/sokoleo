@@ -452,6 +452,20 @@
               <label>Description (optional)</label>
               <textarea id="lDescription" rows="3" placeholder="e.g. Freshly harvested, grade A..."></textarea>
             </div>
+            <div class="form-group full">
+              <label>📸 Produce Photo <span style="color:var(--muted);font-weight:400;">(optional — listings with photos rank higher)</span></label>
+              <div id="lPhotoBox" onclick="document.getElementById('lPhotoFile').click()"
+                style="border:2px dashed var(--border);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:border-color .2s;"
+                onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div id="lPhotoPlaceholder" style="color:var(--muted);font-size:13px;">
+                  📷 Click to add a photo of your produce
+                </div>
+                <img id="lPhotoPreview" src="" alt="" style="display:none;max-width:100%;max-height:180px;border-radius:8px;margin-top:6px;" />
+              </div>
+              <input type="file" id="lPhotoFile" accept="image/*" capture="environment" style="display:none;"
+                onchange="handleListingPhoto(this)" />
+              <div id="lPhotoStatus" style="font-size:12px;margin-top:4px;color:var(--green);"></div>
+            </div>
           </div>
           <div class="action-row">
             <button class="btn btn-ghost btn-sm" onclick="showPage('listings')">Cancel</button>
@@ -637,6 +651,20 @@
       <div class="form-group full">
         <label>Description (optional)</label>
         <textarea id="lvDesc" rows="2" placeholder="e.g. Good milking cow, calm temperament..."></textarea>
+      </div>
+      <div class="form-group full">
+        <label>📸 Animal Photo <span style="color:#ef4444;font-size:12px;">* Required</span></label>
+        <div id="lvPhotoBox" onclick="document.getElementById('lvPhotoFile').click()"
+          style="border:2px dashed #f59e0b55;border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:border-color .2s;"
+          onmouseover="this.style.borderColor='#f59e0b'" onmouseout="this.style.borderColor='#f59e0b55'">
+          <div id="lvPhotoPlaceholder" style="color:var(--muted);font-size:13px;">
+            📷 Click to add a photo of the animal
+          </div>
+          <img id="lvPhotoPreview" src="" alt="" style="display:none;max-width:100%;max-height:180px;border-radius:8px;margin-top:6px;" />
+        </div>
+        <input type="file" id="lvPhotoFile" accept="image/*" capture="environment" style="display:none;"
+          onchange="handleLivestockPhoto(this)" />
+        <div id="lvPhotoStatus" style="font-size:12px;margin-top:4px;color:var(--green);"></div>
       </div>
     </div>
     <div class="action-row">
@@ -1055,6 +1083,60 @@
     } catch { el.innerHTML = '<p style="color:red;padding:16px;">Failed to load listings.</p>'; }
   }
 
+  // ── Photo helpers ──────────────────────────────────────────────────
+  async function compressImage(file, maxW = 900, quality = 0.78) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  let _listingPhotoUrl = null;
+  async function handleListingPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('lPhotoStatus').textContent = '⏳ Compressing…';
+    try {
+      _listingPhotoUrl = await compressImage(file);
+      const preview = document.getElementById('lPhotoPreview');
+      preview.src = _listingPhotoUrl;
+      preview.style.display = 'block';
+      document.getElementById('lPhotoPlaceholder').style.display = 'none';
+      const kb = Math.round(_listingPhotoUrl.length * 0.75 / 1024);
+      document.getElementById('lPhotoStatus').textContent = `✅ Photo ready (${kb} KB) — click to replace`;
+    } catch { document.getElementById('lPhotoStatus').textContent = '❌ Failed to process photo. Try another image.'; }
+  }
+
+  let _livestockPhotoUrl = null;
+  async function handleLivestockPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('lvPhotoStatus').textContent = '⏳ Compressing…';
+    try {
+      _livestockPhotoUrl = await compressImage(file);
+      const preview = document.getElementById('lvPhotoPreview');
+      preview.src = _livestockPhotoUrl;
+      preview.style.display = 'block';
+      document.getElementById('lvPhotoPlaceholder').style.display = 'none';
+      const kb = Math.round(_livestockPhotoUrl.length * 0.75 / 1024);
+      document.getElementById('lvPhotoStatus').textContent = `✅ Photo ready (${kb} KB)`;
+    } catch { document.getElementById('lvPhotoStatus').textContent = '❌ Failed to process photo. Try another image.'; }
+  }
+
   async function submitListing() {
     const product = document.getElementById('lProduct').value === 'Other'
       ? document.getElementById('lProductCustom').value.trim()
@@ -1076,7 +1158,12 @@
     try {
       const r = await fetch(`${BASE}/api/listings`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ farmer_id: currentUser.id, product, quantity: qty, unit, price_per_unit: price || null, availability: avail, location, county, region, description: desc })
+        body: JSON.stringify({
+          farmer_id: currentUser.id, product, quantity: qty, unit,
+          price_per_unit: price || null, availability: avail,
+          location, county, region, description: desc,
+          photo_url: _listingPhotoUrl || null,
+        })
       });
       const d = await r.json();
       if (!r.ok) return showMsg('listingMsg', d.error || 'Failed to post listing.', 'error');
@@ -1092,7 +1179,16 @@
   }
 
   // ── Livestock ─────────────────────────────────────────────────────
-  function openLivestockModal() { document.getElementById('livestockModal').classList.add('open'); }
+  function openLivestockModal() {
+    _livestockPhotoUrl = null;
+    const prev = document.getElementById('lvPhotoPreview');
+    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+    const ph = document.getElementById('lvPhotoPlaceholder');
+    if (ph) ph.style.display = 'block';
+    const st = document.getElementById('lvPhotoStatus');
+    if (st) st.textContent = '';
+    document.getElementById('livestockModal').classList.add('open');
+  }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
   async function loadMyLivestock() {
@@ -1131,6 +1227,9 @@
     };
     if (!body.animal_type || !body.price_per_head || !body.location)
       return showMsg('lvMsg', 'Animal type, price and location are required.', 'error');
+    if (!_livestockPhotoUrl)
+      return showMsg('lvMsg', '📸 A photo is required for livestock listings.', 'error');
+    body.photo_url = _livestockPhotoUrl;
     try {
       const r = await fetch(`${BASE}/api/livestock`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
