@@ -885,7 +885,7 @@
 
   async function loadCountiesData() {
     try {
-      const r = await fetch('/api/admin/counties');
+      const r = await fetch('/api/counties');
       KENYA_DATA = await r.json();
       const sel = document.getElementById('filterRegion');
       KENYA_DATA.regions.forEach(r => {

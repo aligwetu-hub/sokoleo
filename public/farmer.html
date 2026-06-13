@@ -972,7 +972,7 @@
 
   async function loadFarmerCounties() {
     try {
-      const r = await fetch('/api/admin/counties');
+      const r = await fetch('/api/counties');
       FARMER_KENYA_DATA = await r.json();
       const sel = document.getElementById('lCounty');
       FARMER_KENYA_DATA.regions.forEach(region => {

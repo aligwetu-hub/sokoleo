@@ -93,6 +93,11 @@ app.use(express.static(publicPath, {
 console.log('Serving static files from:', publicPath);
 
 // ── 2. API Routes (before catch-all) ─────────────────────────────────────────
+
+// Public counties endpoint — not behind adminAuth
+const COUNTIES = require('./config/kenya-counties');
+app.get('/api/counties', (req, res) => res.json(COUNTIES));
+
 app.use('/api/auth',         authRoutes);
 app.use('/api/listings',     listingRoutes);
 app.use('/api/negotiations', negotiationRoutes);
