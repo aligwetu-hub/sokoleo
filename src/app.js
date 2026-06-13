@@ -84,6 +84,11 @@ app.use(express.static(publicPath, {
   maxAge: '1d',
   etag: true,
   lastModified: true,
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
 }));
 console.log('Serving static files from:', publicPath);
 
