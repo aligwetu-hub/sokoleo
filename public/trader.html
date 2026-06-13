@@ -969,7 +969,7 @@
         return `
         <div class="market-card${boostActive ? ' boosted' : ''}">
           ${boostActive ? '<span class="boost-featured-badge">🚀 Featured</span>' : ''}
-          ${l.photo_url ? `<img class="market-card-thumb" src="${l.photo_url}" alt="${l.product}" loading="lazy" />` : ''}
+          ${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;margin-bottom:.5rem"/>` : ''}
           <div class="market-card-header">
             <span class="market-card-product">${l.product} ${l.photo_url ? '<span class="photo-badge">📸 Photo</span>' : ''}</span>
             <span class="market-card-price">${l.price_per_unit ? 'KES ' + Number(l.price_per_unit).toLocaleString() + '/' + (l.unit||'unit') : 'Negotiate'}</span>
