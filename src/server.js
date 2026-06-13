@@ -14,6 +14,16 @@ app.listen(PORT, () => {
   `);
 });
 
+// Ensure photo columns exist (safe to run on every startup)
+;(async () => {
+  try {
+    const { query } = require('./db/pool');
+    await query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS photo_url TEXT`);
+    await query(`ALTER TABLE livestock_listings ADD COLUMN IF NOT EXISTS photo_url TEXT`);
+    console.log('✅ photo_url columns verified');
+  } catch (e) { console.error('Photo column migration:', e.message); }
+})();
+
 // Run OTP cleanup shortly after startup
 setTimeout(async () => {
   await BackupService.cleanupExpiredOTPs();
