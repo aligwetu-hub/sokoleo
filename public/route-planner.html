@@ -475,7 +475,7 @@ window.addEventListener('resize', () => { if (lastRoute) drawRouteCanvas(lastRou
 // Populate kenyaTowns datalist from API
 (async function loadTownsList() {
   try {
-    const r = await fetch('/api/admin/counties');
+    const r = await fetch('/api/counties');
     const data = await r.json();
     const dl = document.getElementById('kenyaTowns');
     data.regions.forEach(region => {

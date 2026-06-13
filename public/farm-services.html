@@ -327,7 +327,7 @@ loadServices();
 // Populate county filter from API
 (async function loadCountyFilter() {
   try {
-    const r = await fetch('/api/admin/counties');
+    const r = await fetch('/api/counties');
     const data = await r.json();
     const sel = document.getElementById('filterLoc');
     data.regions.forEach(region => {
