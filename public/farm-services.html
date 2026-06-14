@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -105,6 +121,7 @@
     @keyframes spin { to { transform:rotate(360deg); } }
     .loading { text-align:center; padding:40px; color:var(--muted); }
   </style>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 
@@ -309,7 +326,7 @@ async function submitService() {
   if (!body.service_name || !body.service_type || !body.location)
     return showMsg('formMsg', 'Service name, type and location are required.', 'error');
   try {
-    const r = await fetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const r = await fetch(SOKOLEO_API.services, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok) return showMsg('formMsg', d.error || 'Submission failed.', 'error');
     showMsg('formMsg', '✅ Submitted! Your service will appear after admin review.', 'success');
@@ -327,7 +344,7 @@ loadServices();
 // Populate county filter from API
 (async function loadCountyFilter() {
   try {
-    const r = await fetch('/api/counties');
+    const r = await fetch(SOKOLEO_API.counties);
     const data = await r.json();
     const sel = document.getElementById('filterLoc');
     data.regions.forEach(region => {

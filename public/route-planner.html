@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -139,6 +155,7 @@
     /* Offline */
     .offline-pill { display:none; background:#1e293b; color:#fff; font-size:12px; padding:5px 12px; border-radius:999px; position:fixed; top:60px; left:50%; transform:translateX(-50%); z-index:100; }
   </style>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 
@@ -475,7 +492,7 @@ window.addEventListener('resize', () => { if (lastRoute) drawRouteCanvas(lastRou
 // Populate kenyaTowns datalist from API
 (async function loadTownsList() {
   try {
-    const r = await fetch('/api/counties');
+    const r = await fetch(SOKOLEO_API.counties);
     const data = await r.json();
     const dl = document.getElementById('kenyaTowns');
     data.regions.forEach(region => {

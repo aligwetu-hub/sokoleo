@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -189,6 +205,7 @@
     .rating-bar-fill { height:100%; background:var(--amber); border-radius:999px; }
     .rating-bar-count { font-size:11px; color:var(--muted); width:20px; }
   </style>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 
@@ -240,11 +257,11 @@ async function boot() {
   if (!farmerId) return showNotFound('No farmer ID in URL. Use ?id=FARMER_ID');
   try {
     const [userRes, listingsRes, livestockRes, reviewStats, reviews] = await Promise.all([
-      fetch(`/api/auth/user/${farmerId}`).then(r => r.ok ? r.json() : null),
-      fetch(`/api/listings?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
-      fetch(`/api/livestock?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
-      fetch(`/api/reviews/stats/${farmerId}`).then(r => r.ok ? r.json() : { total: 0, avg_rating: null }),
-      fetch(`/api/reviews/farmer/${farmerId}`).then(r => r.ok ? r.json() : []),
+      fetch(`${SOKOLEO_API.auth}/user/${farmerId}`).then(r => r.ok ? r.json() : null),
+      fetch(`${SOKOLEO_API.listings}?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
+      fetch(`${SOKOLEO_API.livestock}?farmer_id=${farmerId}&status=active`).then(r => r.ok ? r.json() : []),
+      fetch(`${SOKOLEO_API.reviews}/stats/${farmerId}`).then(r => r.ok ? r.json() : { total: 0, avg_rating: null }),
+      fetch(`${SOKOLEO_API.reviews}/farmer/${farmerId}`).then(r => r.ok ? r.json() : []),
     ]);
     if (!userRes) return showNotFound('Farmer profile not found.');
     farmer = userRes;
@@ -445,14 +462,14 @@ async function submitReservation() {
 
   try {
     // Register/find trader by phone then create reservation
-    const regRes = await fetch('/api/auth/register', {
+    const regRes = await fetch(SOKOLEO_API.auth + '/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ phone, name: 'Trader', role: 'trader' })
     });
     const regData = await regRes.json();
     const traderId = regData.user?.id || regData.id;
 
-    const r = await fetch('/api/reservations', {
+    const r = await fetch(SOKOLEO_API.reservations, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ listing_id: selectedListing.id, trader_id: traderId, quantity_reserved: qty, notes })
     });

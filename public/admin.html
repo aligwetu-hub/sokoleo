@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -167,6 +183,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 
@@ -574,7 +591,7 @@ async function loadUsers(role) {
 }
 
 async function verifyUser(id) {
-  const res = await fetch(`${API}/api/admin/users/${id}/verify`, { method: 'PATCH' });
+  const res = await fetch(`${API}${SOKOLEO_API.adminUsers}/${id}/verify`, { method: 'PATCH' });
   if (res.ok) loadUsers();
 }
 
@@ -608,7 +625,7 @@ async function registerPickupPoint() {
     msg.textContent = '❌ Fill all required fields.'; msg.style.color = 'red'; return;
   }
   try {
-    const r = await fetch(`${API}/api/pickup/points/register`, {
+    const r = await fetch(`${API}${SOKOLEO_API.pickup}/points/register`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await r.json();
@@ -676,7 +693,7 @@ function openResolveDispute(dealCode) {
   const resolution = prompt(`Resolve dispute for ${dealCode}:\nEnter resolution notes:`);
   if (!resolution) return;
   const releaseTo = confirm('Release payment to FARMER?\n(Cancel = refund to TRADER)') ? 'farmer' : 'trader';
-  fetch(`${API}/api/pickup/resolve-dispute`, {
+  fetch(`${API}${SOKOLEO_API.pickup}/resolve-dispute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Admin-Token': localStorage.getItem('adminToken') || '' },
     body: JSON.stringify({ deal_code: dealCode, resolution, release_to: releaseTo, admin_id: 'admin' }),

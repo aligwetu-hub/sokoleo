@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -119,6 +135,7 @@
                border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 

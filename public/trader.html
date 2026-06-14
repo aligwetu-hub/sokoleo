@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- SOKOLEO API RULES:
+     PUBLIC endpoints (no token needed):
+       /api/counties          — all 47 counties and towns
+       /api/listings          — browse produce listings
+       /api/admin/analytics   — platform analytics
+       /api/pickup/points     — pickup point locations
+       /api/whatsapp/webhook  — WhatsApp bot
+
+     ADMIN endpoints (require X-Admin-Token header):
+       /api/admin/users       — manage users
+       /api/admin/verify      — verify farmers
+       /api/admin/listings    — manage listings
+
+     NEVER use /api/admin/* endpoints from farmer.html or trader.html
+     ALWAYS use public endpoints for farmer and trader portals
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -265,6 +281,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="SokoLeo"/>
   <link rel="apple-touch-icon" href="/logo.png"/>
+  <script src="/api-config.js"></script>
 </head>
 <body>
 
@@ -793,8 +810,8 @@
   function _getDemoData(url) {
     if (url.includes('/api/listings'))         return _DEMO_LISTINGS;
     if (url.includes('/api/livestock'))        return _DEMO_LIVESTOCK;
-    if (url.includes('/api/reservations'))     return _DEMO_ORDERS;
-    if (url.includes('/api/services'))         return _DEMO_SERVICES;
+    if (url.includes(SOKOLEO_API.reservations))     return _DEMO_ORDERS;
+    if (url.includes(SOKOLEO_API.services))         return _DEMO_SERVICES;
     if (url.includes('/api/escrow/buyer'))     return _DEMO_SPENDING;
     if (url.includes('/api/messages/inbox'))   return _DEMO_INBOX;
     if (url.includes('/api/messages/thread')) {
@@ -842,7 +859,7 @@
     if (!phone || !name) return showMsg('phoneMsg', 'Phone and name required.', 'error');
     showMsg('phoneMsg', 'Sending OTP...', '');
     try {
-      const r = await fetch(`${BASE}/api/auth/register`, {
+      const r = await fetch(`${BASE}${SOKOLEO_API.auth}/register`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ phone, name, role: 'trader' })
       });
@@ -858,7 +875,7 @@
     const otp = document.getElementById('authOTP').value.trim();
     if (!otp) return showMsg('otpMsg', 'Enter the OTP.', 'error');
     try {
-      const r = await fetch(`${BASE}/api/auth/verify-otp`, {
+      const r = await fetch(`${BASE}${SOKOLEO_API.auth}/verify-otp`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ phone: currentPhone, otp })
       });
@@ -886,7 +903,7 @@
 
   async function loadCountiesData() {
     try {
-      const r = await fetch('/api/counties');
+      const r = await fetch(SOKOLEO_API.counties);
       KENYA_DATA = await r.json();
       const sel = document.getElementById('filterRegion');
       KENYA_DATA.regions.forEach(r => {
@@ -1029,7 +1046,7 @@
       return;
     }
     try {
-      const r = await fetch(`${BASE}/api/admin/listings/${reportListingId}/report`, {
+      const r = await fetch(`${BASE}${SOKOLEO_API.adminListings}/${reportListingId}/report`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reporter_id: currentUser?.id || null, reason: fullReason }),
       });
@@ -1061,7 +1078,7 @@
     const notes = document.getElementById('reserveNotes').value.trim();
     if (!qty) return showMsg('reserveMsg', 'Enter quantity to reserve.', 'error');
     try {
-      const r = await fetch(`${BASE}/api/reservations`, {
+      const r = await fetch(`${BASE}${SOKOLEO_API.reservations}`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ listing_id: selectedListing.id, trader_id: currentUser.id, quantity_reserved: qty, notes })
       });
@@ -1210,7 +1227,7 @@
       const fd = new FormData();
       fd.append('image', selectedImageFile);
       if (currentUser) fd.append('user_id', currentUser.id);
-      const r = await fetch(`${BASE}/api/vision/analyze`, { method:'POST', body: fd });
+      const r = await fetch(`${BASE}${SOKOLEO_API.vision}/analyze`, { method:'POST', body: fd });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Analysis failed');
       el.innerHTML = `
@@ -1317,7 +1334,7 @@
     if (!body.service_name || !body.service_type || !body.location)
       return showMsg('traderSvcMsg', 'Service name, type and location are required.', 'error');
     try {
-      const r = await fetch('/api/services', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const r = await fetch(SOKOLEO_API.services, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const d = await r.json();
       if (!r.ok) return showMsg('traderSvcMsg', d.error || 'Submission failed.', 'error');
       showMsg('traderSvcMsg', '✅ Submitted! Your service will appear after admin review.', 'success');
@@ -1395,7 +1412,7 @@
     if (!selectedRating) return showMsg('reviewMsg', 'Please select a star rating.', 'error');
     const comment = document.getElementById('reviewComment').value.trim();
     try {
-      const r = await fetch('/api/reviews', {
+      const r = await fetch(SOKOLEO_API.reviews, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1527,7 +1544,7 @@
   // Called from "💬 Chat" button on a listing card
   async function startConversation(farmerId, listingId) {
     try {
-      const r = await fetch('/api/messages/conversation', {
+      const r = await fetch(SOKOLEO_API.messages + '/conversation', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ farmer_id: farmerId, trader_id: currentUser.id, listing_id: listingId })
       });
@@ -1588,7 +1605,7 @@
     document.getElementById('traderThreadName').textContent   = otherName;
     document.getElementById('traderThreadMessages').innerHTML = loadingHTML();
     await traderLoadThread(convId);
-    fetch(`/api/messages/read/${convId}/${currentUser.id}`, { method: 'PATCH' });
+    fetch(`${SOKOLEO_API.messages}/read/${convId}/${currentUser.id}`, { method: 'PATCH' });
   }
 
   async function traderLoadThread(convId) {
@@ -1618,7 +1635,7 @@
     if (!body || !traderActiveConvId) return;
     input.value = '';
     try {
-      await fetch('/api/messages/send', {
+      await fetch(SOKOLEO_API.messages + '/send', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversation_id: traderActiveConvId, sender_id: currentUser.id, body })
       });
@@ -1677,7 +1694,7 @@
     const btn = document.querySelector('#srAction button');
     if (btn) { btn.disabled = true; btn.textContent = 'Registering…'; }
     try {
-      const r = await fetch(`${BASE}/api/auth/add-role`, {
+      const r = await fetch(`${BASE}${SOKOLEO_API.auth}/add-role`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUser.id, role: 'farmer' })
       });
