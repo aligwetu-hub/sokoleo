@@ -115,6 +115,7 @@ router.post('/otp/send', async (req, res) => {
 
     // 5. Generate and persist OTP
     const otp = generateOTP();
+    console.log(`🔑 OTP for ${phone}: ${otp} (remove this log before going live)`);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     await query(
       `INSERT INTO otp_log (phone, otp_code, ip_address, expires_at) VALUES ($1,$2,$3,$4)`,
