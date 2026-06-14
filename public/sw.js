@@ -4,7 +4,7 @@
 //   • API calls (/api/*)        → Network-first, no cache
 //   • Google Fonts              → Cache-first (stale-while-revalidate)
 
-const CACHE_VERSION = 'sokoleo-v2';
+const CACHE_VERSION = 'sokoleo-v3';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
@@ -21,6 +21,7 @@ const APP_SHELL = [
   '/manifest.json',
   '/pwa.js',
   '/logo.png',
+  '/api-config.js',
 ];
 
 // ── Install: pre-cache the app shell ─────────────────────────────────────────
@@ -83,7 +84,7 @@ self.addEventListener('fetch', event => {
         // Revalidate in background
         fetch(request).then(response => {
           if (response && response.status === 200) {
-            caches.open(SHELL_CACHE).then(c => c.put(request, response));
+            caches.open(SHELL_CACHE).then(c => c.put(request, response.clone()));
           }
         }).catch(() => {});
         return cached;
