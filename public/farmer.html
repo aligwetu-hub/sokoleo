@@ -304,7 +304,16 @@
         <label>OTP Code</label>
         <input type="text" id="authOTP" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;" />
       </div>
-      <button class="btn btn-green" onclick="verifyOTP()">Login / Register</button>
+      <div style="display:flex;align-items:flex-start;gap:.5rem;margin:1rem 0">
+        <input type="checkbox" id="consentCheckbox" onchange="document.getElementById('registerBtn').disabled=!this.checked" style="margin-top:3px"/>
+        <label for="consentCheckbox" style="font-size:.8rem;color:var(--muted)">
+          I agree to SokoLeo's
+          <a href="/privacy-policy.html" target="_blank" style="color:var(--green)">Privacy Policy</a>
+          and
+          <a href="/terms-of-service.html" target="_blank" style="color:var(--green)">Terms of Service</a>
+        </label>
+      </div>
+      <button class="btn btn-green" id="registerBtn" disabled onclick="verifyOTP()">Login / Register</button>
       <button class="btn btn-ghost" style="margin-top:8px;" onclick="showStep('stepPhone')">← Back</button>
       <div id="otpMsg"></div>
     </div>

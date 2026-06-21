@@ -586,13 +586,27 @@ async function loadUsers(role) {
       <td>${u.location||'—'}</td>
       <td>${u.is_verified ? '<span class="badge green">✓ Yes</span>' : '<span class="badge gray">No</span>'}</td>
       <td style="color:#9ca3af;font-size:12px">${formatDate(u.created_at)}</td>
-      <td>${!u.is_verified ? `<button class="btn btn-ghost btn-sm" onclick="verifyUser('${u.id}')">Verify</button>` : ''}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        ${!u.is_verified ? `<button class="btn btn-ghost btn-sm" onclick="verifyUser('${u.id}')">Verify</button>` : ''}
+        <button class="btn btn-sm" style="background:#7f1d1d;color:#fca5a5;border:none;cursor:pointer" onclick="deleteUser('${u.id}','${u.name.replace(/'/g,'\\'+'\\'')}')">Delete</button>
+      </td>
     </tr>`).join('');
 }
 
 async function verifyUser(id) {
   const res = await fetch(`${API}${SOKOLEO_API.adminUsers}/${id}/verify`, { method: 'PATCH' });
   if (res.ok) loadUsers();
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`This will permanently delete ${name}'s account, listings, and messages. This cannot be undone.`)) return;
+  const res = await fetch(`${API}${SOKOLEO_API.adminUsers}/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-Admin-Token': adminToken }
+  });
+  const d = await res.json();
+  if (res.ok) { alert('User deleted.'); loadUsers(); }
+  else alert(d.error || 'Failed to delete user.');
 }
 
 async function loadReservations() {

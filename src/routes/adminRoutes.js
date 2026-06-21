@@ -63,10 +63,36 @@ router.get('/users', async (req, res) => {
 // PATCH /api/admin/users/:id/verify
 router.patch('/users/:id/verify', async (req, res) => {
   try {
-    await query(`UPDATE users SET is_verified=TRUE WHERE id=$1`, [req.params.id]);
+    const userId = req.params.id;
+    // Fetch current national_id to mask it, then clear id photo
+    const userRow = await query(`SELECT national_id FROM users WHERE id=$1`, [userId]);
+    const nationalId = userRow.rows[0]?.national_id || '';
+    const id_last4 = nationalId.length >= 4 ? nationalId.slice(-4) : nationalId;
+
+    await query(
+      `UPDATE users SET is_verified=TRUE, id_last4=$1, national_id=NULL, id_photo_url=NULL WHERE id=$2`,
+      [id_last4 || null, userId]
+    );
     res.json({ message: 'User verified.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to verify user.' });
+  }
+});
+
+// DELETE /api/admin/users/:id
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await query('DELETE FROM messages WHERE sender_id=$1', [userId]);
+    await query('DELETE FROM conversations WHERE farmer_id=$1 OR trader_id=$1', [userId]);
+    await query('DELETE FROM reviews WHERE reviewer_id=$1 OR seller_id=$1', [userId]);
+    await query('DELETE FROM listings WHERE farmer_id=$1', [userId]);
+    await query('DELETE FROM negotiations WHERE farmer_id=$1 OR trader_id=$1', [userId]);
+    await query('DELETE FROM seller_stats WHERE seller_id=$1', [userId]);
+    await query('DELETE FROM users WHERE id=$1', [userId]);
+    res.json({ success: true, message: 'User and associated data deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
