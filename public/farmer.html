@@ -24,6 +24,7 @@
   <meta http-equiv="Expires" content="0"/>
   <title>SokoLeo – Farmer Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     :root {
       --green: #2d6a4f; --green-light: #40916c; --green-pale: #d8f3dc;
@@ -84,18 +85,24 @@
     .logo h2 { font-size: 20px; font-weight: 700; color: white; }
     .logo h2 span { color: var(--amber); }
     .logo p { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
-    .nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+    .nav { flex: 1; padding: 10px 0; overflow-y: auto; }
     .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.5);
-      font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; color: #9ca3af; font-size: 0.875rem;
+      font-family: 'Outfit', sans-serif; margin: 2px 8px;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
-    .nav-item.active { background: var(--green); color: white; }
-    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
-    .sidebar-user {
-      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08);
-    }
+    .nav-item:hover { background: rgba(74,222,128,0.08); color: #e5e7eb; }
+    .nav-item:hover .nav-icon { stroke: #4ade80; }
+    .nav-item.active { background: rgba(74,222,128,0.12); color: #ffffff; }
+    .nav-item.active .nav-icon { stroke: #4ade80; }
+    .nav-icon { width: 20px; height: 20px; stroke: #6b7280; stroke-width: 1.75; flex-shrink: 0; transition: stroke 0.2s; }
+    .nav-add-listing { border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.06); color: #4ade80 !important; margin: 6px 8px; }
+    .nav-add-listing .nav-icon { stroke: #4ade80 !important; }
+    .nav-add-listing:hover { background: rgba(74,222,128,0.15) !important; border-color: rgba(74,222,128,0.6); }
+    .unread-badge { margin-left: auto; background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+    .sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .sidebar-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .sidebar-user-actions { display: flex; gap: 8px; }
     .sidebar-user-actions button {
@@ -103,6 +110,8 @@
       font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
     .sidebar-user-actions button:hover { opacity: 0.85; }
+    .logout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 8px; cursor: pointer; font-size: 0.83rem; font-family: 'Outfit', sans-serif; transition: all 0.2s; margin-top: 4px; }
+    .logout-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); }
     .avatar {
       width: 36px; height: 36px; border-radius: 50%; background: var(--green-light);
       display: flex; align-items: center; justify-content: center;
@@ -334,34 +343,49 @@
       <p>Farmer Portal</p>
     </div>
     <nav class="nav">
-      <div class="nav-item active" onclick="showPage('overview')"><span class="icon">🏠</span> Overview</div>
-      <div class="nav-item" onclick="showPage('listings')"><span class="icon">🌽</span> My Listings</div>
-      <div class="nav-item" onclick="showPage('add-listing')"><span class="icon">➕</span> Add Listing</div>
-      <div class="nav-item" onclick="showPage('livestock')"><span class="icon">🐄</span> My Livestock</div>
-      <div class="nav-item" onclick="showPage('reservations')"><span class="icon">📦</span> Orders</div>
-      <div class="nav-item" onclick="showPage('earnings')"><span class="icon">💰</span> Earnings</div>
-      <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
-      <div class="nav-item" onclick="showPage('services')"><span class="icon">🏪</span> Services</div>
-      <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
-      <div class="nav-item" onclick="openRoleModal()"><span class="icon">🔄</span> Switch Role</div>
+      <div class="nav-item active" id="nav-overview" onclick="showPage('overview')">
+        <i data-lucide="home" class="nav-icon"></i><span>Overview</span>
+      </div>
+      <div class="nav-item" id="nav-listings" onclick="showPage('listings')">
+        <i data-lucide="clipboard-list" class="nav-icon"></i><span>My Listings</span>
+      </div>
+      <div class="nav-item nav-add-listing" id="nav-add-listing" onclick="showPage('add-listing')">
+        <i data-lucide="plus-circle" class="nav-icon"></i><span>Add Listing</span>
+      </div>
+      <div class="nav-item" id="nav-livestock" onclick="showPage('livestock')">
+        <i data-lucide="beef" class="nav-icon"></i><span>My Livestock</span>
+      </div>
+      <div class="nav-item" id="nav-reservations" onclick="showPage('reservations')">
+        <i data-lucide="package" class="nav-icon"></i><span>Orders</span>
+      </div>
+      <div class="nav-item" id="nav-earnings" onclick="showPage('earnings')">
+        <i data-lucide="banknote" class="nav-icon"></i><span>Earnings</span>
+      </div>
+      <div class="nav-item" id="nav-reputation" onclick="showPage('reputation')">
+        <i data-lucide="star" class="nav-icon"></i><span>Reputation</span>
+      </div>
+      <div class="nav-item" id="nav-services" onclick="showPage('services')">
+        <i data-lucide="store" class="nav-icon"></i><span>Services</span>
+      </div>
+      <div class="nav-item" id="nav-messages" onclick="showPage('messages')">
+        <i data-lucide="message-circle" class="nav-icon"></i><span>Messages</span>
+        <span class="unread-badge" id="farmMsgBadge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" id="nav-switch-role" onclick="openRoleModal()">
+        <i data-lucide="repeat-2" class="nav-icon"></i><span>Switch Role</span>
+      </div>
     </nav>
-    <div class="sidebar-user">
-      <div class="sidebar-user-row">
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
         <div class="avatar" id="sidebarAvatar">F</div>
         <div class="user-info">
           <div class="user-name" id="sidebarName">Farmer</div>
           <div class="user-role">Farmer</div>
         </div>
       </div>
-    </div>
-    <div style="padding:.5rem 1rem 1rem 1rem">
-      <button onclick="logout()"
-        style="width:100%;background:rgba(248,113,113,.08);
-        border:1px solid rgba(248,113,113,.2);color:#f87171;
-        padding:9px;border-radius:8px;cursor:pointer;
-        font-size:.83rem;font-family:'DM Sans',sans-serif;
-        display:flex;align-items:center;justify-content:center;gap:.5rem">
-        🚪 Logout
+      <button onclick="logout()" class="logout-btn">
+        <i data-lucide="log-out" style="width:16px;height:16px;stroke:#f87171;stroke-width:1.75"></i>
+        Logout
       </button>
     </div>
   </div>
@@ -990,6 +1014,7 @@
     document.getElementById('sidebarAvatar').textContent = n[0].toUpperCase();
     document.getElementById('topbarName').textContent = n;
     document.getElementById('topbarAvatar').textContent = n[0].toUpperCase();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     loadFarmerCounties();
     loadOverview();
   }
@@ -1035,10 +1060,8 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(n => {
-      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(`'${id}'`))
-        n.classList.add('active');
-    });
+    const navEl = document.getElementById('nav-' + id);
+    if (navEl) navEl.classList.add('active');
     if (id === 'listings')     loadMyListings();
     if (id === 'livestock')    loadMyLivestock();
     if (id === 'reservations') loadMyReservations();
