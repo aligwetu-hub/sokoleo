@@ -24,7 +24,6 @@
   <meta http-equiv="Expires" content="0"/>
   <title>SokoLeo – Farmer Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     :root {
       --green: #2d6a4f; --green-light: #40916c; --green-pale: #d8f3dc;
@@ -1855,10 +1854,7 @@
   }
 </script>
 <script src="/pwa.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  });
-</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
