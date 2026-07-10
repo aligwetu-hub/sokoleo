@@ -4,7 +4,7 @@
 //   • API calls (/api/*)        → Network-first, no cache
 //   • Google Fonts              → Cache-first (stale-while-revalidate)
 
-const CACHE_VERSION = 'sokoleo-v3';
+const CACHE_VERSION = 'sokoleo-v5';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const FONT_CACHE    = `${CACHE_VERSION}-fonts`;
 
