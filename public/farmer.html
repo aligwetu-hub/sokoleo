@@ -18,6 +18,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
@@ -84,18 +85,24 @@
     .logo h2 { font-size: 20px; font-weight: 700; color: white; }
     .logo h2 span { color: var(--amber); }
     .logo p { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
-    .nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+    .nav { flex: 1; padding: 10px 0; overflow-y: auto; }
     .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.5);
-      font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; color: #9ca3af; font-size: 0.875rem;
+      font-family: 'Outfit', sans-serif; margin: 2px 8px;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
-    .nav-item.active { background: var(--green); color: white; }
-    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
-    .sidebar-user {
-      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08);
-    }
+    .nav-item:hover { background: rgba(74,222,128,0.08); color: #e5e7eb; }
+    .nav-item:hover .nav-icon { color: #4ade80; }
+    .nav-item.active { background: rgba(74,222,128,0.12); color: #ffffff; }
+    .nav-item.active .nav-icon { color: #4ade80; }
+    .nav-icon { width: 20px; height: 20px; color: #6b7280; flex-shrink: 0; transition: color 0.2s; }
+    .nav-add-listing { border: 1px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.06); color: #4ade80 !important; margin: 6px 8px; }
+    .nav-add-listing .nav-icon { color: #4ade80 !important; }
+    .nav-add-listing:hover { background: rgba(74,222,128,0.15) !important; border-color: rgba(74,222,128,0.6); }
+    .unread-badge { margin-left: auto; background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+    .sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .sidebar-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .sidebar-user-actions { display: flex; gap: 8px; }
     .sidebar-user-actions button {
@@ -103,6 +110,8 @@
       font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
     .sidebar-user-actions button:hover { opacity: 0.85; }
+    .logout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 8px; cursor: pointer; font-size: 0.83rem; font-family: 'Outfit', sans-serif; transition: all 0.2s; margin-top: 4px; }
+    .logout-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); }
     .avatar {
       width: 36px; height: 36px; border-radius: 50%; background: var(--green-light);
       display: flex; align-items: center; justify-content: center;
@@ -121,10 +130,14 @@
     .topbar-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; font-weight: 700; flex-shrink: 0; }
     .topbar-name { font-size: 13px; font-weight: 600; color: var(--dark); }
     .topbar-role-tag { font-size: 11px; color: var(--muted); }
-    @media (max-width: 640px) {
-      .sidebar { width: 0; overflow: hidden; }
+    @media (max-width: 768px) {
+      #menuToggle { display: block !important; }
+      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 999; transition: left 0.3s ease; width: 240px; overflow: hidden; }
+      .sidebar.open { left: 0; }
       .topbar { left: 0; }
       .main { margin-left: 0 !important; }
+      #bottomNav { display: block !important; }
+      .main { padding-bottom: 70px !important; }
     }
     .demo-mode .topbar { top: 42px; }
     .main { margin-left: 220px; padding: 28px; padding-top: 80px; min-height: 100vh; flex: 1; }
@@ -271,6 +284,10 @@
   <script src="/api-config.js"></script>
 </head>
 <body>
+<button id="menuToggle" onclick="toggleSidebar()" style="display:none;position:fixed;top:1rem;left:1rem;z-index:1000;background:#166534;border:none;border-radius:8px;padding:8px;cursor:pointer">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:998"></div>
 
 <!-- ── AUTH SCREEN ────────────────────────────────────────────────── -->
 <div class="auth-screen" id="authScreen">
@@ -304,7 +321,16 @@
         <label>OTP Code</label>
         <input type="text" id="authOTP" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center;" />
       </div>
-      <button class="btn btn-green" onclick="verifyOTP()">Login / Register</button>
+      <div style="display:flex;align-items:flex-start;gap:.5rem;margin:1rem 0">
+        <input type="checkbox" id="consentCheckbox" onchange="document.getElementById('registerBtn').disabled=!this.checked" style="margin-top:3px"/>
+        <label for="consentCheckbox" style="font-size:.8rem;color:var(--muted)">
+          I agree to SokoLeo's
+          <a href="/privacy-policy.html" target="_blank" style="color:var(--green)">Privacy Policy</a>
+          and
+          <a href="/terms-of-service.html" target="_blank" style="color:var(--green)">Terms of Service</a>
+        </label>
+      </div>
+      <button class="btn btn-green" id="registerBtn" disabled onclick="verifyOTP()">Login / Register</button>
       <button class="btn btn-ghost" style="margin-top:8px;" onclick="showStep('stepPhone')">← Back</button>
       <div id="otpMsg"></div>
     </div>
@@ -325,34 +351,59 @@
       <p>Farmer Portal</p>
     </div>
     <nav class="nav">
-      <div class="nav-item active" onclick="showPage('overview')"><span class="icon">🏠</span> Overview</div>
-      <div class="nav-item" onclick="showPage('listings')"><span class="icon">🌽</span> My Listings</div>
-      <div class="nav-item" onclick="showPage('add-listing')"><span class="icon">➕</span> Add Listing</div>
-      <div class="nav-item" onclick="showPage('livestock')"><span class="icon">🐄</span> My Livestock</div>
-      <div class="nav-item" onclick="showPage('reservations')"><span class="icon">📦</span> Orders</div>
-      <div class="nav-item" onclick="showPage('earnings')"><span class="icon">💰</span> Earnings</div>
-      <div class="nav-item" onclick="showPage('reputation')"><span class="icon">⭐</span> Reputation</div>
-      <div class="nav-item" onclick="showPage('services')"><span class="icon">🏪</span> Services</div>
-      <div class="nav-item" onclick="showPage('messages')"><span class="icon">💬</span> Messages <span id="farmMsgBadge" class="msg-badge"></span></div>
-      <div class="nav-item" onclick="openRoleModal()"><span class="icon">🔄</span> Switch Role</div>
+      <div class="nav-item active" id="nav-overview" onclick="showPage('overview')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Overview</span>
+      </div>
+      <div class="nav-item" id="nav-listings" onclick="showPage('listings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>My Listings</span>
+      </div>
+      <div class="nav-item nav-add-listing" id="nav-add-listing" onclick="showPage('add-listing')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Add Listing</span>
+      </div>
+      <div class="nav-item" id="nav-livestock" onclick="showPage('livestock')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 7h-3a2 2 0 00-2-2H9a2 2 0 00-2 2H4a2 2 0 00-2 2v6a2 2 0 002 2h1l1 3h2l1-3h6l1 3h2l1-3h1a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+        <span>My Livestock</span>
+      </div>
+      <div class="nav-item" id="nav-reservations" onclick="showPage('reservations')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>Orders</span>
+      </div>
+      <div class="nav-item" id="nav-earnings" onclick="showPage('earnings')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+        <span>Earnings</span>
+      </div>
+      <div class="nav-item" id="nav-reputation" onclick="showPage('reputation')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Reputation</span>
+      </div>
+      <div class="nav-item" id="nav-services" onclick="showPage('services')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07M8.46 8.46a5 5 0 000 7.07"/></svg>
+        <span>Services</span>
+      </div>
+      <div class="nav-item" id="nav-messages" onclick="showPage('messages')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span>Messages</span>
+        <span class="unread-badge" id="farmMsgBadge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" id="nav-switch-role" onclick="openRoleModal()">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        <span>Switch Role</span>
+      </div>
     </nav>
-    <div class="sidebar-user">
-      <div class="sidebar-user-row">
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
         <div class="avatar" id="sidebarAvatar">F</div>
         <div class="user-info">
           <div class="user-name" id="sidebarName">Farmer</div>
           <div class="user-role">Farmer</div>
         </div>
       </div>
-    </div>
-    <div style="padding:.5rem 1rem 1rem 1rem">
-      <button onclick="logout()"
-        style="width:100%;background:rgba(248,113,113,.08);
-        border:1px solid rgba(248,113,113,.2);color:#f87171;
-        padding:9px;border-radius:8px;cursor:pointer;
-        font-size:.83rem;font-family:'DM Sans',sans-serif;
-        display:flex;align-items:center;justify-content:center;gap:.5rem">
-        🚪 Logout
+      <button onclick="logout()" class="logout-btn">
+        <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.75"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
       </button>
     </div>
   </div>
@@ -1026,10 +1077,8 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(n => {
-      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(`'${id}'`))
-        n.classList.add('active');
-    });
+    const navEl = document.getElementById('nav-' + id);
+    if (navEl) navEl.classList.add('active');
     if (id === 'listings')     loadMyListings();
     if (id === 'livestock')    loadMyLivestock();
     if (id === 'reservations') loadMyReservations();
@@ -1823,5 +1872,50 @@
   }
 </script>
 <script src="/pwa.js"></script>
+
+<!-- Bottom nav — mobile only -->
+<nav id="bottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0d2b18;border-top:1px solid rgba(74,222,128,0.2);padding:.5rem 0;z-index:997">
+  <div style="display:flex;justify-content:space-around;align-items:center">
+    <div onclick="showPage('overview')" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:#6b7280;font-size:.65rem;padding:.25rem .5rem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </div>
+    <div onclick="showPage('listings')" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:#6b7280;font-size:.65rem;padding:.25rem .5rem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Listings
+    </div>
+    <div onclick="showPage('add-listing')" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:.25rem .5rem">
+      <div style="background:#166534;border-radius:50%;padding:8px;margin-top:-20px;border:3px solid #0a1a0f">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      </div>
+      <span style="color:#4ade80;font-size:.65rem">Add</span>
+    </div>
+    <div onclick="showPage('reservations')" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:#6b7280;font-size:.65rem;padding:.25rem .5rem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Orders
+    </div>
+    <div onclick="toggleSidebar()" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:#6b7280;font-size:.65rem;padding:.25rem .5rem">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      More
+    </div>
+  </div>
+</nav>
+
+<script>
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+}
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      document.querySelector('.sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').style.display = 'none';
+    }
+  });
+});
+</script>
 </body>
 </html>

@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
 
     // Create user
     const userRes = await query(
-      `INSERT INTO users (name, phone, role, location) VALUES ($1, $2, $3, $4) RETURNING id, name, phone, role`,
+      `INSERT INTO users (name, phone, role, location, consent_given, consent_date) VALUES ($1, $2, $3, $4, TRUE, NOW()) RETURNING id, name, phone, role`,
       [name, phone, role, location]
     );
     const user = userRes.rows[0];
