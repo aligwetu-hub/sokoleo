@@ -72,6 +72,9 @@
     .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--white); }
     .nav-item.active { background: var(--green); color: var(--white); }
     .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+    .nav-item:hover .nav-icon { color: white; }
+    .nav-item.active .nav-icon { color: white; }
+    .nav-icon { width: 20px; height: 20px; color: rgba(255,255,255,0.5); flex-shrink: 0; transition: color 0.2s; }
     .sidebar-footer {
       padding: 0 12px;
       font-size: 12px;
@@ -196,29 +199,29 @@
   </div>
   <nav class="nav">
     <div class="nav-item active" onclick="showPage('overview')">
-      <span class="icon">📊</span> Overview
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="6" y1="20" x2="6" y2="16"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/></svg> Overview
     </div>
     <div class="nav-item" onclick="showPage('listings')">
-      <span class="icon">🌽</span> Listings
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Listings
     </div>
     <div class="nav-item" onclick="showPage('users')">
-      <span class="icon">👥</span> Users
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Users
     </div>
     <div class="nav-item" onclick="showPage('reservations')">
-      <span class="icon">📦</span> Reservations
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Reservations
     </div>
     <div class="nav-item" onclick="showPage('ussd')">
-      <span class="icon">📱</span> USSD Flow
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg> USSD Flow
     </div>
     <div class="nav-item" onclick="showPage('pickup')">
-      <span class="icon">📍</span> Pickup Points
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Pickup Points
     </div>
     <div class="nav-item" onclick="showPage('groups')">
-      <span class="icon">👥</span> Groups
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> Groups
     </div>
     <a href="/analytics.html" style="text-decoration:none;">
       <div class="nav-item">
-        <span class="icon">📈</span> Analytics
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Analytics
       </div>
     </a>
   </nav>
