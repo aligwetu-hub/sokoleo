@@ -12,6 +12,7 @@ const SOKOLEO_API = {
   reviews:        '/api/reviews',
   boosts:         '/api/boosts',
   pickup:         '/api/pickup',
+  groups:         '/api/groups',
   whatsapp:       '/api/whatsapp',
   services:       '/api/services',
   reservations:   '/api/reservations',
