@@ -441,7 +441,11 @@
         <select id="filterTown" onchange="searchListings()" disabled>
           <option value="">All Towns</option>
         </select>
+        <select id="filterGroup" onchange="searchListings()">
+          <option value="">All Sellers (Groups + Independent)</option>
+        </select>
       </div>
+      <div id="groupSummaryBar" style="display:none;margin-bottom:12px;"></div>
       <div class="market-grid" id="marketGrid">
         <div class="loading"><span class="spinner"></span> Loading produce...</div>
       </div>
@@ -937,7 +941,23 @@
     document.getElementById('topbarName').textContent = n;
     document.getElementById('topbarAvatar').textContent = n[0].toUpperCase();
     loadCountiesData();
+    loadGroupsFilter();
     loadMarket();
+  }
+
+  // ── Farmer Groups ─────────────────────────────────────────────────────────
+  let TRADER_GROUPS = [];
+  async function loadGroupsFilter() {
+    try {
+      TRADER_GROUPS = await apiFetch(SOKOLEO_API.groups);
+      const sel = document.getElementById('filterGroup');
+      TRADER_GROUPS.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.textContent = `${g.name}${g.is_verified ? ' ✅' : ''} — ${g.town || g.county || ''}`;
+        sel.appendChild(opt);
+      });
+    } catch { /* filter just stays empty if this fails */ }
   }
 
   // ── Kenya Counties ────────────────────────────────────────────────────────
@@ -1009,17 +1029,20 @@
 
   // ── Marketplace ───────────────────────────────────────────────────
   async function loadMarket() {
-    const q      = document.getElementById('searchQuery').value.trim();
-    const avail  = document.getElementById('filterAvail').value;
-    const county = document.getElementById('filterCounty').value;
-    const town   = document.getElementById('filterTown').value;
+    const q       = document.getElementById('searchQuery').value.trim();
+    const avail   = document.getElementById('filterAvail').value;
+    const county  = document.getElementById('filterCounty').value;
+    const town    = document.getElementById('filterTown').value;
+    const groupId = document.getElementById('filterGroup').value;
     let url = `/api/listings?status=active`;
-    if (q)      url += `&product=${encodeURIComponent(q)}`;
-    if (avail)  url += `&availability=${avail}`;
-    if (county) url += `&county=${encodeURIComponent(county)}`;
-    if (town)   url += `&town=${encodeURIComponent(town)}`;
+    if (q)       url += `&product=${encodeURIComponent(q)}`;
+    if (avail)   url += `&availability=${avail}`;
+    if (county)  url += `&county=${encodeURIComponent(county)}`;
+    if (town)    url += `&town=${encodeURIComponent(town)}`;
+    if (groupId) url += `&group_id=${encodeURIComponent(groupId)}`;
     const el = document.getElementById('marketGrid');
     el.innerHTML = `<div class="loading"><span class="spinner"></span></div>`;
+    updateGroupSummaryBar(groupId, q);
     try {
       const data = await apiFetch(url);
       if (!data.length) { el.innerHTML = emptyState('No produce found matching your search.'); return; }
@@ -1038,6 +1061,7 @@
             <span>📍 ${l.location}</span>
             <span>🕐 Available: ${l.availability.replace('_',' ')}</span>
             ${l.description ? `<span style="margin-top:4px;font-style:italic;">${l.description}</span>` : ''}
+            ${l.group_name ? `<span>👥 <strong>${l.group_name}</strong></span>` : ''}
             <span>🌾 ${l.farmer_name || 'Farmer'} &nbsp;${(() => {
               const avg = l.farmer_avg_rating ? parseFloat(l.farmer_avg_rating) : 0;
               const verified = !!l.farmer_verified;
@@ -1063,6 +1087,25 @@
         </div>`;
       }).join('');
     } catch { el.innerHTML = '<p style="color:red;padding:20px;">Failed to load listings.</p>'; }
+  }
+
+  async function updateGroupSummaryBar(groupId, product) {
+    const bar = document.getElementById('groupSummaryBar');
+    if (!groupId) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+    try {
+      let url = `${SOKOLEO_API.groups}/${groupId}/summary`;
+      if (product) url += `?product=${encodeURIComponent(product)}`;
+      const rows = await apiFetch(url);
+      if (!rows.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+      const group = TRADER_GROUPS.find(g => g.id === groupId);
+      const groupLabel = group ? group.name : 'Group';
+      bar.innerHTML = `
+        <div class="card" style="padding:12px 16px;background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.25);">
+          <strong>👥 ${groupLabel}:</strong>
+          ${rows.map(r => `${Number(r.total_quantity).toLocaleString()} ${r.unit || 'units'} ${r.product} across ${r.farmer_count} farmer${r.farmer_count == 1 ? '' : 's'}`).join(' &nbsp;·&nbsp; ')}
+        </div>`;
+      bar.style.display = 'block';
+    } catch { bar.style.display = 'none'; bar.innerHTML = ''; }
   }
 
   function searchListings() { clearTimeout(window._searchTimer); window._searchTimer = setTimeout(loadMarket, 400); }

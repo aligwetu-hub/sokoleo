@@ -5,7 +5,7 @@ const { notifyListingCreated, notifyNewProduce } = require('../services/smsServi
 
 // GET /api/listings - search listings
 router.get('/', async (req, res) => {
-  const { product, location, availability, county, town, page = 1, limit = 20 } = req.query;
+  const { product, location, availability, county, town, group_id, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   try {
@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
       params.push(`%${loc}%`);
     }
     if (availability) { conditions.push(`l.availability = $${i++}`); params.push(availability); }
+    if (group_id)     { conditions.push(`l.group_id = $${i++}`);     params.push(group_id); }
 
     params.push(parseInt(limit), offset);
 
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
       SELECT l.id, l.product, l.quantity, l.unit, l.price_per_unit, l.location,
              l.county, l.region, l.availability, l.status, l.created_at, l.farmer_id,
              l.is_boosted, l.boosted_until, l.boost_count, l.description,
-             l.photo_url,
+             l.photo_url, l.group_id, fg.name as group_name,
              u.name as farmer_name, u.phone as farmer_phone, u.location as farmer_location,
              u.is_verified as farmer_verified,
              ss.avg_rating as farmer_avg_rating, ss.total_reviews as farmer_total_reviews,
@@ -36,6 +37,7 @@ router.get('/', async (req, res) => {
       FROM listings l
       JOIN users u ON l.farmer_id = u.id
       LEFT JOIN seller_stats ss ON ss.seller_id = l.farmer_id
+      LEFT JOIN farmer_groups fg ON fg.id = l.group_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY
         (l.is_boosted AND l.boosted_until > NOW()) DESC,
@@ -71,7 +73,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/listings - create listing
 router.post('/', async (req, res) => {
-  const { farmer_id, farmer_phone, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url } = req.body;
+  const { farmer_id, farmer_phone, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url, group_id } = req.body;
 
   if (!product || !quantity || !location || !availability) {
     return res.status(400).json({ error: 'product, quantity, location, availability are required.' });
@@ -89,9 +91,9 @@ router.post('/', async (req, res) => {
     }
 
     const listing = await query(
-      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, county || null, region || null, availability, description || null, photo_url || null]
+      `INSERT INTO listings (farmer_id, product, quantity, unit, price_per_unit, location, county, region, availability, description, photo_url, group_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [farmerId, product, quantity, unit || 'bags', price_per_unit || null, location, county || null, region || null, availability, description || null, photo_url || null, group_id || null]
     );
 
     // Notify farmer

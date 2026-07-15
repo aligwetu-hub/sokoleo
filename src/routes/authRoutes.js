@@ -185,12 +185,14 @@ router.get('/user/:phone', async (req, res) => {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.phone, u.role, u.location, u.is_verified, u.created_at,
-              f.farm_size, f.crops, f.livestock,
+              f.farm_size, f.crops, f.livestock, f.group_id,
+              fg.name as group_name, fg.is_verified as group_verified,
               t.subscription_tier, t.products_interest,
               (f.user_id IS NOT NULL) AS has_farmer_profile,
               (t.user_id IS NOT NULL) AS has_trader_profile
        FROM users u
        LEFT JOIN farmers f ON f.user_id = u.id
+       LEFT JOIN farmer_groups fg ON fg.id = f.group_id
        LEFT JOIN traders t ON t.user_id = u.id
        WHERE u.phone=$1`,
       [req.params.phone]
