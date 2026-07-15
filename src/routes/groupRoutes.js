@@ -50,8 +50,11 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// PATCH /api/groups/assign/:user_id - set (or clear) a farmer's group affiliation
-// Body: { group_id } — pass group_id: null to remove a farmer from a group.
+// PATCH /api/groups/assign/:user_id - request to join a group, or leave one
+// Body: { group_id } — a real group id sets status to 'pending' (awaiting admin approval).
+// Passing group_id: null clears the affiliation entirely (leave / cancel request).
+// Note: this never sets status to 'approved' directly — only an admin can do that,
+// via PATCH /api/admin/groups/:user_id/approve. That's what keeps the group badge meaningful.
 router.patch('/assign/:user_id', async (req, res) => {
   const { group_id } = req.body;
   try {
@@ -60,8 +63,8 @@ router.patch('/assign/:user_id', async (req, res) => {
       if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found.' });
     }
     const result = await query(
-      `UPDATE farmers SET group_id=$1 WHERE user_id=$2 RETURNING *`,
-      [group_id || null, req.params.user_id]
+      `UPDATE farmers SET group_id=$1, group_status=$2 WHERE user_id=$3 RETURNING *`,
+      [group_id || null, group_id ? 'pending' : null, req.params.user_id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Farmer profile not found.' });
     res.json({ success: true, farmer: result.rows[0] });

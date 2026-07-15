@@ -388,6 +388,10 @@
         <span>Messages</span>
         <span class="unread-badge" id="farmMsgBadge" style="display:none">0</span>
       </div>
+      <div class="nav-item" id="nav-groups" onclick="showPage('groups')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Groups</span>
+      </div>
       <div class="nav-item" id="nav-switch-role" onclick="openRoleModal()">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
         <span>Switch Role</span>
@@ -609,6 +613,22 @@
         <p>Your seller profile as buyers see it</p>
       </div>
       <div id="reputationContent"><div class="loading"><span class="spinner"></span></div></div>
+    </div>
+
+    <!-- GROUPS -->
+    <div class="page" id="page-groups">
+      <div class="page-header">
+        <h2>👥 Farmer Groups</h2>
+        <p>Join a group like Tunyai Farmers Association to sell alongside other members</p>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><h3>Your Status</h3></div>
+        <div id="myGroupStatus"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Available Groups</h3></div>
+        <div id="groupsList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
     </div>
 
     <!-- FARM SERVICES -->
@@ -1048,14 +1068,18 @@
 
   // ── Farmer group affiliation ────────────────────────────────────────
   let farmerGroupId = null;
+  let farmerGroupInfo = null; // last fetched /api/auth/user/:phone result, reused by the Groups page
   async function loadFarmerGroupInfo() {
     if (isDemoMode || !currentUser || !currentUser.phone) return;
     try {
       const u = await apiFetch(`${SOKOLEO_API.auth}/user/${currentUser.phone}`);
+      farmerGroupInfo = u;
       farmerGroupId = u.group_id || null;
       const wrap = document.getElementById('lGroupWrap');
       const sel  = document.getElementById('lGroup');
-      if (farmerGroupId && u.group_name) {
+      // Only offer "sell through group" once an admin has approved the membership —
+      // a pending request shouldn't already be able to show the trust badge on listings.
+      if (farmerGroupId && u.group_name && u.group_status === 'approved') {
         sel.innerHTML = `
           <option value="">No — sell independently</option>
           <option value="${farmerGroupId}">Yes — ${u.group_name}${u.group_verified ? ' ✅' : ''}</option>
@@ -1065,6 +1089,73 @@
         wrap.style.display = 'none';
       }
     } catch { /* not fatal — just keep the group field hidden */ }
+  }
+
+  // ── Groups page: browse, request to join, leave ─────────────────────
+  async function loadGroupsPage() {
+    if (isDemoMode) {
+      document.getElementById('myGroupStatus').innerHTML = '<p style="color:var(--muted);font-size:13px;">Groups aren\'t available in demo mode.</p>';
+      document.getElementById('groupsList').innerHTML = '';
+      return;
+    }
+    // Refresh in case status changed since boot (e.g. admin approved while farmer was browsing)
+    await loadFarmerGroupInfo();
+    const u = farmerGroupInfo || {};
+    const statusEl = document.getElementById('myGroupStatus');
+
+    if (u.group_id && u.group_status === 'approved') {
+      statusEl.innerHTML = `
+        <p>✅ You're an approved member of <strong>${u.group_name}</strong>${u.group_verified ? ' ✅' : ''}.</p>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="leaveGroup()">Leave Group</button>`;
+    } else if (u.group_id && u.group_status === 'pending') {
+      statusEl.innerHTML = `
+        <p>⏳ Your request to join <strong>${u.group_name}</strong> is pending approval.</p>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="leaveGroup()">Cancel Request</button>`;
+    } else {
+      statusEl.innerHTML = `<p style="color:var(--muted);font-size:13px;">You're not in a group yet — selling independently.</p>`;
+    }
+
+    const listEl = document.getElementById('groupsList');
+    listEl.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
+    try {
+      const groups = await apiFetch(SOKOLEO_API.groups);
+      if (!groups.length) { listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;">No groups registered yet.</p>'; return; }
+      listEl.innerHTML = groups.map(g => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+          <div>
+            <strong>${g.name}</strong>${g.is_verified ? ' <span class="badge green" style="font-size:11px;">✅ Verified</span>' : ''}
+            <div style="font-size:12px;color:var(--muted);">${g.town || ''}${g.town && g.county ? ', ' : ''}${g.county || ''}</div>
+          </div>
+          ${u.group_id === g.id
+            ? '<span style="font-size:12px;color:var(--muted);">Current</span>'
+            : (u.group_id
+                ? '<span style="font-size:12px;color:var(--muted);">Leave your current group first</span>'
+                : `<button class="btn btn-green btn-sm" onclick="requestJoinGroup('${g.id}')">Request to Join</button>`)}
+        </div>`).join('');
+    } catch { listEl.innerHTML = '<p style="color:var(--red);font-size:13px;">Failed to load groups.</p>'; }
+  }
+
+  async function requestJoinGroup(groupId) {
+    try {
+      const r = await fetch(`${BASE}${SOKOLEO_API.groups}/assign/${currentUser.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId })
+      });
+      if (!r.ok) { const d = await r.json(); alert(d.error || 'Failed to send request.'); return; }
+      loadGroupsPage();
+    } catch { alert('Network error.'); }
+  }
+
+  async function leaveGroup() {
+    if (!confirm('Leave / cancel your group request?')) return;
+    try {
+      const r = await fetch(`${BASE}${SOKOLEO_API.groups}/assign/${currentUser.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: null })
+      });
+      if (!r.ok) { const d = await r.json(); alert(d.error || 'Failed to update.'); return; }
+      loadGroupsPage();
+    } catch { alert('Network error.'); }
   }
 
   // ── Kenya Counties ────────────────────────────────────────────────────────
@@ -1118,6 +1209,7 @@
     if (id === 'services')     loadFarmerServices();
     if (id === 'messages')     loadFarmInbox();
     if (id === 'add-listing')  loadFarmerCounties();
+    if (id === 'groups')       loadGroupsPage();
     if (id !== 'messages')     stopFarmPoll();
   }
 

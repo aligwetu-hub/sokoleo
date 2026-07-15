@@ -213,6 +213,9 @@
     <div class="nav-item" onclick="showPage('pickup')">
       <span class="icon">📍</span> Pickup Points
     </div>
+    <div class="nav-item" onclick="showPage('groups')">
+      <span class="icon">👥</span> Groups
+    </div>
     <a href="/analytics.html" style="text-decoration:none;">
       <div class="nav-item">
         <span class="icon">📈</span> Analytics
@@ -449,6 +452,32 @@ you soon.</div>
     </div>
   </div>
 
+  <div class="page" id="page-groups">
+    <div class="page-header">
+      <h2>👥 Farmer Groups</h2>
+      <p>Approve join requests and verify groups</p>
+    </div>
+
+    <div class="table-card" style="margin-bottom:24px;">
+      <div class="table-header">
+        <h3>Pending Join Requests</h3>
+        <button class="btn btn-ghost btn-sm" onclick="loadGroupsAdmin()">↻ Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th>Farmer</th><th>Phone</th><th>Requested Group</th><th>Action</th></tr></thead>
+        <tbody id="groupPendingTable"><tr><td colspan="4" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h3>All Farmer Groups</h3></div>
+      <table>
+        <thead><tr><th>Name</th><th>Location</th><th>Verified</th><th>Action</th></tr></thead>
+        <tbody id="groupsTable"><tr><td colspan="4" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -463,6 +492,7 @@ function showPage(name) {
   if (name === 'overview') loadStats();
   if (name === 'listings') loadListings();
   if (name === 'users') loadUsers();
+  if (name === 'groups') loadGroupsAdmin();
   if (name === 'reservations') loadReservations();
   if (name === 'pickup') { loadPickupPoints(); loadPickupTransactions(); }
 }
@@ -597,6 +627,56 @@ async function loadUsers(role) {
 async function verifyUser(id) {
   const res = await fetch(`${API}${SOKOLEO_API.adminUsers}/${id}/verify`, { method: 'PATCH' });
   if (res.ok) loadUsers();
+}
+
+// ── Farmer Groups ────────────────────────────────────────────────────
+async function loadGroupsAdmin() {
+  const pending = await fetchAPI(`${SOKOLEO_API.adminGroups}/pending`);
+  const pendingTable = document.getElementById('groupPendingTable');
+  if (!pending || !pending.length) {
+    pendingTable.innerHTML = `<tr><td colspan="4"><div class="empty"><span class="emoji">✅</span>No pending requests.</div></td></tr>`;
+  } else {
+    pendingTable.innerHTML = pending.map(p => `
+      <tr>
+        <td><strong>${p.name}</strong></td>
+        <td style="font-family:monospace;font-size:12px">${p.phone}</td>
+        <td>${p.group_name}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-primary btn-sm" onclick="approveGroupRequest('${p.user_id}')">Approve</button>
+          <button class="btn btn-sm" style="background:#7f1d1d;color:#fca5a5;border:none;cursor:pointer" onclick="rejectGroupRequest('${p.user_id}')">Reject</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  const groups = await fetchAPI(SOKOLEO_API.groups);
+  const groupsTable = document.getElementById('groupsTable');
+  if (!groups || !groups.length) {
+    groupsTable.innerHTML = `<tr><td colspan="4"><div class="empty"><span class="emoji">👥</span>No groups registered yet.</div></td></tr>`;
+  } else {
+    groupsTable.innerHTML = groups.map(g => `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.town || ''}${g.town && g.county ? ', ' : ''}${g.county || ''}</td>
+        <td>${g.is_verified ? '<span class="badge green">✓ Yes</span>' : '<span class="badge gray">No</span>'}</td>
+        <td>${!g.is_verified ? `<button class="btn btn-ghost btn-sm" onclick="verifyGroup('${g.id}')">Verify</button>` : ''}</td>
+      </tr>`).join('');
+  }
+}
+
+async function approveGroupRequest(userId) {
+  const res = await fetch(`${API}${SOKOLEO_API.adminGroups}/${userId}/approve`, { method: 'PATCH' });
+  if (res.ok) loadGroupsAdmin(); else alert('Failed to approve.');
+}
+
+async function rejectGroupRequest(userId) {
+  if (!confirm('Reject this join request?')) return;
+  const res = await fetch(`${API}${SOKOLEO_API.adminGroups}/${userId}/reject`, { method: 'PATCH' });
+  if (res.ok) loadGroupsAdmin(); else alert('Failed to reject.');
+}
+
+async function verifyGroup(id) {
+  const res = await fetch(`${API}${SOKOLEO_API.adminGroups}/${id}/verify`, { method: 'PATCH' });
+  if (res.ok) loadGroupsAdmin(); else alert('Failed to verify group.');
 }
 
 async function deleteUser(id, name) {

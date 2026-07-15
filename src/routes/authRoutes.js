@@ -185,7 +185,7 @@ router.get('/user/:phone', async (req, res) => {
   try {
     const result = await query(
       `SELECT u.id, u.name, u.phone, u.role, u.location, u.is_verified, u.created_at,
-              f.farm_size, f.crops, f.livestock, f.group_id,
+              f.farm_size, f.crops, f.livestock, f.group_id, f.group_status,
               fg.name as group_name, fg.is_verified as group_verified,
               t.subscription_tier, t.products_interest,
               (f.user_id IS NOT NULL) AS has_farmer_profile,

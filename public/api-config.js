@@ -27,6 +27,7 @@ const SOKOLEO_API = {
   adminAnalytics: '/api/admin/analytics',
   adminVerify:    '/api/admin/verify',
   adminListings:  '/api/admin/listings',
+  adminGroups:    '/api/admin/groups',
 };
 
 // Guard: log a warning if any admin endpoint is called from a user-facing page

@@ -79,6 +79,65 @@ router.patch('/users/:id/verify', async (req, res) => {
   }
 });
 
+// GET /api/admin/groups/pending - farmers awaiting group approval
+router.get('/groups/pending', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT u.id as user_id, u.name, u.phone, f.group_id, fg.name as group_name
+       FROM farmers f
+       JOIN users u ON u.id = f.user_id
+       JOIN farmer_groups fg ON fg.id = f.group_id
+       WHERE f.group_status = 'pending'
+       ORDER BY u.name ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch pending group requests.' });
+  }
+});
+
+// PATCH /api/admin/groups/:user_id/approve - approve a farmer's pending group request
+router.patch('/groups/:user_id/approve', async (req, res) => {
+  try {
+    const result = await query(
+      `UPDATE farmers SET group_status='approved' WHERE user_id=$1 AND group_status='pending' RETURNING *`,
+      [req.params.user_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'No pending request for this farmer.' });
+    res.json({ message: 'Group membership approved.', farmer: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to approve group request.' });
+  }
+});
+
+// PATCH /api/admin/groups/:user_id/reject - reject a farmer's pending group request
+router.patch('/groups/:user_id/reject', async (req, res) => {
+  try {
+    const result = await query(
+      `UPDATE farmers SET group_id=NULL, group_status=NULL WHERE user_id=$1 AND group_status='pending' RETURNING *`,
+      [req.params.user_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'No pending request for this farmer.' });
+    res.json({ message: 'Group request rejected.', farmer: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reject group request.' });
+  }
+});
+
+// PATCH /api/admin/groups/:id/verify - mark a farmer group itself as verified
+router.patch('/groups/:id/verify', async (req, res) => {
+  try {
+    const result = await query(
+      `UPDATE farmer_groups SET is_verified=TRUE WHERE id=$1 RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Group not found.' });
+    res.json({ message: 'Group verified.', group: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to verify group.' });
+  }
+});
+
 // DELETE /api/admin/users/:id
 router.delete('/users/:id', async (req, res) => {
   try {
